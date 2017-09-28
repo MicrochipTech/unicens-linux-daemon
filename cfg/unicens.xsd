@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2017 rel. 3 (x64) (http://www.altova.com) by Pavel Hanak (Microchip Technology Germany II GmbH & Co. KG) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="Unicens">
+		<xs:annotation>
+			<xs:documentation>Schema for the description of a UNICENS configuration</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:choice maxOccurs="unbounded">
+				<xs:element name="Node">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:choice minOccurs="0" maxOccurs="unbounded">
+								<xs:element name="USBPort">
+									<xs:complexType>
+										<xs:attribute name="PhysicalLayer" type="USBPortPhysicalLayer" use="required"/>
+										<xs:attribute name="DeviceInterfaces" type="HexNumber" use="required"/>
+										<xs:attribute name="StreamingIfEpInCount" type="DecNumber" use="required"/>
+										<xs:attribute name="StreamingIfEpOutCount" type="DecNumber" use="required"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="MediaLBPort">
+									<xs:complexType>
+										<xs:attribute name="ClockConfig" type="MediaLBPortClockConfig" use="required"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="StreamPort">
+									<xs:complexType>
+										<xs:attribute name="ClockConfig" type="StreamPortClockConfig" use="required"/>
+										<xs:attribute name="DataAlignment" type="StreamPortDataAlignment" use="required"/>
+									</xs:complexType>
+								</xs:element>
+							</xs:choice>
+							<xs:choice minOccurs="0" maxOccurs="unbounded">
+								<xs:element name="SyncConnection">
+									<xs:complexType>
+										<xs:complexContent>
+											<xs:extension base="Connection">
+												<xs:attribute name="MuteMode" type="SyncConnectionMuteMode" use="optional"/>
+											</xs:extension>
+										</xs:complexContent>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="AVPConnection">
+									<xs:complexType>
+										<xs:complexContent>
+											<xs:extension base="Connection">
+												<xs:attribute name="IsocPacketSize" type="AVPConnectionIsocPacketSize" use="required"/>
+											</xs:extension>
+										</xs:complexContent>
+									</xs:complexType>
+								</xs:element>
+							</xs:choice>
+						</xs:sequence>
+						<xs:attribute name="Address" type="HexNumber" use="required"/>
+						<xs:attribute name="Script" type="xs:string" use="optional"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Script">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:choice maxOccurs="unbounded">
+								<xs:element name="GPIOPortCreate">
+									<xs:complexType>
+										<xs:attribute name="DebounceTime" type="DecNumber" use="required"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="GPIOPortPinMode">
+									<xs:complexType>
+										<xs:attribute name="PinConfiguration" type="HexData" use="required"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="GPIOPinState">
+									<xs:complexType>
+										<xs:attribute name="Mask" type="HexNumber" use="required"/>
+										<xs:attribute name="Data" type="HexNumber" use="required"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="I2CPortCreate">
+									<xs:complexType>
+										<xs:attribute name="Speed" type="I2CPortCreateSpeed" use="required"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="I2CPortWrite">
+									<xs:complexType>
+										<xs:attribute name="Mode" type="I2CPortWriteMode" use="optional"/>
+										<xs:attribute name="BlockCount" type="DecNumber" use="optional"/>
+										<xs:attribute name="Address" type="HexNumber" use="required"/>
+										<xs:attribute name="Length" type="DecNumber" use="optional"/>
+										<xs:attribute name="Payload" type="HexData" use="required"/>
+										<xs:attribute name="Timeout" type="DecNumber" use="optional"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="I2CPortRead">
+									<xs:complexType>
+										<xs:attribute name="Address" type="HexNumber" use="required"/>
+										<xs:attribute name="Length" type="DecNumber" use="required"/>
+										<xs:attribute name="Timeout" type="DecNumber" use="optional"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="MsgSend">
+									<xs:complexType>
+										<xs:attribute name="FBlockId" type="HexNumber" use="required"/>
+										<xs:attribute name="FunctionId" type="HexNumber" use="required"/>
+										<xs:attribute name="OpTypeRequest" type="HexNumber" use="required"/>
+										<xs:attribute name="OpTypeResponse" type="HexNumber" use="optional"/>
+										<xs:attribute name="PayloadRequest" type="HexData" use="required"/>
+										<xs:attribute name="PayloadResponse" type="HexData" use="optional"/>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="Pause">
+									<xs:complexType>
+										<xs:attribute name="WaitTime" type="DecNumber" use="required"/>
+									</xs:complexType>
+								</xs:element>
+							</xs:choice>
+						</xs:sequence>
+						<xs:attribute name="Name" type="xs:string" use="required"/>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+			<xs:attribute name="AsyncBandwidth" type="DecNumber" use="required"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="Connection">
+		<xs:choice minOccurs="2" maxOccurs="2">
+			<xs:element name="MOSTSocket" type="MOSTSocketType"/>
+			<xs:element name="USBSocket">
+				<xs:complexType>
+					<xs:attribute name="EndpointAddress" type="HexNumber" use="required"/>
+					<xs:attribute name="FramesPerTransaction" type="DecNumber" use="required"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="MediaLBSocket">
+				<xs:complexType>
+					<xs:attribute name="ChannelAddress" type="HexNumber" use="required"/>
+					<xs:attribute name="Bandwidth" type="xs:integer" use="required"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="StreamSocket">
+				<xs:complexType>
+					<xs:attribute name="StreamPinID" type="StreamSocketStreamPinID" use="required"/>
+					<xs:attribute name="Bandwidth" type="xs:integer" use="required"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Splitter" type="SplitterCombinerType"/>
+			<xs:element name="Combiner" type="SplitterCombinerType"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:simpleType name="HexNumber">
+		<xs:annotation>
+			<xs:documentation>Hexadecimal number in the format 0xd..d</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="0x(0|[1-9a-fA-F][0-9a-fA-F]*)"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="DecNumber">
+		<xs:annotation>
+			<xs:documentation>Decimal number</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	<xs:simpleType name="USBPortPhysicalLayer">
+		<xs:annotation>
+			<xs:documentation>Physical Layer of USB port</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Standard"/>
+			<xs:enumeration value="HSIC"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="MediaLBPortClockConfig">
+		<xs:annotation>
+			<xs:documentation>Clock Config of MediaLB port</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="256Fs"/>
+			<xs:enumeration value="512Fs"/>
+			<xs:enumeration value="1024Fs"/>
+			<xs:enumeration value="2048Fs"/>
+			<xs:enumeration value="3072Fs"/>
+			<xs:enumeration value="4096Fs"/>
+			<xs:enumeration value="6114Fs"/>
+			<xs:enumeration value="8192Fs"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="StreamPortClockConfig">
+		<xs:annotation>
+			<xs:documentation>Clock Config of Stream port</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="8Fs"/>
+			<xs:enumeration value="16fs"/>
+			<xs:enumeration value="32Fs"/>
+			<xs:enumeration value="64Fs"/>
+			<xs:enumeration value="128Fs"/>
+			<xs:enumeration value="256Fs"/>
+			<xs:enumeration value="512Fs"/>
+			<xs:enumeration value="Willdcard"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="StreamPortDataAlignment">
+		<xs:annotation>
+			<xs:documentation>Data Alignment of Stream port</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Left16Bit"/>
+			<xs:enumeration value="Left24Bit"/>
+			<xs:enumeration value="Right16Bit"/>
+			<xs:enumeration value="Right24Bit"/>
+			<xs:enumeration value="Seq"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="StreamSocketStreamPinID">
+		<xs:annotation>
+			<xs:documentation>Stream Pin ID of Stream socket</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="SRXA0"/>
+			<xs:enumeration value="SRXA1"/>
+			<xs:enumeration value="SRXB0"/>
+			<xs:enumeration value="SRXB1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="SyncConnectionMuteMode">
+		<xs:annotation>
+			<xs:documentation>Mute Mode of Sync connection</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="NoMuting"/>
+			<xs:enumeration value="MuteSignal"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="AVPConnectionIsocPacketSize">
+		<xs:annotation>
+			<xs:documentation>Isoc Packet Size of AVP connection</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:enumeration value="188"/>
+			<xs:enumeration value="196"/>
+			<xs:enumeration value="206"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="I2CPortCreateSpeed">
+		<xs:annotation>
+			<xs:documentation>Speed parameter of I2CPortCreate</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="SlowMode"/>
+			<xs:enumeration value="FastMode"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="I2CPortWriteMode">
+		<xs:annotation>
+			<xs:documentation>Mode parameter of I2CPortWrite</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="DefaultMode"/>
+			<xs:enumeration value="RepeatedStartMode"/>
+			<xs:enumeration value="BurstMode"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="HexData">
+		<xs:annotation>
+			<xs:documentation>String which represents byte array as hexadecimal digits with space after each two digits</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[0-9a-fA-F]{2}(\s+[0-9a-fA-F]{2})*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="SplitterCombinerType">
+		<xs:sequence>
+			<xs:element name="MOSTSocket" type="SCMOSTSocketType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="BytesPerFrame" type="xs:integer" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="MOSTSocketType">
+		<xs:attribute name="Route" type="xs:string" use="required"/>
+		<xs:attribute name="Bandwidth" type="xs:integer" use="required"/>
+		<xs:attribute name="IsActive" type="xs:boolean" use="optional"/>
+		<xs:attribute name="RouteId" type="HexNumber" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="SCMOSTSocketType">
+		<xs:complexContent>
+			<xs:extension base="MOSTSocketType">
+				<xs:attribute name="Offset" type="xs:integer" use="required"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

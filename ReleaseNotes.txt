@@ -1,0 +1,451 @@
+Unicens V2 Daemon (unicensd)
+============================
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! Only use Firmware V2.4.0 or newer                                                  !!!
+!!! Make sure that you enable Unicens mode in ConfigString                             !!!
+!!! Make sure that you set an unique node address in ConfigString                      !!!
+!!! Make sure that you set an unique MAC address in ConfigString, when device use MEP  !!!
+!!! Use default config feature from MOST Linux Driver to setup USB/MLB.                !!!
+!!! Control Channel must be mapped to CDEVs: /dev/inic-usb-crx and /dev/inic-usb-ctx   !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+V04.00.03
+=========
+- Moved example UNICENS configurations into cfg subfolder
+
+V04.00.02
+=========
+- Character device name can be passed with command line parameters.
+- Enabled dynamic route switching functionality.
+- Added user API for I2C and GPIO handling.
+- Added events for NetworkState, AMS Message, Routing Result and GPIO state changes.
+- XML parsing components delivers better error messages.
+- Fixed bug, which prevented usage of nodes without any sockets.
+- Fixed non usable combiner bug.
+- Remote I2C response is now optional.
+- Enabled INIC watchdog.
+
+V04.00.01
+=========
+!! XML Format has changed, added XML schema, make sure you edit with a XML editor which understands XML schemas !!
+- Integrated Unicens Library UNICENS V2.1.0-3564
+- Fixed non working Combiner / Splitter functionality.
+- Routes can be defined (with RouteId attribute) and switched on / off by C-code while runtime.
+
+V04.00.00
+=========
+!! Breaking change. Switched from NetworkManager aka IndustrialStack aka Unicens V1 to Unicens V2 !!
+!! XML Format has changed, file ending is now ucsx !!
+- Changed name of executable. NetworkManager --> unicensd
+- Integrated Unicens Library UCS_V2.1.0-3491_RC2
+- Switched from libxml2 to mxml, the sources of the library are part of this package.
+
+V03.00.05
+=========
+- Fixed Mantis-ID: 31653: "NW Manager does not report error when "local_connection" is not present in xml".
+- Fixed Mantis-ID: 31651: "NW Manager does not report error when xml contains two identical device entries".
+- Fixed Mantis-ID: 31650: "NW Manager does not report error when "channel" tag contains more than two sockets".
+
+V03.00.04
+=========
+- Integrated MOST Linux Driver V1.4.0.
+- Improved retry behaviour in case of Errors.
+- Showing unused or unknown devices in connection table (broken since V3.0.0).
+
+V03.00.03
+=========
+- Applied different MAC address setting mechanism in loadDriver.sh scripts and in Linux Driver.
+- Fixed issue reported with Splitter / Combiner sockets.
+- MOST IPC clients, which notified for MCM, are now also getting the request messages.
+- Connection Channel IDs with values over 256 are now correctly displayed.
+- Changed AudioMixer IPC port to 5522, this fixes collision with VideoOnDemand server.
+- Repaired non working master volume adjustment in AudioMixer due to INIC API changes.
+- AudioMixer sends master volume only on change to SlimDevice.
+- VideoOnDemand supports multiplexing of streams independend from Source MAC address.
+
+V03.00.02
+=========
+- Updated INIC OS81118 firmware to V2.4.0.
+- Updated Automotive Target Manager to V2.0.9.
+- Merged with Sample Application branch V02.07.23 (see below).
+
+V03.00.01
+=========
+- INIC API V1 is working again (broken since V3.0.0).
+- Added support for TSI interface of OS81110.
+- Stored TargetManager V2.0.7-Patch1.
+- Merged with Sample Application branch V02.07.21 (see below).
+
+V03.00.00
+=========
+- Replaced Industrial Stack by C++ based version. It supports setup of all slim devices in parallel.
+- Switched TargetManager to version V2.0.7.
+- Switched INIC OS81118 firmware to V2.3.0
+- Integrated NetServices Light V3.2.5.0.1465 (MultiInstance patched)
+
+V02.07.23
+=========
+- NetworkManager: Improved loading of configurations and scripts via IPC commands.
+- Added debug possibilty in NetworkManager with enabled Menu (-m). MOST can be enabled and disabled by user.
+
+V02.07.22
+=========
+- Integrated MOST Linux Driver V1.3.12.
+- Improved stability of VideoOnDemand client and server.
+
+V02.07.21
+=========
+- Fixed non working switching of NetworkManager configurations.
+- Improved loadDriver shell scripts.
+
+V02.07.20
+=========
+- NetworkManager: Fixed crash when TCP-IPC client disconnects.
+- NetworkManager: Avoid registering the same MCM listener multiple times.
+- NetworkManager: Checking local and remote INIC firmware version and print warn message if incompatible version was found.
+- Android Video Players: In case of rendering problems, please set variable "oldAndroid" to true in file "TsSample.java".
+- HmiAuto Android App: Video list is queried via IPC from server.
+
+MOST150 specific:
+================
+- NetworkManager: Checking local and remote INIC firmware version and print warn message if incompatible version was found.
+
+V02.07.19
+=========
+- VideoOnDemand: Fixed segmentation fault when selecting new movies while MOST-network is not available.
+- NetworkManager: Selecting new config xml file via IPC detects automatically correct path.
+- NetworkManager: Retry to open busy control endpoints.
+
+V02.07.18
+=========
+
+- Implemented new thread safe vector class in all examples.
+- Optimized LLD driver in NetworkManager.
+
+V02.07.17
+=========
+
+- CHANGED BEHAVIOUR:
+					NetworkManager now enables the INIC watchdog feature. This means if the 
+					process of NetworkManager is killed, all streams will stop.
+- Supporting isochronous channel on USB without stuffing. To use add this: <packets_per_xact_hex>FFFF</packets_per_xact_hex>
+- loadDriver shell scripts consume less CPU resources.
+- Increased IPC temp memory in NetworkManager so more connections can be reported to VideoOnDemand via IPC.					
+- Increased amount of terminals supported by a Multiplexer from 20 to 40 nodes (VideoOnDemand).
+- NetworkManager uses blocking mechanisms to trigger MOST related services.
+- Enabled transport stream stuffing for VideoOnDemand use case (without test patterns).
+- Printing warning message, when MLB socket is created with a blockwidth which is not quadlet aligned.
+- Optimized VideoOnDemand to use less CPU resources.
+
+V02.07.16
+=========
+
+- Integrated MOST Linux Driver V1.3.11.
+- Improved of MPR changes in NetworkManager.
+
+V02.07.15
+=========
+
+- Integrated MOST Linux Driver V1.3.10.
+- Added patch for kernel crash, when two MOST rings are used one device. Apply with "make patch-two-most-ring-hang".
+- Improved remote MOST message sending via IPC.
+- Improved reporting of MOST network state via IPC.
+
+V02.07.14
+=========
+
+- Integrated MOST Linux Driver V1.3.9.
+
+V02.07.13
+=========
+
+- Integrated MOST Linux Driver V1.3.8.
+- NetworkManager Server supports notification of NetworkState (locked, mpr, sbc) via UDP/TCP IPC.
+- NetworkManager Server supports extended socket for I2S on API V1 based INICs (OS81110).
+- NetworkManager Client supports switching of Network Configuration XML while running (config command line parameter).
+- Updated ConfigString for SlimAuxIO board, so all LEDs can be used.
+- Improved support of different Video containers (like MPEG, AVI) VideoOnDemand Server.
+- VideoOnDemand supports new parameter "-i", which ignores CDEVs by name.
+- Modified XML and shell scripts for VideoOnDemand default use case. 
+  Only 2 Isochronous channels will be used. The next free 2 channels 
+  will then be used for UDP video stream routing.
+- Fixed loadDriver.sh, so that IP addresses are set correctly for C-Rev OS81118-
+- Improved handling of IP addresses in loadDriver shell script.
+- Fixed VideoOnDemand streaming problem with files bigger than 2GB.
+- Added support for AAC Playback in Android-HMI and Android-Sync-Player application.
+- Made two new Tools:
+	-- udp2stdout: copies any UDP stream (also multicast) to stdout. So it can be piped to CDEVs.
+	-- udp2dev: copies any UDP stream (also multicast) to one or multiple CDEVs.
+- Added new example for SlimAuxIO board. The source is automatically changed, depending which
+  input port is used (Microphone or Line in).
+- Improved Audio Examples. Added SlimMic use case.
+
+V02.07.12
+=========
+
+- Integrated MOST Linux Driver V1.3.7.
+
+V02.07.11
+=========
+
+- VideoOnDemand seek time is improved.
+- VideoOnDemand seeking in files bigger than 2GB is now supported.
+
+V02.07.10
+=========
+
+- Integrated MOST Linux Driver V1.3.6.
+- Added new Example TsRetimer. 
+  This reads transport stream from stdin and streams it with the correct speed to stdout.
+- NetworkManager configuration file can now be set via IPC.
+- Improved stability of VideoOnDemand Server and Client software.
+
+V02.07.09
+=========
+
+- Added PatternChecker Client for Android.
+- Added Splitter / Combiner functionality for I2S and MLB.
+
+V02.07.08
+=========
+
+- Added posibility to use also UDP as Transport for VideoOnDemand.
+- Fixed problem, with multiple connected sockets, sometimes the wrong MOST connection label was used.
+- Disabled stuffing by default in VideoOnDemand Server application.
+
+V02.07.07
+=========
+
+- Integrated MOST Linux Driver V1.3.5, this improves stability of USB and MLB driver.
+
+V02.07.06
+=========
+
+- Integrated MOST Linux Driver V1.3.4, this finally provides 5.1 ALSA support.
+- Synchronous channels can now be configured to be a loopback on the same INIC.
+- New INIC firmware for OS81118-D supporting RBD at power on reset.
+
+V02.07.05
+=========
+
+- NetworkManager supports Ethernet (MEP) sniffing by enabling promiscuous mode. Usage: "NetworkManager -s"
+- Added support for Ring Break Diagnosis (Result is transmitted via IPC).
+- Patched MOST Linux Driver V1.3.3, found additional problems with 5.1 surround sound.
+
+V02.07.04
+=========
+
+    ###########################################################################
+    ## In case of OS81118-C Rev USB usage, enter: "make patch patch-c-rev"   ##
+    ###########################################################################
+
+- Integrated MOST Linux Driver V1.3.3.
+- ConnectionList now holds offset and max channel width for splitted / combined sockets.
+- UDP messages can now have a size of 8KB.
+- AudioMixer supports playback to local ALSA device. 
+  It must be enabled with "LOCAL_ALSA_OUTPUT" preprocessor flag or call "make examples-alsa" from the root folder.
+- Added new command line client for Audio Mixer. It can be used to fully test audio mixer including 5.1 sound mixing.
+
+V02.07.03
+=========
+
+- Repaired wrong entries in ConnectionList (since V2.7.2).
+- Destroying all local INIC resources on detected MOST unlock (better implementation).
+- Improved stability of device discovery.
+- AudioMixer volume matrix can now set per mono-channel.
+- AudioMixer supports audio compression for microphones.
+
+V02.07.02
+=========
+
+- Integrated MOST Linux Driver V1.3.1, which supports Video for Linux 2 (V4L2)
+- Showing not configured devices in ConnectionList.
+- Showing devices which have no socket configuration in ConnectionList.
+- Showing asynchronous channels on devices with INIC API V1 in ConnectionList.
+- Supporting enhanced (combined / splitted) synchronous sockets on INIC API V1 INICs.
+
+V02.07.01
+=========
+
+- Fixed non working ALSA configuration in NetworkManager component.
+- Fixed non working opening of MLB channel, if hexadecimal device id was used.
+
+V02.07.00
+=========
+
+- Added Support for OS81118-D revision.
+- Improved API of configuration XML to support different types of INIC connected to the local EHC.
+  (Backward compatible to old API).
+- VideoOnDemand must now send it's own MAC address in the first 6 Byte of the Payload.
+
+V02.06.01
+=========
+
+- Scripts can now be executed via IPC protocol.
+- Performance optimizations.
+- Added support for I2C attached INICs.
+
+V02.06.00
+=========
+    ###########################################################################
+    ## Please note that the command line parameters of examples have changed ##
+    ###########################################################################
+
+- Implemented new IPC protocol also running on TCP/IP and supporting unlimited payload size per message.
+- Integrated Linux Driver V1.2.2.
+- NetworkManager can now also be controlled via IPC.
+- NetworkManager can send any MOST control message received via IPC and vice versa.
+- First support for OS81118-D revision on SlimMicrophone.
+
+V02.05.02
+=========
+
+- Fixed problems with MAMAC / MEP on DIM2 platforms.
+- Fixed non working multi-instance of INICs (since V2.5.1).
+- Sending PMT and PAT more often, as some players won't wait 1 second.
+
+V02.05.01
+=========
+
+- Central Makefile to build all examples and MOST Linux driver.
+- Improved restart behaviour after sudden NetOff or MPR change event.
+- Setting thread priority to max for MOST timing relevant functions in AudioMixer and VideoOnDemand samples.
+- Allow Multicast Ethernet packets to be received.
+- AIM module can now be chosen by configuration XML.
+- Added File listing in VideoOnDemand FBlock.
+- VideoOnDemand sends PMT packet every second.
+- Added device discovery to Android and C++ VoD-Client samples.
+- Added support for Splitter and Combiner objects in INIC.
+
+
+V02.05.00
+=========
+
+- Splitted VoD application into three applications: NetworkManager, VideoOnDemand and AudioMixer.
+- Moved shell scripts to corresponding projects.
+- Moved client applications to corresponding projects.
+
+V02.04.01
+=========
+
+- Fixed non working local connected MLB INIC.
+- Fixed non working VoD Broadcast streaming.
+- Added parameter in XML file to create MLB port with the given speed.
+
+V02.04.00
+=========
+
+- Removed fork mechanism, all C components are now multi instanceable.
+- Updated Linux Driver to V1.2.1.
+
+V02.03.00
+=========
+
+- Updated to INIC OS81118 Firmware V2.1.0.
+- Updated Linux Driver to V1.2.0. Attention: The API of sysfs is different.
+- Implemented audio mixing sample for MOST sync channel.
+- Added support for creating routes in XML file.
+- Repaired non working MOST timing slave mode.
+- Removed support for local media playback.
+- Solved problem with not starting METH device with MLB attached INICs.
+
+V02.02.00
+=========
+
+- Interaction via MOST IPC (MEP) with Android HMI App.
+- Added support for different working folder. Path will be passed as second command line parameter.
+- Media files are now searched in sub-folders: audio, video, radio, cluster, navigation.
+- Added support for local media play back. Create fifo with 'mkfifo' command and pass path as third 
+  command line parameter.
+- Fixed hanging character devices after Netoff-event or USB disconnect.
+- Replaced initial GetGroupAddress from Broadcast to Unicast query.
+
+V02.01.00
+=========
+
+- Get Audio / Video PIDs from source streams automatically.
+- Added support for synchronous streams.
+- Buffer size and amount of Buffers is configurable with the XML file.
+- Subbuffer size and amount of packets per transaction is configurable with the XML file.
+- VoD Receive shell scripts are now designed to run in background. Devices are automatically
+  detected and configured.
+- Added support for I2S port and socket handling.
+
+V02.00.03
+=========
+
+- Fixed dead lock bug in console printing routine.
+- Restarting MOST in case of network off state.
+
+V02.00.02
+=========
+- Updated Linux Driver to V1.1.0-release.
+- Printing overall send speed for all streams in statistics function.
+- Less CPU usage by increasing sending buffer.
+- Less CPU usage by optimizing thread sleep times.
+- Allowing empty channel configuration in configuration XML file. This allows maximum MEP 
+  configurations.
+
+V02.00.01
+=========
+
+- Updated Target Manager to version V2.0.1 Release 1951.
+- Updated Linux Driver to V1.1.0-rc4.
+- Fixed MEP start-up shell script, to support multiple MOST device instances.
+- Integrated INIC OS81110 Firmware V1.2.4.
+
+V02.00.00
+=========
+
+- Integrated new MOST System Framework V1.1.0, which adds Application Interfacing Modules (AIM).
+- Changed MSF calls VoD application to meet new MSF V1.1.0 requirements.
+- Changed target scripts to meet new MSF V1.1.0 requirements.
+- Added Device Discovery feature, based on UDP Broadcast.
+- Added XML scripting support (for bootstrapping a MOST based camera system for example).
+
+
+V01.00.05
+=========
+
+- Repaired switching to different Video file.
+- Repaired set new time position.
+- Repaired Shutdown block, caused by the TCP/IP server.
+
+V01.00.04
+=========
+
+- Implemented TCP/IP server and client for VoD control.
+
+V01.00.03
+=========
+
+- Fixed ambiguous usage of PIDs in Multiplexer.
+- Setting correct MAC addresses to the Multiplexer instances.
+- Added support for OS81118 MLB port.
+- Added reference manual.
+- Storing INIC firmware for OS8110, for the clients.
+- Added feature to stream a transport stream file to all connected clients at once.
+- Added feature to print stream statistics periodically.
+
+
+V01.00.02
+=========
+
+- Integrated MOST System Framework V1.0.0-SR1
+
+V01.00.01
+=========
+
+- Integrated new INIC firmware V02.00.00.1404281309
+
+- Setup Asynchronous MLB channels. Move all target shell scripts into one folder.
+- Added intelligent auto connect feature. Using new pattern for empty TS frame, 
+  in order to find transmission errors.
+- Fixed crash when using more than 2 multiplexer. RB_WRITEBLOCK_SIZE was set to high.
+- Implemented API changes made in new INIC firmware.
+
+
+V01.00.00
+=========
+- Initial version
