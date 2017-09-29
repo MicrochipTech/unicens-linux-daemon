@@ -1,165 +1,564 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- edited with XMLSpy v2017 rel. 3 (x64) (http://www.altova.com) by Pavel Hanak (Microchip Technology Germany II GmbH & Co. KG) -->
+<!-- committed 2017-09-22 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:element name="Unicens">
 		<xs:annotation>
-			<xs:documentation>Schema for the description of a UNICENS configuration</xs:documentation>
+			<xs:documentation>
+				<UCSElementPath>/Unicens</UCSElementPath>
+Schema for the description of a UNICENS configuration</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:choice maxOccurs="unbounded">
 				<xs:element name="Node">
+					<xs:annotation>
+						<xs:documentation>
+							<UCSElementPath>/Unicens/Node</UCSElementPath>
+Node is a connection point that can receive, create, store or send data along distributed network routes.</xs:documentation>
+					</xs:annotation>
 					<xs:complexType>
 						<xs:sequence>
 							<xs:choice minOccurs="0" maxOccurs="unbounded">
 								<xs:element name="USBPort">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Node/USBPort</UCSElementPath>
+Configuration Structure of a USB Port</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="PhysicalLayer" type="USBPortPhysicalLayer" use="required"/>
-										<xs:attribute name="DeviceInterfaces" type="HexNumber" use="required"/>
-										<xs:attribute name="StreamingIfEpInCount" type="DecNumber" use="required"/>
-										<xs:attribute name="StreamingIfEpOutCount" type="DecNumber" use="required"/>
+										<xs:attribute name="PhysicalLayer" type="USBPortPhysicalLayer" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Node/USBPort/@PhysicalLayer</UCSElementPath>
+Interface of the USB Ports Physical Layer
+This attribute corresponds with the parameter PhysicalLayer of the INIC function INIC.USBPortCreate.
+</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="DeviceInterfaces" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Node/USBPort/@DeviceInterfaces</UCSElementPath>
+USB Devices interfaces mask.
+This attribute corresponds with the parameter DeviceInterfaces of the INIC function INIC.USBPortCreate.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="StreamingIfEpInCount" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Node/USBPort/@StreamingIfEpInCount</UCSElementPath>
+IN Endpoints inside the streaming interfaces.
+This attribute corresponds with the parameter StreamingIfEpInCount of the INIC function INIC.USBPortCreate.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="StreamingIfEpOutCount" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Node/USBPort/@StreamingIfEpOutCount</UCSElementPath>
+OUT Endpoints inside the streaming interfaces.
+This attribute corresponds with the parameter StreamingIfEpInCount of the INIC function INIC.USBPortCreate.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="MediaLBPort">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Node/MediaLBPort</UCSElementPath>
+Configuration Structure of a MediaLB Port
+The MediaLB Port is the interface to the Media Local Bus. 
+It supports the handling of all MOST network data types and is available in two pin-out options: MediaLB 3-Pin (single-ended) and MediaLB 6-Pin (differential). </xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="ClockConfig" type="MediaLBPortClockConfig" use="required"/>
+										<xs:attribute name="ClockConfig" type="MediaLBPortClockConfig" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Node/MediaLBPort/@ClockConfig</UCSElementPath>
+Clock speed configuration.
+This attribute corresponds with the parameter ClockConfig of the INIC function INIC.MediaLBPortCreate.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="StreamPort">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Node/StreamPort</UCSElementPath>
+Configuration Structure of a Stream Port</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="ClockConfig" type="StreamPortClockConfig" use="required"/>
-										<xs:attribute name="DataAlignment" type="StreamPortDataAlignment" use="required"/>
+										<xs:attribute name="ClockConfig" type="StreamPortClockConfig" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Node/StreamPort/@ClockConfig</UCSElementPath>
+Clock speed configuration.
+This attribute corresponds with the parameter ClockConfig of the INIC function INIC.StreamPortCreate.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="DataAlignment" type="StreamPortDataAlignment" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Node/StreamPort/@DataAlignment</UCSElementPath>
+Alignment of the data bytes .
+This attribute corresponds with the parameter DataAlignment of the INIC function INIC.StreamPortCreate</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 							</xs:choice>
 							<xs:choice minOccurs="0" maxOccurs="unbounded">
 								<xs:element name="SyncConnection">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Node/SyncConnection</UCSElementPath>
+Configuration Structure of a SyncConnection It sets the connection in Sync mode.</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
 										<xs:complexContent>
 											<xs:extension base="Connection">
-												<xs:attribute name="MuteMode" type="SyncConnectionMuteMode" use="optional"/>
+												<xs:attribute name="MuteMode" type="SyncConnectionMuteMode" use="optional">
+													<xs:annotation>
+														<xs:documentation>
+															<UCSElementPath>/Unicens/Node/SyncConnection/@MuteMode</UCSElementPath>
+Mode of operation of mute.
+This attribute corresponds with the parameter MuteMode of the INIC function INIC.SyncCreate</xs:documentation>
+													</xs:annotation>
+												</xs:attribute>
 											</xs:extension>
 										</xs:complexContent>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="AVPConnection">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Node/AVPConnection</UCSElementPath>
+Configuration Structure of an AVP Connection. It sets the connection in AVP mode.</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
 										<xs:complexContent>
 											<xs:extension base="Connection">
-												<xs:attribute name="IsocPacketSize" type="AVPConnectionIsocPacketSize" use="required"/>
+												<xs:attribute name="IsocPacketSize" type="AVPConnectionIsocPacketSize" use="required">
+													<xs:annotation>
+														<xs:documentation>
+															<UCSElementPath>/Unicens/Node/AVPConnection/@IsocPacketSize</UCSElementPath>
+Size of data packets.
+This attribute corresponds with the parameter IsocPacketSize of the INIC function INIC.AVPacketizedCreate</xs:documentation>
+													</xs:annotation>
+												</xs:attribute>
 											</xs:extension>
 										</xs:complexContent>
 									</xs:complexType>
 								</xs:element>
 							</xs:choice>
 						</xs:sequence>
-						<xs:attribute name="Address" type="HexNumber" use="required"/>
-						<xs:attribute name="Script" type="xs:string" use="optional"/>
+						<xs:attribute name="Address" type="Number" use="required">
+							<xs:annotation>
+								<xs:documentation>
+									<UCSElementPath>/Unicens/Node/@Address</UCSElementPath>
+Address of the Unicens node</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="Script" type="xs:string" use="optional">
+							<xs:annotation>
+								<xs:documentation>
+									<UCSElementPath>/Unicens/Node/@Script</UCSElementPath>
+Script to which the node is linked.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="Name" use="optional"/>
 					</xs:complexType>
 				</xs:element>
 				<xs:element name="Script">
+					<xs:annotation>
+						<xs:documentation>
+							<UCSElementPath>/Unicens/Script</UCSElementPath>
+A script is a structure data composed of :
+The command based on INIC FBlock-Syntax to be transmitted
+The expected result also based on INIC FBlock-Syntax.
+The amount time [in milliseconds] to pause before sending the Tx command.
+
+</xs:documentation>
+					</xs:annotation>
 					<xs:complexType>
 						<xs:sequence>
 							<xs:choice maxOccurs="unbounded">
 								<xs:element name="GPIOPortCreate">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Script/GPIOPortCreate</UCSElementPath>
+Creates the GPIO port with its associated port instance identifier.</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="DebounceTime" type="DecNumber" use="required"/>
+										<xs:attribute name="DebounceTime" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/GPIOPortCreate/@DebounceTime</UCSElementPath>
+The timeout for the GPIO debounce timer (in ms).
+</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="GPIOPortPinMode">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Script/GPIOPortPinMode</UCSElementPath>
+This function is used for GPIO pin configuration.
+To change a pin into a GPIO pin, it has to be configured via GPIOPortPinMode</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="PinConfiguration" type="HexData" use="required"/>
+										<xs:attribute name="PinConfiguration" type="HexData" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/GPIOPortPinMode/@PinConfiguration</UCSElementPath>
+Defines the GPIO pin configuration and clears the trigger conditions on level-sensitive inputs and sticky inputs thereby allowing reporting of further trigger events.
+Note that trigger conditions are automatically cleared for all edge-sensitive input/output GPIO classes when the INIC.GPIOPortTriggerEvent.Status message is sent.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="GPIOPinState">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Script/GPIOPinState</UCSElementPath>TO DO - [State of GPIO Pin : High/Low]</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="Mask" type="HexNumber" use="required"/>
-										<xs:attribute name="Data" type="HexNumber" use="required"/>
+										<xs:attribute name="Mask" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/GPIOPinState/@Mask</UCSElementPath>
+TO DO - [Changing certain data elements within a data store so that the structure remains similar while the information itself is changed to protect sensitive information]</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Data" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/GPIOPinState/@Data</UCSElementPath>  
+TO DO - [Data to be given to GPIO Pin State]</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="I2CPortCreate">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Script/I2CPortCreate</UCSElementPath>
+This function is used to define the I2C Port working as I2C-bus master. 
+The function creates the I2C Port with its associated port instance identifier. 
+
+</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="Speed" type="I2CPortCreateSpeed" use="required"/>
+										<xs:attribute name="Speed" type="I2CPortCreateSpeed" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortCreate/@Speed</UCSElementPath>
+The speed grade of I2C port.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="I2CPortWrite">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Script/I2CPortWrite</UCSElementPath>
+This function writes a block of bytes to an I2C device at a specified I2C address. 
+The function supports also a burst write mechanism for optimized transactions.
+
+</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="Mode" type="I2CPortWriteMode" use="optional"/>
-										<xs:attribute name="BlockCount" type="DecNumber" use="optional"/>
-										<xs:attribute name="Address" type="HexNumber" use="required"/>
-										<xs:attribute name="Length" type="DecNumber" use="optional"/>
-										<xs:attribute name="Payload" type="HexData" use="required"/>
-										<xs:attribute name="Timeout" type="DecNumber" use="optional"/>
+										<xs:attribute name="Mode" type="I2CPortWriteMode" use="optional">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortWrite/@Mode</UCSElementPath>
+The write transfer mode.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="BlockCount" type="Number" use="optional">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortWrite/@BlockCount</UCSElementPath>
+The number of blocks to be written to the I2C address.
+If parameter mode is not set to Burst Mode, the value of block_count has to be set to 0.
+Otherwise the valid range of this parameter goes from 1 to 30. </xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Address" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortWrite/@Address</UCSElementPath>
+Address of the target device. Use the UCS_ADDR_LOCAL_DEV macro to target the local device. 
+The following address ranges are supported:
+â¢[0x10 ... 0x2FF]
+â¢[0x500 ... 0xFEF]
+â¢UCS_ADDR_LOCAL_DEV </xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Length" type="Number" use="optional">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortWrite/@Length</UCSElementPath>
+The total number of bytes to be written to the addressed I2C peripheral. 
+Even if parameter mode is set to Burst Mode, the data_len shall correspond to the whole size of the burst transfer.
+That is, the data_len shall equal the size of a block times the block_count value.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Payload" type="HexData" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortWrite/@PayLoad</UCSElementPath>
+Payload bytes to be written on I2C</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Timeout" type="Number" use="optional">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortWrite/@Timeout</UCSElementPath>
+The timeout for the I2C Port write. </xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="I2CPortRead">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Script/I2CPortRead</UCSElementPath>
+This function reads a block of bytes from an I2C device at a specified I2C address.
+The function can only be used, if the I2C Port has been configured as Master. 
+If the I2C Port was configured as I2C-bus slave via the configuration string, an error message will be returned.  
+</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="Address" type="HexNumber" use="required"/>
-										<xs:attribute name="Length" type="DecNumber" use="required"/>
-										<xs:attribute name="Timeout" type="DecNumber" use="optional"/>
+										<xs:attribute name="Address" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortRead/@Address</UCSElementPath>
+Address of the target device. Use the UCS_ADDR_LOCAL_DEV macro to target the local device. 
+The following address ranges are supported:
+â¢[0x10 ... 0x2FF]
+â¢[0x500 ... 0xFEF]
+â¢UCS_ADDR_LOCAL_DEV </xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Length" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortRead/@Length</UCSElementPath>
+Number of bytes to be read from the address.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Timeout" type="Number" use="optional">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/I2CPortRead/@Timeout</UCSElementPath>
+The timeout for the I2C Port read.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="MsgSend">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Script/MsgSend</UCSElementPath>
+TO DO</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="FBlockId" type="HexNumber" use="required"/>
-										<xs:attribute name="FunctionId" type="HexNumber" use="required"/>
-										<xs:attribute name="OpTypeRequest" type="HexNumber" use="required"/>
-										<xs:attribute name="OpTypeResponse" type="HexNumber" use="optional"/>
-										<xs:attribute name="PayloadRequest" type="HexData" use="required"/>
-										<xs:attribute name="PayloadResponse" type="HexData" use="optional"/>
+										<xs:attribute name="FBlockId" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/MsgSend/@FBlockId</UCSElementPath>
+FBlockId of the config msg.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="FunctionId" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/MsgSend/@FunctionId</UCSElementPath>
+TO DO</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="OpTypeRequest" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/MsgSend/@OpTypeRequest</UCSElementPath>
+TO DO</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="OpTypeResponse" type="Number" use="optional">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/MsgSend/@OpTypeResponse</UCSElementPath>
+TO DO</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="PayloadRequest" type="HexData" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/MsgSend/@PayloadRequest</UCSElementPath>
+TO DO</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="PayloadResponse" type="HexData" use="optional">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/MsgSend/@PayloadResponse</UCSElementPath>
+TO DO</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 								<xs:element name="Pause">
+									<xs:annotation>
+										<xs:documentation>
+											<UCSElementPath>/Unicens/Script/Pause</UCSElementPath>
+Specifies the pause which shall be set before sending the configuration message.</xs:documentation>
+									</xs:annotation>
 									<xs:complexType>
-										<xs:attribute name="WaitTime" type="DecNumber" use="required"/>
+										<xs:attribute name="WaitTime" type="Number" use="required">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Script/Pause/@WaitTime</UCSElementPath>
+TO DO -[Time for which pause is to be done]</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:complexType>
 								</xs:element>
 							</xs:choice>
 						</xs:sequence>
-						<xs:attribute name="Name" type="xs:string" use="required"/>
+						<xs:attribute name="Name" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>
+									<UCSElementPath>/Unicens/Script/@Name</UCSElementPath>
+Name of the Script</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
 					</xs:complexType>
 				</xs:element>
 			</xs:choice>
-			<xs:attribute name="AsyncBandwidth" type="DecNumber" use="required"/>
+			<xs:attribute name="AsyncBandwidth" type="Number" use="required">
+				<xs:annotation>
+					<xs:documentation>
+						<UCSElementPath>/Unicens/@AsyncBandwidth</UCSElementPath>
+Asynchronous bandwidth of the Unicens network.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
 		</xs:complexType>
 	</xs:element>
 	<xs:complexType name="Connection">
 		<xs:choice minOccurs="2" maxOccurs="2">
-			<xs:element name="MOSTSocket" type="MOSTSocketType"/>
+			<xs:element name="MOSTSocket" type="MOSTSocketType">
+				<xs:annotation>
+					<xs:documentation>
+						<UCSElementPath>/Unicens/MOSTSocket</UCSElementPath>
+Configuration Structure of a MOST Socket</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="USBSocket">
+				<xs:annotation>
+					<xs:documentation>
+						<UCSElementPath>/Unicens/USBSocket</UCSElementPath>
+Configuration Structure of a USB Socket.</xs:documentation>
+				</xs:annotation>
 				<xs:complexType>
-					<xs:attribute name="EndpointAddress" type="HexNumber" use="required"/>
-					<xs:attribute name="FramesPerTransaction" type="DecNumber" use="required"/>
+					<xs:attribute name="EndpointAddress" type="Number" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								<UCSElementPath>/Unicens/USBSocket/@EndpointAddress</UCSElementPath>
+Address of a USB Endpoint.
+This attribute corresponds with the parameter EndpointAddress of the INIC function INIC.USBSocketCreate</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="FramesPerTransaction" type="Number" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								<UCSElementPath>/Unicens/USBSocket/@FramesPerTransaction</UCSElementPath>
+ FramesPerTransaction defines the number of data frames that are transferred within one USB bulk transaction.The value depends on the data type being used.
+ The MOST network frame is six times shorter than the duration of one USB Microframe, the minimum number of FramesPerTransaction must be 7.</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
 				</xs:complexType>
 			</xs:element>
 			<xs:element name="MediaLBSocket">
+				<xs:annotation>
+					<xs:documentation>
+						<UCSElementPath>/Unicens/MediaLBSocket</UCSElementPath>
+Configuration Structure of MediaLB Socket</xs:documentation>
+				</xs:annotation>
 				<xs:complexType>
-					<xs:attribute name="ChannelAddress" type="HexNumber" use="required"/>
-					<xs:attribute name="Bandwidth" type="xs:integer" use="required"/>
+					<xs:attribute name="ChannelAddress" type="Number" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								<UCSElementPath>/Unicens/MediaLBSocket/@ChannelAddress</UCSElementPath>
+MLB Channel address.
+This attribute corresponds with the parameter ChannelAddress of the INIC function INIC.MediaLBSocketCreate.</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="Bandwidth" type="xs:integer" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								<UCSElementPath>/Unicens/MediaLBSocket/@Bandwidth</UCSElementPath>
+Required socket bandwidth in bytes.
+This attribute corresponds with the parameter Bandwidth of the INIC function INIC.StreamSocketCreate.</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
 				</xs:complexType>
 			</xs:element>
 			<xs:element name="StreamSocket">
+				<xs:annotation>
+					<xs:documentation>
+						<UCSElementPath>/Unicens/StreamSocket</UCSElementPath>
+Configuration Structure of a streaming data Socket</xs:documentation>
+				</xs:annotation>
 				<xs:complexType>
-					<xs:attribute name="StreamPinID" type="StreamSocketStreamPinID" use="required"/>
-					<xs:attribute name="Bandwidth" type="xs:integer" use="required"/>
+					<xs:attribute name="StreamPinID" type="StreamSocketStreamPinID" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								<UCSElementPath>/Unicens/StreamSocket/@StreamPinID</UCSElementPath>
+ID of the serial interface pin.
+This attribute corresponds with the parameter StreamPinID of the INIC function INIC.StreamSocketCreate.</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="Bandwidth" type="xs:integer" use="required">
+						<xs:annotation>
+							<xs:documentation>
+								<UCSElementPath>/Unicens/StreamSocket/@Bandwidth</UCSElementPath>
+Required socket bandwidth in bytes.
+This attribute corresponds with the parameter Bandwidth of the INIC function INIC.StreamSocketCreate.</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
 				</xs:complexType>
 			</xs:element>
-			<xs:element name="Splitter" type="SplitterCombinerType"/>
-			<xs:element name="Combiner" type="SplitterCombinerType"/>
+			<xs:element name="Splitter" type="SplitterCombinerType">
+				<xs:annotation>
+					<xs:documentation>
+						<UCSElementPath>/Unicens/Splitter</UCSElementPath>
+Configuration Structure of a splitter resource.
+A splitter enables two variants of routing to be set-up. The first variant is a splitter created with a peripheral socket.
+It enables data routing from a specified segment of the peripheral socket to a MOST socket. 
+The second variant is a splitter created with a MOST socket. 
+This variant enables data routing in its whole (no segments) from the MOST socket to multiple peripheral sockets.
+</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Combiner" type="SplitterCombinerType">
+				<xs:annotation>
+					<xs:documentation>
+						<UCSElementPath>/Unicens/Combiner</UCSElementPath>
+Configuration Structure of a combiner resource.
+A combiner enables streaming data to be routed from a MOST socket to a specified segment of a peripheral socket. 
+The same combiner may be used in multiple connections, which enables grouping of data streams from multiple MOST sockets into the same peripheral socket.
+</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 		</xs:choice>
 	</xs:complexType>
-	<xs:simpleType name="HexNumber">
+	<xs:simpleType name="Number">
 		<xs:annotation>
-			<xs:documentation>Hexadecimal number in the format 0xd..d</xs:documentation>
+			<xs:documentation>Hexadecimal or decimal number in the format 0xd..d</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string">
-			<xs:pattern value="0x(0|[1-9a-fA-F][0-9a-fA-F]*)"/>
+			<xs:pattern value="([0-9]+)|(0x(0|[1-9a-fA-F][0-9a-fA-F]*))"/>
 		</xs:restriction>
-	</xs:simpleType>
-	<xs:simpleType name="DecNumber">
-		<xs:annotation>
-			<xs:documentation>Decimal number</xs:documentation>
-		</xs:annotation>
-		<xs:restriction base="xs:integer"/>
 	</xs:simpleType>
 	<xs:simpleType name="USBPortPhysicalLayer">
 		<xs:annotation>
@@ -270,21 +669,69 @@
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:complexType name="SplitterCombinerType">
-		<xs:sequence>
-			<xs:element name="MOSTSocket" type="SCMOSTSocketType" maxOccurs="unbounded"/>
+        <xs:annotation>
+        	<xs:documentation><UCSElementPath>/Unicens/SplitterCombinerType</UCSElementPath>TO DO</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+			<xs:element name="MOSTSocket" type="SCMOSTSocketType" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation><UCSElementPath>/Unicens/SplitterCombinerType/MOSTSocket</UCSElementPath>TO DO - [Combination of Splitter and combiner.
+Splitter : enables two variants of routing to be set-up. The first variant is a splitter created with a peripheral socket.
+It enables data routing from a specified segment of the peripheral socket to a MOST socket. The second variant is a splitter created with a MOST socket. 
+This variant enables data routing in its whole (no segments) from the MOST socket to multiple peripheral sockets.
+
+Combiner : A combiner enables streaming data to be routed from a MOST socket to a specified segment of a peripheral socket. 
+The same combiner may be used in multiple connections, which enables grouping of data streams from multiple MOST sockets into the same peripheral socket ]</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 		</xs:sequence>
-		<xs:attribute name="BytesPerFrame" type="xs:integer" use="required"/>
+		<xs:attribute name="BytesPerFrame" type="xs:integer" use="required">
+			<xs:annotation>
+				<xs:documentation><UCSElementPath>/Unicens/SplitterCombinerType/@BytesPerFrame</UCSElementPath>
+Total number of data bytes to be transferred each MOST network frame.
+</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
 	</xs:complexType>
 	<xs:complexType name="MOSTSocketType">
-		<xs:attribute name="Route" type="xs:string" use="required"/>
-		<xs:attribute name="Bandwidth" type="xs:integer" use="required"/>
-		<xs:attribute name="IsActive" type="xs:boolean" use="optional"/>
-		<xs:attribute name="RouteId" type="HexNumber" use="optional"/>
+        <xs:annotation>
+        	<xs:documentation><UCSElementPath>/Unicens/MOSTSocketType</UCSElementPath>TO DO</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="Route" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation><UCSElementPath>/Unicens/MOSTSocketType/@Route</UCSElementPath>
+A (virtual) route is a logical unidirectional connection between two endpoints. An endpoint acts as a MOST connection in INIC plus the internal linked resources</xs:documentation>
+			</xs:annotation>
+        </xs:attribute>
+		<xs:attribute name="Bandwidth" type="xs:integer" use="required">
+			<xs:annotation>
+				<xs:documentation><UCSElementPath>/Unicens/MOSTSocketType/@Bandwidth</UCSElementPath>TO DO - [Bandwidth of MOST Socket Type] </xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="IsActive" type="xs:boolean" use="optional">
+			<xs:annotation>
+				<xs:documentation><UCSElementPath>/Unicens/MOSTSocketType/@IsActive</UCSElementPath>TO DO -[Determines the state of MOST Socket type : Active/Inactive]</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="RouteId" type="Number" use="optional">
+			<xs:annotation>
+				<xs:documentation><UCSElementPath>/Unicens/MOSTSocketType/@RouteId</UCSElementPath>
+User-defined route identifier</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
 	</xs:complexType>
 	<xs:complexType name="SCMOSTSocketType">
-		<xs:complexContent>
+        <xs:annotation>
+        	<xs:documentation><UCSElementPath>/Unicens/SCMOSTSocketType</UCSElementPath>TO DO</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
 			<xs:extension base="MOSTSocketType">
-				<xs:attribute name="Offset" type="xs:integer" use="required"/>
+				<xs:attribute name="Offset" type="xs:integer" use="required">
+					<xs:annotation>
+						<xs:documentation><UCSElementPath>/Unicens/SCMOSTSocketType/@Offset</UCSElementPath>
+Offset from where the socket data should be routed from a splitter.
+</xs:documentation>
+					</xs:annotation></xs:attribute>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
