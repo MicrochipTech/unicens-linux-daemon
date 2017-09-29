@@ -1,0 +1,3 @@
+[submodule "libraries/unicens/ucs2"]
+	path = libraries/unicens/ucs2
+	url = https://github.com/MicrochipTech/unicens.git
