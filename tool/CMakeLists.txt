@@ -4,7 +4,7 @@ target_include_directories (xml2struct
 	PUBLIC 
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_SOURCE_DIR}/libraries/unicens/cfg-daemon
-	${CMAKE_SOURCE_DIR}/libraries/unicens/inc
+	${CMAKE_SOURCE_DIR}/libraries/unicens/ucs2/inc
 	${CMAKE_SOURCE_DIR}/libraries/mxml
 	${CMAKE_SOURCE_DIR}/libraries/ucs-xml
 )
