@@ -31,7 +31,8 @@ If you configured the driver in a different way, you can pass your CDEV names to
 -ctx <CDEV name of TX channel>
 ```
 
-Make sure you have the rights to access these CDEVs (using sudo unicensd or using udev rules)
+Make sure you have the rights to access these CDEVs (using sudo unicensd or using udev rules).
+
 Launch daemon with the correct XML file, for example:
 ```bash
 $ ./unicensd cfg/config_multichannel_audio_kit.xml &
