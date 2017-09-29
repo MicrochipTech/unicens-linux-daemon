@@ -1,36 +1,47 @@
 # UNICENS DAEMON (unicensd)
-To get it running, you will need to get cmake installed.  
-On debian based machines enter:  
+
+This project is an exmample integration of the  [UNICENS library](https://github.com/MicrochipTech/unicens) for any kind of Linux.
+
+To get it running, you will need to get compilers, cmake and git installed.  On debian based machines enter:
 ```bash
-$ sudo apt-get install cmake
+$ sudo apt-get install build-essential cmake git
 ```
 
-Perform these steps:  
+To get the source code, enter:
+```bash
+$ git clone --recurse-submodules https://github.com/MicrochipTech/unicens-linux-daemon.git
+$ cd unicens-linux-daemon
+```
+
+Building is easy:
 ```bash
 $ ./build.sh
 ```
 
-Now the binaries unicensd and xml2struct shall be available in the root folder
-of the unicensd project.  
-Make sure MOST Linux Driver is loaded (loadDriver.sh in "driver" folder).  
-The daemon needs to access these control enabled CDEVs:  
-`
-/dev/inic-usb-crx  
-/dev/inic-usb-ctx
-`
+Now the binaries unicensd and xml2struct shall be available in the current folder.
+In order to run unicensd, first make sure [MOST Linux Driver](https://github.com/microchip-ais/linux) is loaded.
+The daemon searchs by default for these control enabled character devices (CDEVs):
 
-Make sure you have the rights to access these CDEVs (using sudo e.g.)  
-Launch daemon with the correct XML file, for example:  
+ - /dev/inic-usb-crx
+ - /dev/inic-usb-ctx
+
+If you configured the driver in a different way, you can pass your CDEV names to unicensd by command line parameter:
+```bash
+-crx <CDEV name of RX channel>
+-ctx <CDEV name of TX channel>
+```
+
+Make sure you have the rights to access these CDEVs (using sudo unicensd or using udev rules).
+
+Launch daemon with the correct XML file, for example:
 ```bash
 $ ./unicensd cfg/config_multichannel_audio_kit.xml &
 ```
 
-To get a static C-based configuration enter:  
+To get a static network configuration, which do not need a XML file, enter:
 ```bash
-$ ./xml2struct cfg/config_multichannel_audio_kit.xml > default_config.c
+$ ./xml2struct cfg/config_multichannel_audio_kit.xml > src/default_config.c
+$ ./build.sh
+$ ./unicensd &
 ```
 
-Afterwise build the daemon again:  
-```bash
-$ ./build.sh
-```
