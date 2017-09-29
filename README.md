@@ -1,8 +1,8 @@
 # UNICENS DAEMON (unicensd)
 
-This project is an exmample integration of the  [UNICENS library](https://github.com/MicrochipTech/unicens) for any kind of Linux.
+This project is an example integration of the [UNICENS library](https://github.com/MicrochipTech/unicens) for any kind of Linux.
 
-To get it running, you will need to get compilers, cmake and git installed.  On debian based machines enter:
+To get it running, you will need to get compilers, cmake and git installed. On debian based machines enter:
 ```bash
 $ sudo apt-get install build-essential cmake git
 ```
