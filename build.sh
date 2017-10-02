@@ -1,5 +1,5 @@
 #/bin/sh
-rm -f unicensd xml2struct
+rm -f unicensd
 mkdir -p out
 cd out
 cmake ..
