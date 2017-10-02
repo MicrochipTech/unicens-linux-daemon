@@ -288,13 +288,13 @@ void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout)
     TimerSetTimeOut(timeout, m.ucsTimer);
 }
 
-void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, bool isStable, uint16_t packetBW)
+void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, bool isStable, uint16_t freeStreamBw)
 {
     pTag = pTag;
-    ConsolePrintf(PRIO_HIGH, "Network isAvailable=%s, isStable=%s, packetBw=%d\r\n",
+    ConsolePrintf(PRIO_HIGH, "Network isAvailable=%s, isStable=%s, freeStreanBW=%d\r\n",
                   isAvailable ? "yes" : "no",
                   isStable ? "yes": "no",
-                  packetBW);
+                  freeStreamBw);
 }
 
 /* Callback from Unicens Integration component */
