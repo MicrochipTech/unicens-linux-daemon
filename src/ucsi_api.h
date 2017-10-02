@@ -222,9 +222,9 @@ extern void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout);
  * \param pTag - Pointer given by the integrator by UCSI_Init
  * \param isAvailable - true, if the network is operable. false, network is down. No message or stream can be sent or received.
  * \param isStable - can only be true, if isAvailable is true. if isStable is false, all streaming channels have been automatically closed to prevent unwanted noises.
- * \param packetBW - The amount of bytes per frame, reserved for Ethernet channel. As given with the UCSI_NewConfig function.
+ * \param freeStreamBw - The amount of bytes per frame, still available for streaming. This value will go down with every created MOST sync / isoc socket.
  */
-extern void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, bool isStable, uint16_t packetBW);
+extern void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, bool isStable, uint16_t freeStreamBw);
 
 /**
  * \brief Callback when ever an Unicens forms a human readable message.
