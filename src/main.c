@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Unicens Daemon (unicensd) main-loop                                                            */
+/* UNICENS Daemon (unicensd) main-loop                                                            */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -125,7 +125,7 @@ int main(int argc, const char *argv[])
             free(xmlContent);
             if (NULL == cfg)
             {
-                ConsolePrintf(PRIO_ERROR, RED"Could not parse Unicens XML"RESETCOLOR"\r\n");
+                ConsolePrintf(PRIO_ERROR, RED"Could not parse UNICENS XML"RESETCOLOR"\r\n");
                 return -1;
             }
         }
@@ -166,13 +166,13 @@ int main(int argc, const char *argv[])
         return -1;
     }
 
-    /* Initialize Unicens */
+    /* Initialize UNICENS */
     UCSI_Init(&m.unicens, &m);
     if (cfg)
     {
         if (!UCSI_NewConfig(&m.unicens, cfg->packetBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize))
         {
-            ConsolePrintf(PRIO_ERROR, RED"Could not enqueue new Unicens config"RESETCOLOR"\r\n");
+            ConsolePrintf(PRIO_ERROR, RED"Could not enqueue new UNICENS config"RESETCOLOR"\r\n");
             assert(false);
             return -1;
         }
@@ -182,7 +182,7 @@ int main(int argc, const char *argv[])
         ConsolePrintf(PRIO_HIGH, YELLOW"No filename was provided, executing default configuration (default_config.c)"RESETCOLOR"\r\n");
         if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize))
         {
-            ConsolePrintf(PRIO_ERROR, RED"Could not enqueue new Unicens config"RESETCOLOR"\r\n");
+            ConsolePrintf(PRIO_ERROR, RED"Could not enqueue new UNICENS config"RESETCOLOR"\r\n");
             assert(false);
             return -1;
         }
@@ -190,7 +190,7 @@ int main(int argc, const char *argv[])
     m.allowRun = true;
     while (m.allowRun)
     {
-        /* Unicens Service */
+        /* UNICENS Service */
         if (m.unicensTrigger)
         {
             m.unicensTrigger = false;
@@ -281,7 +281,7 @@ uint16_t UCSI_CB_OnGetTime(void *pTag)
     return GetTicks();
 }
 
-/* Callback from Unicens Integration component */
+/* Callback from UNICENS Integration component */
 void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout)
 {
     pTag = pTag;
@@ -297,7 +297,7 @@ void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, bool isStable, uint16_
                   freeStreamBw);
 }
 
-/* Callback from Unicens Integration component */
+/* Callback from UNICENS Integration component */
 void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16_t vargsCnt, ...)
 {
     va_list argptr;
@@ -312,7 +312,7 @@ void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16
         ConsolePrintf(PRIO_HIGH, "%s\r\n", outbuf);
 }
 
-/* Callback from Unicens Integration component */
+/* Callback from UNICENS Integration component */
 void UCSI_CB_OnServiceRequired(void *pTag)
 {
     pTag = pTag;

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Unicens Integration Helper Component                                                           */
+/* UNICENS Integration Helper Component                                                           */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -96,7 +96,7 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
     result = Ucs_SetDefaultConfig(&my->uniInitData);
     if(UCS_RET_SUCCESS != result)
     {
-        UCSI_CB_OnUserMessage(my->tag, true, "Can not set default values to Unicens config (result=0x%X)", 1, result);
+        UCSI_CB_OnUserMessage(my->tag, true, "Can not set default values to UNICENS config (result=0x%X)", 1, result);
         assert(false);
         return;
     }
@@ -464,7 +464,7 @@ static void OnUnicensError( Ucs_Error_t error_code, void *user_ptr )
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     error_code = error_code;
     assert(MAGIC == my->magic);
-    UCSI_CB_OnUserMessage(my->tag, true, "Unicens general error, code=0x%X, restarting", 1, error_code);
+    UCSI_CB_OnUserMessage(my->tag, true, "UNICENS general error, code=0x%X, restarting", 1, error_code);
     e.cmd = UnicensCmd_Init;
     e.val.Init.init_ptr = &my->uniInitData;
     EnqueueCommand(my, &e);
@@ -828,10 +828,9 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
         UCSI_CB_OnUserMessage(my->tag, true, "Remote I2C Write to node=0x%X failed", 1, node_address);
 }
 
-/*----------------------------------------
- * Debug Message output from Unicens stack:
- *----------------------------------------
- */
+/************************************************************************/
+/* Debug Message output from UNICENS stack:                             */
+/************************************************************************/
 #if defined(UCS_TR_ERROR) || defined(UCS_TR_INFO)
 #include <stdio.h>
 #define TRACE_BUFFER_SZ 200

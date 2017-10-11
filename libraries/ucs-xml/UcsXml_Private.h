@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Unicens XML Parser                                                                             */
+/* UNICENS XML Parser                                                                             */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
