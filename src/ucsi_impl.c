@@ -111,7 +111,7 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
     my->uniInitData.general.debug_error_msg_fptr = &OnUnicensDebugErrorMsg;
     my->uniInitData.ams.enabled = ENABLE_AMS_LIB;
     my->uniInitData.ams.rx.message_received_fptr = &OnUcsAmsRxMsgReceived;
-    my->uniInitData.network.status.notification_mask = 0xE6;
+    my->uniInitData.network.status.notification_mask = 0xC2;
     my->uniInitData.network.status.cb_fptr = &OnUnicensNetworkStatus;
 
     my->uniInitData.lld.lld_user_ptr = my;
@@ -562,8 +562,7 @@ static void OnUnicensNetworkStatus(uint16_t change_mask, uint16_t events, Ucs_Ne
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    UCSI_CB_OnNetworkState(my->tag, UCS_NW_AVAILABLE == availability, 
-        UCS_NW_AVAIL_INFO_STABLE == avail_info, packet_bw, max_position);
+    UCSI_CB_OnNetworkState(my->tag, UCS_NW_AVAILABLE == availability, packet_bw, max_position);
 }
 
 static void OnUnicensDebugXrmResources(Ucs_Xrm_ResourceType_t resource_type,
