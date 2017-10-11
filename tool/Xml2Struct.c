@@ -788,25 +788,32 @@ static void PrintScriptMessage(Ucs_Ns_ConfigMsg_t *msg, uint16_t nodeAddress, bo
 {
     uint8_t i;
     char *varName;
+    bool gotPayload = (0xFF != msg->DataLen && NULL != msg->DataPtr);
     if (GetNameFromTable(msg)) return;
     varName = AllocateString("%s%dForNode%x", 2, 
         isRequest ? "Request" : "Response", 
         scriptNr, nodeAddress);
     StoreNameInTable(msg, varName);
-    ConsolePrintfStart(PRIO_HIGH, "uint8_t Payload%s[] = {\n"TAB, varName);
-    for (i = 0; i < msg->DataLen; i++)
+    if (gotPayload)
     {
-        if(i) ConsolePrintfContinue(", ");
-        ConsolePrintfContinue("0x%02X", msg->DataPtr[i]);
+        ConsolePrintfStart(PRIO_HIGH, "uint8_t Payload%s[] = {\n"TAB, varName);
+        for (i = 0; i < msg->DataLen; i++)
+        {
+            if(i) ConsolePrintfContinue(", ");
+            ConsolePrintfContinue("0x%02X", msg->DataPtr[i]);
+        }
+        ConsolePrintfExit(" };\n");
     }
-    ConsolePrintfExit(" };\n");
     ConsolePrintfStart(PRIO_HIGH, "Ucs_Ns_ConfigMsg_t %s = {\n"TAB, varName);
     ConsolePrintfContinue(C99(".FBlockId = ")"0x%02X,\n"TAB, msg->FBlockId);
     ConsolePrintfContinue(C99(".InstId = ")"0x%02X,\n"TAB, msg->InstId);
     ConsolePrintfContinue(C99(".FunktId = ")"0x%04X,\n"TAB, msg->FunktId);
     ConsolePrintfContinue(C99(".OpCode = ")"0x%02X,\n"TAB, msg->OpCode);
-    ConsolePrintfContinue(C99(".DataLen = ")"%u,\n"TAB, msg->DataLen);
-    ConsolePrintfContinue(C99(".DataPtr = ")"Payload%s", varName);
+    ConsolePrintfContinue(C99(".DataLen = ")"0x%02X,\n"TAB, msg->DataLen);
+    if (gotPayload)
+        ConsolePrintfContinue(C99(".DataPtr = ")"Payload%s", varName);
+    else
+        ConsolePrintfContinue(C99(".DataPtr = ")"NULL");
     ConsolePrintfExit(" };\n");
 }
 
