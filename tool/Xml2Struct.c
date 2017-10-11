@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Unicens Stucture Printing module                                                               */
+/* UNICENS Stucture Printing module                                                               */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -170,7 +170,7 @@ void PrintUcsStructures(
 
 static void PrintHeader(void) {
     ConsolePrintfStart(PRIO_HIGH, "/*------------------------------------------------------------------------------------------------*/\n");
-    ConsolePrintfContinue("/* Unicens Static Network Configuration                                                           */\n");
+    ConsolePrintfContinue("/* UNICENS Static Network Configuration                                                           */\n");
     ConsolePrintfContinue("/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */\n");
     ConsolePrintfContinue("/*                                                                                                */\n");
     ConsolePrintfContinue("/* Redistribution and use in source and binary forms, with or without                             */\n");

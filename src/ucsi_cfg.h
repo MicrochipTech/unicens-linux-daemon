@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Unicens Integration Helper Component                                                           */
+/* UNICENS Integration Helper Component                                                           */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -52,7 +52,7 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /**
- * \brief Internal enum for Unicens Integration
+ * \brief Internal enum for UNICENS Integration
  */
 typedef enum
 {
@@ -65,7 +65,7 @@ typedef enum
 } UnicensCmdResult_t;
 
 /**
- * \brief Internal enum for Unicens Integration
+ * \brief Internal enum for UNICENS Integration
  */
 typedef enum
 {
@@ -80,7 +80,7 @@ typedef enum
 } UnicensCmd_t;
 
 /**
- * \brief Internal struct for Unicens Integration
+ * \brief Internal struct for UNICENS Integration
  */
 typedef struct
 {
@@ -88,7 +88,7 @@ typedef struct
 } UnicensCmdInit_t;
 
 /**
- * \brief Internal struct for Unicens Integration
+ * \brief Internal struct for UNICENS Integration
  */
 typedef struct
 {
@@ -97,7 +97,7 @@ typedef struct
 } UnicensCmdRmSetRoute_t;
 
 /**
- * \brief Internal struct for Unicens Integration
+ * \brief Internal struct for UNICENS Integration
  */
 typedef struct
 {
@@ -105,7 +105,7 @@ typedef struct
 } UnicensCmdNsRun_t;
 
 /**
- * \brief Internal struct for Unicens Integration
+ * \brief Internal struct for UNICENS Integration
  */
 typedef struct
 {
@@ -114,7 +114,7 @@ typedef struct
 } UnicensCmdGpioCreatePort_t;
 
 /**
- * \brief Internal struct for Unicens Integration
+ * \brief Internal struct for UNICENS Integration
  */
 typedef struct
 {
@@ -124,7 +124,7 @@ typedef struct
 } UnicensCmdGpioWritePort_t;
 
 /**
- * \brief Internal struct for Unicens Integration
+ * \brief Internal struct for UNICENS Integration
  */
 typedef struct
 {
@@ -155,7 +155,7 @@ typedef struct
 } UnicensCmdEntry_t;
 
 /**
- * \brief Internal variables for one instance of Unicens Integration
+ * \brief Internal variables for one instance of UNICENS Integration
  * \note Never touch any of this fields!
  */
 typedef struct {
@@ -169,7 +169,7 @@ typedef struct {
 } RB_t;
 
 /**
- * \brief Internal variables for one instance of Unicens Integration
+ * \brief Internal variables for one instance of UNICENS Integration
  * \note Allocate this structure for each instance (static or malloc)
  *        and pass it to UCSI_Init()
  * \note Never touch any of this fields!
