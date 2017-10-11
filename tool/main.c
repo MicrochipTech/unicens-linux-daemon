@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Unicens XML to C-Struct converter tool                                                         */
+/* UNICENS XML to C-Struct converter tool                                                         */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     free(xmlContent);
     if (NULL == cfg)
     {
-        ConsolePrintf(PRIO_ERROR, RED"Could not parse Unicens XML"RESETCOLOR"\r\n");
+        ConsolePrintf(PRIO_ERROR, RED"Could not parse UNICENS XML"RESETCOLOR"\r\n");
         return -1;
     }
     PrintUcsStructures(cfg->packetBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize);

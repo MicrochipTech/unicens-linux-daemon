@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Unicens XML Parser                                                                             */
+/* UNICENS XML Parser                                                                             */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -38,7 +38,7 @@ extern "C" {
 #include <stdint.h>
 #include "ucs_api.h"
 
-/** Structure holding informations to startup Unicens (UCS).
+/** Structure holding informations to startup UNICENS (UCS).
  *  Pass all these variables to the UCS manager structure, but not pInternal.
  *  */
 typedef struct
@@ -62,8 +62,8 @@ typedef struct
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /**
- * \brief Initializes Unicens XML parser module, parses the given string and
- *        generate the data needed to run Unicens (UCS) library.
+ * \brief Initializes UNICENS XML parser module, parses the given string and
+ *        generate the data needed to run UNICENS (UCS) library.
  *
  * \note In case of errors the callback UcsXml_CB_OnError will be raised.
  * \param xmlString - Zero terminated XML string. The string will not be used

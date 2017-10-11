@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Unicens Integration Helper Component                                                           */
+/* UNICENS Integration Helper Component                                                           */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -41,7 +41,7 @@ extern "C" {
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /**
- * \brief Initializes Unicens Integration module.
+ * \brief Initializes UNICENS Integration module.
  * \note Must be called before any other function of this component
  *
  * \param pPriv - External allocated memory area for this particular
@@ -72,7 +72,7 @@ bool UCSI_NewConfig(UCSI_Data_t *pPriv,
 
 
 /**
- * \brief Offer the received control data from LLD to Unicens
+ * \brief Offer the received control data from LLD to UNICENS
  * \note Call this function only from single context (not from ISR)
  * \note This function can be called repeated until it return false
  *
@@ -90,7 +90,7 @@ bool UCSI_ProcessRxData(UCSI_Data_t *pPriv,
     const uint8_t *pBuffer, uint32_t len);
 
 /**
- * \brief Gives Unicens Integration module time to do its job
+ * \brief Gives UNICENS Integration module time to do its job
  * \note Call this function only from single context (not from ISR)
  *
  * \param pPriv - private data section of this instance
@@ -123,7 +123,7 @@ void UCSI_Timeout(UCSI_Data_t *pPriv);
 bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen);
 
 /**
- * \brief Gets the queued AMS message from Unicens stack
+ * \brief Gets the queued AMS message from UNICENS stack
  *
  * \note Call this function only from single context (not from ISR)
  * \note This function may be called cyclic or when UCSI_CB_OnAmsMessageReceived was raised
@@ -158,7 +158,7 @@ void UCSI_ReleaseAmsMessage(UCSI_Data_t *my);
  * \param routeId - identifier as given in XML file along with MOST socket (unique)
  * \param isActive - true, route will become active. false, route will be deallocated
  *
- * \return true, if route was found and the specific command was enqueued to Unicens.
+ * \return true, if route was found and the specific command was enqueued to UNICENS.
  */
 bool UCSI_SetRouteActive(UCSI_Data_t *pPriv, uint16_t routeId, bool isActive);
 
@@ -175,7 +175,7 @@ bool UCSI_SetRouteActive(UCSI_Data_t *pPriv, uint16_t routeId, bool isActive);
  * \param dataLen - Amount of bytes to send via I2C
  * \param pData - The payload to be send.
  *
- * \return true, if route command was enqueued to Unicens.
+ * \return true, if route command was enqueued to UNICENS.
  */
 bool UCSI_I2CWrite(UCSI_Data_t *pPriv, uint16_t targetAddress, bool isBurst, uint8_t blockCount,
     uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, uint8_t *pData);
@@ -189,7 +189,7 @@ bool UCSI_I2CWrite(UCSI_Data_t *pPriv, uint16_t targetAddress, bool isBurst, uin
  * \param gpioPinId - INIC GPIO PIN starting with 0 for the first GPIO.
  * \param isHighState - true, high state = 3,3V. false, low state = 0V.
  *
- * \return true, if GPIO command was enqueued to Unicens.
+ * \return true, if GPIO command was enqueued to UNICENS.
  */
 bool UCSI_SetGpioState(UCSI_Data_t *pPriv, uint16_t targetAddress, uint8_t gpioPinId, bool isHighState);
 
@@ -227,7 +227,7 @@ extern void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout);
 extern void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, bool isStable, uint16_t freeStreamBw);
 
 /**
- * \brief Callback when ever an Unicens forms a human readable message.
+ * \brief Callback when ever an UNICENS forms a human readable message.
  *        This can be error events or when enabled also debug messages.
  * \note This function must be implemented by the integrator
  * \param pTag - Pointer given by the integrator by UCSI_Init
@@ -247,7 +247,7 @@ extern void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[],
 extern void UCSI_CB_OnServiceRequired(void *pTag);
 
 /**
- * \brief Callback when ever this instance of Unicens wants to send control data to the LLD.
+ * \brief Callback when ever this instance of UNICENS wants to send control data to the LLD.
  * \note This function must be implemented by the integrator
  * \param pTag - Pointer given by the integrator by UCSI_Init
  * \param pPayload - Byte array to be sent on the INIC control channel
@@ -257,7 +257,7 @@ extern void UCSI_CB_OnTxRequest(void *pTag,
     const uint8_t *pPayload, uint32_t payloadLen);
 
 /**
- * \brief Callback when Unicens instance has been stopped.
+ * \brief Callback when UNICENS instance has been stopped.
  * \note This event can be used to free memory holding the resources
  *       passed with UCSI_NewConfig
  * \note This function must be implemented by the integrator
@@ -266,7 +266,7 @@ extern void UCSI_CB_OnTxRequest(void *pTag,
 extern void UCSI_CB_OnStop(void *pTag);
 
 /**
- * \brief Callback when Unicens instance has received an AMS message
+ * \brief Callback when UNICENS instance has received an AMS message
  * \note This function must be implemented by the integrator
  * \note After this callback, call UCSI_GetAmsMessage indirect by setting a flag
  * \param pTag - Pointer given by the integrator by UCSI_Init
