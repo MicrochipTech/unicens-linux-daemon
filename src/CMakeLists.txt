@@ -9,7 +9,11 @@ target_include_directories (unicensd
 	${CMAKE_SOURCE_DIR}/libraries/ucs-xml
 )
 find_package (Threads)
-find_library (unicensd rt)
 target_link_libraries(unicensd
-	ucs2 ucsxml ${CMAKE_THREAD_LIBS_INIT} rt
+	ucs2 ucsxml ${CMAKE_THREAD_LIBS_INIT} ${ADDITIONAL_PLATFORM_LIBS}
 )
+
+CHECK_LIBRARY_EXISTS(rt timer_settime "time.h" NEED_LIBRT)
+if(${NEED_LIBRT})
+	TARGET_LINK_LIBRARIES(unicensd rt)
+endif(${NEED_LIBRT})

@@ -1,6 +1,6 @@
 # UNICENS DAEMON (unicensd)
 
-This project is an example integration of the [UNICENS library](https://github.com/MicrochipTech/unicens) for any kind of Linux.
+This project is an example integration of the [UNICENS library](https://github.com/MicrochipTech/unicens) for any kind of Linux and Android.
 
 To get it running, you will need to get compilers, cmake and git installed. On debian based machines enter:
 ```bash
@@ -17,6 +17,10 @@ Building is easy:
 ```bash
 $ ./build.sh
 ```
+
+> **Android:**
+> See this [tutorial](ANDROID.md), how to build unicensd (or any other application) for Android.
+> After performing all steps from the tutorial, you also may use the crossAndroid.sh script.
 
 Now the binaries `unicensd` and `xml2struct` shall be available in the current folder.
 In order to run unicensd, first make sure [MOST Linux Driver](https://github.com/microchip-ais/linux) is loaded.

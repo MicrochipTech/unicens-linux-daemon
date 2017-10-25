@@ -33,6 +33,11 @@
 #include <stdarg.h>
 #include "Console.h"
 
+#ifdef ANDROID
+#define SERVICE_NAME "unicens"
+#include <android/log.h>
+#endif
+
 /*! \cond PRIVATE */
 typedef struct
 {
@@ -55,8 +60,13 @@ void ConsolePrintf( ConsolePrio_t prio, const char *statement, ... )
     va_list args;
     if( prio < data.minPrio || NULL == statement )
         return;
+
     va_start( args, statement );
-    vfprintf( (PRIO_HIGH == prio ? stdout : stderr), statement, args );
+#ifdef ANDROID
+    __android_log_vprint( PRIO_ERROR == prio ? ANDROID_LOG_ERROR : ANDROID_LOG_INFO, SERVICE_NAME, statement, args );
+#else
+    vfprintf( (PRIO_ERROR == prio ? stderr : stdout), statement, args );
+#endif
     va_end( args );
 }
 
@@ -66,8 +76,13 @@ void ConsolePrintfStart( ConsolePrio_t prio, const char *statement, ... )
     data.contPrio = prio;
     if( data.contPrio < data.minPrio || NULL == statement )
         return;
+
     va_start( args, statement );
-    vfprintf( (PRIO_HIGH == prio ? stdout : stderr), statement, args );
+#ifdef ANDROID
+    __android_log_vprint( PRIO_ERROR == prio ? ANDROID_LOG_ERROR : ANDROID_LOG_INFO, SERVICE_NAME, statement, args );
+#else
+    vfprintf( (PRIO_ERROR == prio ? stderr : stdout), statement, args );
+#endif
     va_end( args );
 }
 
@@ -76,8 +91,13 @@ void ConsolePrintfContinue( const char *statement, ... )
     va_list args;
     if( data.contPrio < data.minPrio || NULL == statement )
         return;
+
     va_start( args, statement );
-    vfprintf( (PRIO_HIGH == data.contPrio ? stdout : stderr), statement, args );
+#ifdef ANDROID
+    __android_log_vprint( PRIO_ERROR == data.contPrio ? ANDROID_LOG_ERROR : ANDROID_LOG_INFO, SERVICE_NAME, statement, args );
+#else
+    vfprintf( (PRIO_ERROR == data.contPrio ? stderr : stdout), statement, args );
+#endif
     va_end( args );
 }
 
@@ -86,7 +106,12 @@ void ConsolePrintfExit( const char *statement, ... )
     va_list args;
     if( data.contPrio < data.minPrio || NULL == statement )
         return;
+
     va_start( args, statement );
-    vfprintf( (PRIO_HIGH == data.contPrio ? stdout : stderr), statement, args );
+#ifdef ANDROID
+    __android_log_vprint( PRIO_ERROR == data.contPrio ? ANDROID_LOG_ERROR : ANDROID_LOG_INFO, SERVICE_NAME, statement, args );
+#else
+    vfprintf( (PRIO_ERROR == data.contPrio ? stderr : stdout), statement, args );
+#endif
     va_end( args );
 }
