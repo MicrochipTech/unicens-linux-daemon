@@ -55,9 +55,12 @@ void ConsolePrintf( ConsolePrio_t prio, const char *statement, ... )
     va_list args;
     if( prio < data.minPrio || NULL == statement )
         return;
+#ifdef ANDROID
+#else
     va_start( args, statement );
-    vfprintf( (PRIO_HIGH == prio ? stdout : stderr), statement, args );
+    vfprintf( (PRIO_ERROR == prio ? stderr : stdout), statement, args );
     va_end( args );
+#endif
 }
 
 void ConsolePrintfStart( ConsolePrio_t prio, const char *statement, ... )
@@ -66,9 +69,12 @@ void ConsolePrintfStart( ConsolePrio_t prio, const char *statement, ... )
     data.contPrio = prio;
     if( data.contPrio < data.minPrio || NULL == statement )
         return;
+#ifdef ANDROID
+#else
     va_start( args, statement );
-    vfprintf( (PRIO_HIGH == prio ? stdout : stderr), statement, args );
+    vfprintf( (PRIO_ERROR == prio ? stderr : stdout), statement, args );
     va_end( args );
+#endif
 }
 
 void ConsolePrintfContinue( const char *statement, ... )
@@ -76,9 +82,12 @@ void ConsolePrintfContinue( const char *statement, ... )
     va_list args;
     if( data.contPrio < data.minPrio || NULL == statement )
         return;
+#ifdef ANDROID
+#else
     va_start( args, statement );
-    vfprintf( (PRIO_HIGH == data.contPrio ? stdout : stderr), statement, args );
+    vfprintf( (PRIO_ERROR == data.contPrio ? stderr : stdout), statement, args );
     va_end( args );
+#endif
 }
 
 void ConsolePrintfExit( const char *statement, ... )
@@ -86,7 +95,10 @@ void ConsolePrintfExit( const char *statement, ... )
     va_list args;
     if( data.contPrio < data.minPrio || NULL == statement )
         return;
+#ifdef ANDROID
+#else
     va_start( args, statement );
-    vfprintf( (PRIO_HIGH == data.contPrio ? stdout : stderr), statement, args );
+    vfprintf( (PRIO_ERROR == data.contPrio ? stderr : stdout), statement, args );
     va_end( args );
+#endif
 }

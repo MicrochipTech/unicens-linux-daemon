@@ -85,8 +85,6 @@ mxml_error(const char *format,		/* I - Printf-style format string */
 
   if (global->error_cb)
     (*global->error_cb)(s);
-  else
-    fprintf(stderr, "mxml: %s\n", s);
 }
 
 
