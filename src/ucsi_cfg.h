@@ -38,7 +38,7 @@
 #define ENABLE_AMS_LIB          (true)
 #define DEBUG_XRM
 #define BOARD_PMS_TX_SIZE       (72)
-#define CMD_QUEUE_LEN           (4)
+#define CMD_QUEUE_LEN           (40)
 #define I2C_WRITE_MAX_LEN       (32)
 
 #include <string.h>
