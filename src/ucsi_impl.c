@@ -551,9 +551,11 @@ static void OnLldCtrlTxTransmitC( Ucs_Lld_TxMsg_t *msg_ptr, void *lld_user_ptr )
 
 static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_t route_infos, void *user_ptr)
 {
+    uint16_t conLabel;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, UCS_RM_ROUTE_INFOS_BUILT == route_infos);
+    conLabel = Ucs_Rm_GetConnectionLabel(my->unicens, route_ptr);
+    UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, UCS_RM_ROUTE_INFOS_BUILT == route_infos, conLabel);
 }
 
 static void OnUnicensNetworkStatus(uint16_t change_mask, uint16_t events, Ucs_Network_Availability_t availability,
