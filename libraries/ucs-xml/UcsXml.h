@@ -37,6 +37,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include "ucs_api.h"
+#include "UcsXmlDriverConfig.h"
 
 /** Structure holding informations to startup UNICENS (UCS).
  *  Pass all these variables to the UCS manager structure, but not pInternal.
@@ -53,6 +54,10 @@ typedef struct
     Ucs_Rm_Node_t *pNod;
     /** Node array size */
     uint16_t nodSize;
+    /** Array of driver information pointers */
+    DriverInformation_t **ppDriver;
+    /** Driver array size */
+    uint16_t driverSize;
     /** Internal data, to be ignored */
     void *pInternal;
 } UcsXmlVal_t;

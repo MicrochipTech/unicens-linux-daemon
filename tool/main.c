@@ -38,11 +38,30 @@
 #include "Console.h"
 #include "UcsXml.h"
 #include "Xml2Struct.h"
+#include "Xml2Driver.h"
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+/*                     USED ADJUSTABLE DEFINES                          */
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+#define FILE_END    "<<<<< FILE END >>>>>\n"
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+/*                        PRIVATE DEFINES                               */
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+typedef enum
+{
+    JOB_PRINT_UCS_STRUCTURE,
+    JOB_PRINT_SINGLE_DRIVER,
+    JOB_PRINT_ALL_DRIVERS
+} Job_t;
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                     PRIVTATE FUNCTION PROTOTYPES                     */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
+static void PrintHelp(void);
 static char *ReadFile(const char *fileName);
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
@@ -51,14 +70,65 @@ static char *ReadFile(const char *fileName);
 
 int main(int argc, char *argv[])
 {
+    bool found;
+    Job_t job = JOB_PRINT_UCS_STRUCTURE;
+    const char *fileName = NULL;
+    uint16_t printNodeAddress = 0;
+    uint16_t i;
     char *xmlContent;
     UcsXmlVal_t *cfg;
-    if (2 != argc)
+    if (1 == argc)
+    {
+        PrintHelp();
+        return 0;
+    }
+    for (i = 1; i < argc; i++)
+    {
+        if ('-' != argv[i][0])
+        {
+            if (fileName)
+            {
+                ConsolePrintf(PRIO_ERROR, RED"Filename is already set. Wrong parameter='%s'"RESETCOLOR"\r\n", argv[i]);
+                return -1;
+            }
+            fileName = argv[i];
+        }
+        else if (0 == strcmp("-ucs", argv[i]))
+        {
+            job = JOB_PRINT_UCS_STRUCTURE;
+        }
+        else if (0 == strcmp("-drv", argv[i]))
+        {
+            if (argc <= (i+1))
+            {
+                ConsolePrintf(PRIO_ERROR, RED"-drv parameter needs additional node address of the device to be configured"RESETCOLOR"\r\n");
+                return -1;
+            }
+            job = JOB_PRINT_SINGLE_DRIVER;
+            printNodeAddress = strtol( argv[i + 1], NULL, 16 );
+            ++i;
+        }
+        else if (0 == strcmp("-all", argv[i]))
+        {
+            job = JOB_PRINT_ALL_DRIVERS;
+        }
+        else if (0 == strcmp("--help", argv[i]))
+        {
+            PrintHelp();
+            return 0;
+        }
+        else
+        {
+            ConsolePrintf(PRIO_ERROR, RED"Unknown parameter '%s'"RESETCOLOR"\r\n", argv[i]);
+            return -1;
+        }
+    }
+    if (!fileName)
     {
         ConsolePrintf(PRIO_ERROR, RED"Can not start, please provide path to XML"RESETCOLOR"\r\n");
         return -1;
     }
-    xmlContent = ReadFile(argv[1]);
+    xmlContent = ReadFile(fileName);
     if (NULL == xmlContent)
     {
         ConsolePrintf(PRIO_ERROR, RED"File could not be opened: '%s'"RESETCOLOR"\r\n", argv[1]);
@@ -71,7 +141,33 @@ int main(int argc, char *argv[])
         ConsolePrintf(PRIO_ERROR, RED"Could not parse UNICENS XML"RESETCOLOR"\r\n");
         return -1;
     }
-    PrintUcsStructures(cfg->packetBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize);
+    switch(job)
+    {
+    case JOB_PRINT_UCS_STRUCTURE:
+        PrintUcsStructures(cfg->packetBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize);
+        break;
+    case JOB_PRINT_SINGLE_DRIVER:
+        found = false;
+        for(i = 0; !found && i < cfg->nodSize; i++)
+        {
+            if (cfg->pNod[i].signature_ptr->node_address == printNodeAddress)
+                found = true;
+        }
+        if (found)
+            PrintUcsDriver(printNodeAddress, cfg->ppDriver, cfg->driverSize);
+        else
+            ConsolePrintf(PRIO_ERROR, RED"Node address 0x%X is not defined in XML"RESETCOLOR"\r\n", printNodeAddress);
+        break;
+    case JOB_PRINT_ALL_DRIVERS:
+        for(i = 0; i < cfg->nodSize; i++)
+        {
+            PrintUcsDriver(cfg->pNod[i].signature_ptr->node_address, cfg->ppDriver, cfg->driverSize);
+            ConsolePrintf(PRIO_HIGH, FILE_END);
+        }
+        break;
+    default:
+        assert(false);
+    }
     UcsXml_FreeVal(cfg);
     usleep(500); /*Give printf time to do its job*/
     return 0;
@@ -95,6 +191,21 @@ void UcsXml_CB_OnError(const char format[], uint16_t vargsCnt, ...)
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                  PRIVATE FUNCTION IMPLEMENTATIONS                    */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+static void PrintHelp(void)
+{
+    ConsolePrintfStart(PRIO_HIGH, "Usage: xml2struct [OPTION]... [FILE]\r\n");
+    ConsolePrintfContinue("Translate a UNICENS XML file into structures for the UNICENS library or structures for the MOST Linux Driver.\r\n\r\n");
+    ConsolePrintfContinue("  -ucs                     Print UNICENS C structures\r\n");
+    ConsolePrintfContinue("  -drv [Address]           Print MOST Linux Driver structure for the given node address (value will be interpreted as hex)\r\n");
+    ConsolePrintfContinue("  -all                     Print all possible MOST Linux Driver structures for all nodes. There is a file seperator inserted after each configuration\r\n");
+    ConsolePrintfContinue("  --help                   Prints this help and exit\r\n\r\n");
+    ConsolePrintfContinue("With no OPTION, UNICENS C structures are printed\r\n\r\n");
+    ConsolePrintfContinue("Examples:\r\n");
+    ConsolePrintfContinue("  xml2struct -drv 200 config.xml\r\n");
+    ConsolePrintfContinue("  xml2struct -all config.xml\r\n");
+    ConsolePrintfExit("  xml2stuct config.xml\r\n");
+}
 
 static char *ReadFile(const char *fileName)
 {

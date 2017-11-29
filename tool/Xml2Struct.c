@@ -127,8 +127,6 @@ void PrintUcsStructures(
     memset(&m, 0, sizeof(struct LocalVar));
     CHECK_ASSERT(pNod);
     CHECK_ASSERT(nodSize);
-    CHECK_ASSERT(pRoutes);
-    CHECK_ASSERT(routesSize);
     PrintHeader();
     ConsolePrintf(PRIO_HIGH, "uint16_t PacketBandwidth = %u;\n", packetBw);
     ConsolePrintf(PRIO_HIGH, "uint16_t RoutesSize = %u;\n", routesSize);
@@ -915,8 +913,8 @@ static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routeP
 static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len)
 {
     uint8_t i;
-    CHECK_ASSERT(routes);
-    CHECK_ASSERT(len);
+    if (NULL == routes || 0 == len)
+        return;
     /* Iterate all routes to create Endpoints */
     for (i = 0; i < len; i++)
     {
