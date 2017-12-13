@@ -150,7 +150,7 @@ mxmlFindPath(mxml_node_t *top,		/* I - Top node */
    /*
     * Handle wildcards...
     */
-    int32_t difPath = pathsep - path;
+    int difPath = pathsep - path;
     if (difPath < 0) difPath = 0;
     if (!strncmp(path, "*/", 2))
     {
