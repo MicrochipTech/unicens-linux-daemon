@@ -43,6 +43,7 @@
 #define RETURN_ASSERT(result, reason) { UcsXml_CB_OnError("Assertion in file=%s, line=%d reason='%s'", 3, __FILE__, __LINE__, reason); return result; }
 #define MISC_HB(value)      ((uint8_t)((uint16_t)(value) >> 8))
 #define MISC_LB(value)      ((uint8_t)((uint16_t)(value) & (uint16_t)0xFF))
+#define ROUTE_AUTO_ID_START (0x8000)
 
 struct UcsXmlRoute
 {
@@ -291,6 +292,7 @@ static ParseResult_t ParseDriver(mxml_node_t *soc, UcsXmlVal_t *ucs, PrivateData
 static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink);
 static uint16_t GetDrvInfCount(struct UcsXmlDriverInfoList *drvInfLst);
 static void FillDriverArray(struct UcsXmlDriverInfoList *drvInfLst, DriverInformation_t **ppDriveInfo);
+static bool IsAutoRouteId(uint16_t id, PrivateData_t *priv);
 
 /************************************************************************/
 /* Public Functions                                                     */
@@ -316,8 +318,7 @@ ERROR:
         UcsXml_CB_OnError("XML memory error, aborting..", 0);
     else
         UcsXml_CB_OnError("XML parsing error, aborting..", 0);
-    assert(false);
-    if (!tree)
+    if (tree)
         mxmlDelete(tree);
     if (val)
         FreeVal(val);
@@ -591,15 +592,13 @@ static bool GetPayload(mxml_node_t *element, const char *name, uint8_t **pPayloa
         {
             UcsXml_CB_OnError("Script payload values must be stuffed to two characters", 0);
             free(txtCopy);
-            assert(false);
-            return 0;
+            return false;
         }
         if (!CheckInteger(token, true))
         {
             UcsXml_CB_OnError("Script payload contains non valid hex number='%s'", 1, token);
             free(txtCopy);
-            assert(false);
-            return 0;
+            return false;
         }
         p[offset + len++] = strtol( token, NULL, 16 );
         token = strtok_r( NULL, " ,.-", &tkPtr );
@@ -654,8 +653,7 @@ static Ucs_Xrm_ResObject_t **GetJobList(struct UcsXmlJobList *joblist, struct Uc
         return false;
     /*Second: Allocate count+1 elements (NULL terminated) and copy pointers*/
     outJob = MCalloc(objList, (count + 1), sizeof(Ucs_Xrm_ResObject_t *));
-    if (NULL == outJob)
-        return false;
+    if (NULL == outJob) RETURN_ASSERT(NULL, "calloc returned NULL");
     tail = joblist;
     count = 0;
     while(tail)
@@ -672,14 +670,14 @@ static struct UcsXmlJobList *DeepCopyJobList(struct UcsXmlJobList *jobsIn, struc
     if (NULL == jobsIn || NULL == objList)
         return NULL;
     jobsOut = tail = MCalloc(objList, 1, sizeof(struct UcsXmlJobList));
-    if (NULL == jobsOut) { assert(false); return NULL; }
+    if (NULL == jobsOut) RETURN_ASSERT(NULL, "calloc returned NULL");
     while(jobsIn)
     {
         tail->job = jobsIn->job;
         if (jobsIn->next)
         {
             tail->next = MCalloc(objList, 1, sizeof(struct UcsXmlJobList));
-            if (NULL == tail->next) { assert(false); return NULL; }
+            if (NULL == tail->next) RETURN_ASSERT(NULL, "calloc returned NULL");
             tail = tail->next;
         }
         jobsIn = jobsIn->next;
@@ -728,7 +726,7 @@ static ParseResult_t ParseAll(mxml_node_t *tree, UcsXmlVal_t *ucs, PrivateData_t
     uint32_t nodeCount;
     mxml_node_t *sub;
     ParseResult_t result;
-    priv->autoRouteId = 0x8000;
+    priv->autoRouteId = ROUTE_AUTO_ID_START;
     if (!GetCount(tree, NODE, &nodeCount, true))
         RETURN_ASSERT(Parse_XmlError, "No node defined");
 
@@ -1291,8 +1289,7 @@ static bool FillScriptInitialValues(Ucs_Ns_Script_t *scr, PrivateData_t *priv)
     assert(NULL != scr && NULL != priv);
     scr->send_cmd = MCalloc(&priv->objList, 1, sizeof(Ucs_Ns_ConfigMsg_t));
     scr->exp_result = MCalloc(&priv->objList, 1, sizeof(Ucs_Ns_ConfigMsg_t));
-    assert(scr->send_cmd && scr->exp_result);
-    if (NULL == scr->send_cmd || NULL == scr->exp_result) return false;
+    if (NULL == scr->send_cmd || NULL == scr->exp_result) RETURN_ASSERT(false, "calloc returned NULL");
     scr->pause = priv->scriptData.pause;
     priv->scriptData.pause = 0;
     return true;
@@ -1603,18 +1600,24 @@ static ParseResult_t ParseScriptPause(mxml_node_t *act, Ucs_Ns_Script_t *scr, Pr
 static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
 {
     uint16_t routeAmount = 0;
+    uint16_t srcCnt = 0;
+    uint16_t snkCnt = 0;
     struct UcsXmlRoute *sourceRoute;
     assert(NULL != ucs && NULL != priv);
     /*First: Count the amount of routes and allocate the correct amount*/
     sourceRoute = priv->pRtLst;
     while (NULL != sourceRoute)
     {
-        if (!sourceRoute->isSource) /*There can be more sinks than sources, so count them*/
-        {
-            ++routeAmount;
-        }
+        if (sourceRoute->isSource)
+            ++srcCnt;
+        else
+            ++snkCnt;
         sourceRoute = sourceRoute->next;
     }
+    if (srcCnt >= snkCnt)
+        routeAmount = srcCnt;
+    else
+        routeAmount = snkCnt;
     if (0 == routeAmount)
         return Parse_Success; /*Its okay to have no routes at all (e.g. MEP traffic only)*/
     ucs->pRoutes = MCalloc(&priv->objList, routeAmount, sizeof(Ucs_Rm_Route_t));
@@ -1633,11 +1636,26 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
                     && !sinkRoute->isSource
                     && (0 == strncmp(sourceRoute->routeName, sinkRoute->routeName, sizeof(sourceRoute->routeName))))
                 {
-                    Ucs_Rm_Route_t *route = &ucs->pRoutes[ucs->routesSize++];
+                    Ucs_Rm_Route_t *route;
+                    if(ucs->routesSize >= routeAmount)
+                    {
+                        ucs->routesSize++;
+                        sinkRoute = sinkRoute->next;
+                        continue;
+                    }
+                    route = &ucs->pRoutes[ucs->routesSize++];
                     route->source_endpoint_ptr = sourceRoute->ep;
                     route->sink_endpoint_ptr = sinkRoute->ep;
-                    route->active = sinkRoute->isActive;
-                    route->route_id = sinkRoute->routeId;
+                    if (!IsAutoRouteId(sourceRoute->routeId, priv))
+                    {
+                        route->active = sourceRoute->isActive;
+                        route->route_id = sourceRoute->routeId;
+                    }
+                    else
+                    {
+                        route->active = sinkRoute->isActive;
+                        route->route_id = sinkRoute->routeId;
+                    }
                 }
                 sinkRoute = sinkRoute->next;
             }
@@ -1646,7 +1664,7 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
     }
     if (routeAmount != ucs->routesSize)
     {
-        UcsXml_CB_OnError("At least one sink (num=%d) is not connected, because of wrong Route name!", 2, (routeAmount - ucs->routesSize));
+        UcsXml_CB_OnError("At least one sink is not connected, because of wrong Route name! Sources:%d Sinks:%d", 2, srcCnt, snkCnt);
         RETURN_ASSERT(Parse_XmlError, "Route error");
     }
 
@@ -2003,4 +2021,10 @@ static void FillDriverArray(struct UcsXmlDriverInfoList *drvInfLst, DriverInform
         head = head->next;
     }
     while(NULL != head);
+}
+
+static bool IsAutoRouteId(uint16_t id, PrivateData_t *priv)
+{
+    assert(NULL != priv);
+    return (id >= ROUTE_AUTO_ID_START && id <= priv->autoRouteId);
 }
