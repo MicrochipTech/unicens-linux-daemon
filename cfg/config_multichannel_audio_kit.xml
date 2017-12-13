@@ -2,7 +2,7 @@
 <Unicens AsyncBandwidth="20" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
   <!-- Server Node -->
   <Node Address="0x200">
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <USBSocket EndpointAddress="0x1" FramesPerTransaction="42"/>
       <Splitter BytesPerFrame="12">
         <NetworkSocket Route="5.1 DVD Player Front" Offset="0" Bandwidth="4"/>
@@ -15,7 +15,7 @@
   <!-- 1st Slim Amplifier -->
   <Node Address="0x270" Script="slim-amp-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <NetworkSocket Route="5.1 DVD Player Front" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
     </SyncConnection>
@@ -23,7 +23,7 @@
   <!-- 2nd Slim Amplifier -->
   <Node Address="0x271" Script="slim-amp-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <NetworkSocket Route="5.1 DVD Player Rear" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
     </SyncConnection>
@@ -31,7 +31,7 @@
   <!-- 3rd Slim Amplifier -->
   <Node Address="0x272" Script="slim-amp-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <NetworkSocket Route="5.1 DVD Player Effect" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
     </SyncConnection>
@@ -53,7 +53,7 @@
   <!-- 1st Aux IO -->
   <Node Address="0x240" Script="aux-io-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <NetworkSocket Route="5.1 DVD Player Front" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA1" Bandwidth="4"/>
     </SyncConnection>
@@ -61,7 +61,7 @@
   <!-- 2nd Aux IO -->
   <Node Address="0x241" Script="aux-io-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <NetworkSocket Route="5.1 DVD Player Rear" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA1" Bandwidth="4"/>
     </SyncConnection>
@@ -69,7 +69,7 @@
   <!-- 3rd Aux IO -->
   <Node Address="0x242" Script="aux-io-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <NetworkSocket Route="5.1 DVD Player Effect" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA1" Bandwidth="4"/>
     </SyncConnection>
