@@ -90,3 +90,28 @@ void ConsolePrintfExit( const char *statement, ... )
     vfprintf( (PRIO_ERROR == data.contPrio ? stderr : stdout), statement, args );
     va_end( args );
 }
+
+static const char* ExtractFileName(const char* filePath)
+{
+	/* We could also use strrchr, but this works without a library function */
+	int fileNameStartPos=0;
+	int i;
+	for (i=0; filePath[i] != 0; i++)
+	{
+		if ((filePath[i] == '\\') || (filePath[i] == '/'))
+		{
+			fileNameStartPos = i+1;
+		}
+	}
+	return filePath + fileNameStartPos;
+}
+
+void ConsolePrintfError(const char* filePath, const int lineNumber, const int columnNumber, const char* severity, const char* statement, ... )
+{
+    va_list args;
+	char buffer[1000];
+    va_start(args, statement);
+	sprintf(buffer, "%s:%d:%d: %s - %s", ExtractFileName(filePath), lineNumber, columnNumber, severity, statement);
+    vfprintf(stderr, buffer, args);
+    va_end(args);
+}
