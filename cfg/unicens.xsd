@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- edited with XMLSpy v2018 (x64) (http://www.altova.com) by Pavel Hanak (Microchip Technology Germany II GmbH & Co. KG) -->
-<!-- committed 2017-11-30 -->
+
+<!-- committed 2017-12-04 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:element name="Unicens">
 		<xs:annotation>
@@ -75,7 +75,7 @@ This attribute corresponds with the parameter StreamingIfEpInCount of the INIC f
 															<UCSElementPath>/Unicens/Node/MediaLBPort</UCSElementPath>
 Configuration Structure of a MediaLB Port
 The MediaLB Port is the interface to the Media Local Bus. 
-It supports the handling of all Network network data types and is available in two pin-out options: MediaLB 3-Pin (single-ended) and MediaLB 6-Pin (differential). </xs:documentation>
+It supports the handling of all network data types and is available in two pin-out options: MediaLB 3-Pin (single-ended) and MediaLB 6-Pin (differential). </xs:documentation>
 													</xs:annotation>
 													<xs:complexType>
 														<xs:complexContent>
@@ -180,6 +180,26 @@ Address of the Unicens node</xs:documentation>
 													<UCSElementPath>/Unicens/Node/@Script</UCSElementPath>
 Script to which the node is linked.</xs:documentation>
 											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Role" use="optional">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:enumeration value="Root"/>
+													<xs:enumeration value="Slim"/>
+													<xs:enumeration value="Smart"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="NetworkController" use="optional">
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:enumeration value="OS81118"/>
+													<xs:enumeration value="OS81119"/>
+													<xs:enumeration value="OS81210"/>
+													<xs:enumeration value="OS81212"/>
+													<xs:enumeration value="OS81214"/>
+												</xs:restriction>
+											</xs:simpleType>
 										</xs:attribute>
 									</xs:extension>
 								</xs:complexContent>
@@ -491,7 +511,7 @@ Name of the Script</xs:documentation>
 						<xs:element name="Driver">
 							<xs:complexType>
 								<xs:complexContent>
-									<xs:extension base="SpecifiedElement">
+									<xs:extension base="DescribedElement">
 										<xs:all>
 											<xs:element name="Alsa" minOccurs="0">
 												<xs:complexType>
@@ -538,6 +558,7 @@ Name of the Script</xs:documentation>
 												</xs:complexType>
 											</xs:element>
 										</xs:all>
+										<xs:attribute name="Name" type="xs:string" use="required"/>
 									</xs:extension>
 								</xs:complexContent>
 							</xs:complexType>
@@ -549,6 +570,15 @@ Name of the Script</xs:documentation>
 								<UCSElementPath>/Unicens/@AsyncBandwidth</UCSElementPath>
 Asynchronous bandwidth of the Unicens network.</xs:documentation>
 						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="Network" use="optional">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:enumeration value="INICnet-50"/>
+								<xs:enumeration value="INICnet-150"/>
+								<xs:enumeration value="MOST150"/>
+							</xs:restriction>
+						</xs:simpleType>
 					</xs:attribute>
 				</xs:extension>
 			</xs:complexContent>
@@ -799,7 +829,7 @@ The same combiner may be used in multiple connections, which enables grouping of
 			<xs:documentation>String which represents byte array as hexadecimal digits with space after each two digits</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string">
-			<xs:pattern value="[0-9a-fA-F]{2}(\s+[0-9a-fA-F]{2})*"/>
+			<xs:pattern value="([0-9a-fA-F]{2}(\s+[0-9a-fA-F]{2})*)?"/>
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:complexType name="SplitterCombinerType">
@@ -815,8 +845,8 @@ A splitter combiner type allocated on network</xs:documentation>
 						<xs:annotation>
 							<xs:documentation>
 								<UCSElementPath>/SplitterCombinerType/NetworkSocket</UCSElementPath>
-								A Network Port socket encapsulates the configuration settings that are required to
-access data streams on specific Network network channels.</xs:documentation>
+								A Network Socket encapsulates the configuration settings that are required to
+access data streams on specific network channels.</xs:documentation>
 						</xs:annotation>
 					</xs:element>
 				</xs:sequence>
@@ -824,7 +854,7 @@ access data streams on specific Network network channels.</xs:documentation>
 					<xs:annotation>
 						<xs:documentation>
 							<UCSElementPath>/SplitterCombinerType/@BytesPerFrame</UCSElementPath>
-Total number of data bytes to be transferred each Network network frame.
+Total number of data bytes to be transferred each network frame.
 </xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
