@@ -279,8 +279,9 @@ extern void UCSI_CB_OnAmsMessageReceived(void *pTag);
  * \param pTag - Pointer given by the integrator by UCSI_Init
  * \param routeId - identifier as given in XML file along with MOST socket (unique)
  * \param isActive - true, if the route is now in use. false, the route is not established.
+ * \param connectionLabel - The connection label used on the Network. Only valid, if isActive=true
  */
-extern void UCSI_CB_OnRouteResult(void *pTag, uint16_t routeId, bool isActive);
+extern void UCSI_CB_OnRouteResult(void *pTag, uint16_t routeId, bool isActive, uint16_t connectionLabel);
 
 /**
  * \brief Callback when a INIC GPIO changes its state

@@ -1,18 +1,26 @@
-Unicens V2 Daemon (unicensd)
+UNICENS V2 Daemon (unicensd)
 ============================
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!! Only use Firmware V2.4.0 or newer                                                  !!!
-!!! Make sure that you enable Unicens mode in ConfigString                             !!!
-!!! Make sure that you set an unique node address in ConfigString                      !!!
-!!! Make sure that you set an unique MAC address in ConfigString, when device use MEP  !!!
+!!! Make sure that you enable UNICENS mode in ConfigString                             !!!
+!!! Make sure that you set an unique node address in IdentString                       !!!
+!!! Make sure that you set an unique MAC address in IdentString, when device use MEP   !!!
 !!! Use default config feature from MOST Linux Driver to setup USB/MLB.                !!!
-!!! Control Channel must be mapped to CDEVs: /dev/inic-usb-crx and /dev/inic-usb-ctx   !!!
+!!! Control Channel should be mapped to CDEVs: /dev/inic-usb-crx and /dev/inic-usb-ctx !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 V04.00.03
 =========
-- Moved example UNICENS configurations into cfg subfolder
+- XML API change: MOSTSocket is now NetworkSocket (still accepting MOSTSocket, to backward compatible).
+- Supporting Android build with NDK.
+- Moved example UNICENS configurations into cfg subfolder.
+- Improved error message output on XML parsing errors.
+- Allowing empty route lists.
+- xml2stuct can generate default configurations for MOST Linux Driver (new XML tags!).
+- Command Line parameters of xml2stuct changed (type --help to see changes)
+- unicensd is reporting amount of nodes.
+- unicensd is reporting connection labels.
 
 V04.00.02
 =========
@@ -29,16 +37,16 @@ V04.00.02
 V04.00.01
 =========
 !! XML Format has changed, added XML schema, make sure you edit with a XML editor which understands XML schemas !!
-- Integrated Unicens Library UNICENS V2.1.0-3564
+- Integrated UNICENS Library UNICENS V2.1.0-3564
 - Fixed non working Combiner / Splitter functionality.
 - Routes can be defined (with RouteId attribute) and switched on / off by C-code while runtime.
 
 V04.00.00
 =========
-!! Breaking change. Switched from NetworkManager aka IndustrialStack aka Unicens V1 to Unicens V2 !!
+!! Breaking change. Switched from NetworkManager aka IndustrialStack aka UNICENS V1 to UNICENS V2 !!
 !! XML Format has changed, file ending is now ucsx !!
 - Changed name of executable. NetworkManager --> unicensd
-- Integrated Unicens Library UCS_V2.1.0-3491_RC2
+- Integrated UNICENS Library UCS_V2.1.0-3491_RC2
 - Switched from libxml2 to mxml, the sources of the library are part of this package.
 
 V03.00.05

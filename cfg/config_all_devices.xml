@@ -2,19 +2,19 @@
 <Unicens AsyncBandwidth="20" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
   <!-- USB Server Node -->
   <Node Address="0x200">
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <USBSocket EndpointAddress="0x1" FramesPerTransaction="42"/>
       <Splitter BytesPerFrame="12">
-        <MOSTSocket Route="5.1 DVD Player Front" Offset="0" Bandwidth="4"/>
-        <MOSTSocket Route="5.1 DVD Player Rear" Offset="4" Bandwidth="4"/>
-        <MOSTSocket Route="5.1 DVD Player Effect" Offset="8" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Front" Offset="0" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Rear" Offset="4" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Effect" Offset="8" Bandwidth="4"/>
       </Splitter>
     </SyncConnection>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <Combiner BytesPerFrame="12">
-        <MOSTSocket Route="Microphone1" Offset="0" Bandwidth="4"/>
-        <MOSTSocket Route="Microphone2" Offset="4" Bandwidth="4"/>
-        <MOSTSocket Route="Microphone3" Offset="8" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone1" Offset="0" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone2" Offset="4" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone3" Offset="8" Bandwidth="4"/>
       </Combiner>
       <USBSocket EndpointAddress="0x82" FramesPerTransaction="42"/>
     </SyncConnection>
@@ -22,19 +22,19 @@
 
   <!-- USB Client Node -->
   <Node Address="0x2B0">
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <Combiner BytesPerFrame="12">
-        <MOSTSocket Route="5.1 DVD Player Front" Offset="0" Bandwidth="4"/>
-        <MOSTSocket Route="5.1 DVD Player Rear" Offset="4" Bandwidth="4"/>
-        <MOSTSocket Route="5.1 DVD Player Effect" Offset="8" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Front" Offset="0" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Rear" Offset="4" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Effect" Offset="8" Bandwidth="4"/>
       </Combiner>
       <USBSocket EndpointAddress="0x81" FramesPerTransaction="42"/>
     </SyncConnection>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <Combiner BytesPerFrame="12">
-        <MOSTSocket Route="Microphone1" Offset="0" Bandwidth="4"/>
-        <MOSTSocket Route="Microphone2" Offset="4" Bandwidth="4"/>
-        <MOSTSocket Route="Microphone3" Offset="8" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone1" Offset="0" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone2" Offset="4" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone3" Offset="8" Bandwidth="4"/>
       </Combiner>
       <USBSocket EndpointAddress="0x82" FramesPerTransaction="42"/>
     </SyncConnection>
@@ -42,19 +42,19 @@
 
   <!-- MLB Client Node -->
   <Node Address="0x2B1">
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <Combiner BytesPerFrame="12">
-        <MOSTSocket Route="5.1 DVD Player Front" Offset="0" Bandwidth="4"/>
-        <MOSTSocket Route="5.1 DVD Player Rear" Offset="4" Bandwidth="4"/>
-        <MOSTSocket Route="5.1 DVD Player Effect" Offset="8" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Front" Offset="0" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Rear" Offset="4" Bandwidth="4"/>
+        <NetworkSocket Route="5.1 DVD Player Effect" Offset="8" Bandwidth="4"/>
       </Combiner>
       <MediaLBSocket ChannelAddress="0xA" Bandwidth="12"/>
     </SyncConnection>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <Combiner BytesPerFrame="12">
-        <MOSTSocket Route="Microphone1" Offset="0" Bandwidth="4"/>
-        <MOSTSocket Route="Microphone2" Offset="4" Bandwidth="4"/>
-        <MOSTSocket Route="Microphone3" Offset="8" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone1" Offset="0" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone2" Offset="4" Bandwidth="4"/>
+        <NetworkSocket Route="Microphone3" Offset="8" Bandwidth="4"/>
       </Combiner>
       <MediaLBSocket ChannelAddress="0xC" Bandwidth="12"/>
     </SyncConnection>
@@ -63,49 +63,49 @@
   <!-- 1st Microphone -->
   <Node Address="0x210">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
-      <MOSTSocket Route="Microphone1" Bandwidth="4"/>
+      <NetworkSocket Route="Microphone1" Bandwidth="4"/>
     </SyncConnection>
   </Node>
   <!-- 2nd Microphone -->
   <Node Address="0x211">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
-      <MOSTSocket Route="Microphone2" Bandwidth="4"/>
+      <NetworkSocket Route="Microphone2" Bandwidth="4"/>
     </SyncConnection>
   </Node>
   <!-- 3rd Microphone -->
   <Node Address="0x212">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
+    <SyncConnection>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
-      <MOSTSocket Route="Microphone3" Bandwidth="4"/>
+      <NetworkSocket Route="Microphone3" Bandwidth="4"/>
     </SyncConnection>
   </Node>
 
   <!-- 1st Slim Amplifier -->
   <Node Address="0x270" Script="slim-amp-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
-      <MOSTSocket Route="5.1 DVD Player Front" Bandwidth="4"/>
+    <SyncConnection>
+      <NetworkSocket Route="5.1 DVD Player Front" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
     </SyncConnection>
   </Node>
   <!-- 2nd Slim Amplifier -->
   <Node Address="0x271" Script="slim-amp-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
-      <MOSTSocket Route="5.1 DVD Player Rear" Bandwidth="4"/>
+    <SyncConnection>
+      <NetworkSocket Route="5.1 DVD Player Rear" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
     </SyncConnection>
   </Node>
   <!-- 3rd Slim Amplifier -->
   <Node Address="0x272" Script="slim-amp-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
-      <MOSTSocket Route="5.1 DVD Player Effect" Bandwidth="4"/>
+    <SyncConnection>
+      <NetworkSocket Route="5.1 DVD Player Effect" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA0" Bandwidth="4"/>
     </SyncConnection>
   </Node>
@@ -126,24 +126,24 @@
   <!-- 1st Aux IO -->
   <Node Address="0x240" Script="aux-io-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
-      <MOSTSocket Route="5.1 DVD Player Front" Bandwidth="4"/>
+    <SyncConnection>
+      <NetworkSocket Route="5.1 DVD Player Front" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA1" Bandwidth="4"/>
     </SyncConnection>
   </Node>
   <!-- 2nd Aux IO -->
   <Node Address="0x241" Script="aux-io-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
-      <MOSTSocket Route="5.1 DVD Player Rear" Bandwidth="4"/>
+    <SyncConnection>
+      <NetworkSocket Route="5.1 DVD Player Rear" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA1" Bandwidth="4"/>
     </SyncConnection>
   </Node>
   <!-- 3rd Aux IO -->
   <Node Address="0x242" Script="aux-io-config">
     <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
-    <SyncConnection MuteMode="NoMuting">
-      <MOSTSocket Route="5.1 DVD Player Effect" Bandwidth="4"/>
+    <SyncConnection>
+      <NetworkSocket Route="5.1 DVD Player Effect" Bandwidth="4"/>
       <StreamSocket StreamPinID="SRXA1" Bandwidth="4"/>
     </SyncConnection>
   </Node>

@@ -106,6 +106,16 @@ extern "C"
     /*----------------------------------------------------------*/
     void ConsolePrintfExit( const char *statement, ... ) __attribute__ ((format (gnu_printf, 1, 2)));
     
+    /*----------------------------------------------------------*/
+    /*! \brief Prints an ERROR formated string, which is understood by most common IDEs like Eclipse or Netbeans
+     * \param filePath - Name of the file containing the error
+     * \param lineNumber - The line number pointing to the error
+     * \param columnNode - The position in the specified line pointing to the error
+     * \param severity - The kind of message like "Warning" or "Error"
+     * \param statement - printf statement for the error message
+     */
+    /*----------------------------------------------------------*/
+    void ConsolePrintfError(const char* filePath, const int lineNumber, const int columnNumber, const char* severity, const char* statement, ... )  __attribute__ ((format (gnu_printf, 5, 6)));
 
 #ifdef __cplusplus
 }

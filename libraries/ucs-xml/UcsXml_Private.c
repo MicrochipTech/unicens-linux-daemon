@@ -65,10 +65,6 @@ static const char* I2S_PIN_SRXB1 =          "SRXB1";
 
 static const char* MUTE_OFF =               "NoMuting";
 static const char* MUTE_SIGNAL =            "MuteSignal";
-/*
-static const char* VAL_TRUE =               "true";
-static const char* VAL_FALSE =              "false";
- */
 
 #define ASSERT_FALSE(func, par) { UcsXml_CB_OnError("Parameter error in attribute=%s value=%s, file=%s, line=%d", 4, func, par,  __FILE__, __LINE__); return false; }
 #define CHECK_POINTER(PTR) if (NULL == PTR) { ASSERT_FALSE(PTR, "NULL pointer"); }

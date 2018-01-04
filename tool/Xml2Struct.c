@@ -42,7 +42,6 @@
 #define CHECK_ASSERT(X) { \
     if (!(X)) { \
         ConsolePrintf(PRIO_ERROR, RED"Statement '"#X"' is false"RESETCOLOR"\n"); \
-        assert(false); \
         exit(-1); } }
 
 #ifdef C99_STRUCTS
@@ -127,8 +126,6 @@ void PrintUcsStructures(
     memset(&m, 0, sizeof(struct LocalVar));
     CHECK_ASSERT(pNod);
     CHECK_ASSERT(nodSize);
-    CHECK_ASSERT(pRoutes);
-    CHECK_ASSERT(routesSize);
     PrintHeader();
     ConsolePrintf(PRIO_HIGH, "uint16_t PacketBandwidth = %u;\n", packetBw);
     ConsolePrintf(PRIO_HIGH, "uint16_t RoutesSize = %u;\n", routesSize);
@@ -339,7 +336,6 @@ static const char*GetMlbClkString(Ucs_Mlb_ClockConfig_t clk)
         CASE(UCS_MLB_CLK_CFG_WILDCARD);
     default:
         ConsolePrintf(PRIO_ERROR, "GetMlbClkString clk-config:%d not implemented\n", clk);
-        assert(false);
         exit(-1);
     }
 }
@@ -378,7 +374,6 @@ static const char*GetUsbPhyString(Ucs_Usb_PhysicalLayer_t phy)
         CASE(UCS_USB_PHY_LAYER_HSCI);
     default:
         ConsolePrintf(PRIO_ERROR, "GetUsbPhyString phy:%d not implemented\n", phy);
-        assert(false);
         exit(-1);
     }
 }
@@ -426,7 +421,6 @@ static const char*GetStrmClkString(Ucs_Stream_PortClockConfig_t clk)
         CASE(UCS_STREAM_PORT_CLK_CFG_WILD);
     default:
         ConsolePrintf(PRIO_ERROR, "GetStrmClkString stream-config:%d not implemented\n", clk);
-        assert(false);
         exit(-1);
     }
 }
@@ -442,7 +436,6 @@ static const char*GetStrmAlignString(Ucs_Stream_PortDataAlign_t align)
         CASE(UCS_STREAM_PORT_ALGN_SEQ);
     default:
         ConsolePrintf(PRIO_ERROR, "GetStrmAlignString align:%d not implemented\n", align);
-        assert(false);
         exit(-1);
     }
 }
@@ -469,7 +462,6 @@ static const char*GetStrmPinString(Ucs_Stream_PortPinId_t pin)
         CASE(UCS_STREAM_PORT_PIN_ID_SRXB1);
     default:
         ConsolePrintf(PRIO_ERROR, "GetStrmPinString pin:%d not implemented\n", pin);
-        assert(false);
         exit(-1);
     }
 }
@@ -523,7 +515,6 @@ static const char*GetSyncConMuteString(Ucs_Sync_MuteMode_t mode)
         CASE(UCS_SYNC_MUTE_MODE_MUTE_SIGNAL);
     default:
         ConsolePrintf(PRIO_ERROR, "GetSyncConMuteString mode:%d not implemented\n", mode);
-        assert(false);
         exit(-1);
     }
 }
@@ -590,7 +581,6 @@ static const char*GetTypeString(Ucs_Xrm_ResObject_t *element)
         case UCS_XRM_RC_TYPE_AVP_CON: return "Ucs_Xrm_AvpCon_t";
     default:
         ConsolePrintf(PRIO_ERROR, "GetTypeString ResourceType:%d not implemented\n", typ);
-        assert(false);
         exit(-1);
     }
 }
@@ -614,7 +604,6 @@ static const char*GetResourceTypeString(Ucs_Xrm_ResourceType_t *element)
         CASE(UCS_XRM_RC_TYPE_AVP_CON);
         default:
             ConsolePrintf(PRIO_ERROR, "GetResourceTypeString ResourceType:%d not implemented\n", typ);
-            assert(false);
             exit(-1);
     }
 }
@@ -627,7 +616,6 @@ static const char*GetDirectionString(Ucs_SocketDirection_t dir)
         CASE(UCS_SOCKET_DIR_OUTPUT);
         default:
             ConsolePrintf(PRIO_ERROR, "GetDirectionString Ucs_SocketDirection_t:%d not implemented\n", dir);
-            assert(false);
             exit(-1);
     }
 }
@@ -642,7 +630,6 @@ static const char*GetMostDataTypeString(Ucs_Most_SocketDataType_t dtyp)
         CASE(UCS_MOST_SCKT_DISC_FRAME_PHASE);
         default:
             ConsolePrintf(PRIO_ERROR, "GetMostDataTypeString Ucs_Most_SocketDataType_t:%d not implemented\n", dtyp);
-            assert(false);
             exit(-1);
     }
 }
@@ -659,7 +646,6 @@ static const char*GetMlbDataTypeString(Ucs_Mlb_SocketDataType_t dtyp)
         CASE(UCS_MLB_SCKT_IPC_PACKET);
         default:
             ConsolePrintf(PRIO_ERROR, "GetMlbDataTypeString Ucs_Mlb_SocketDataType_t:%d not implemented\n", dtyp);
-            assert(false);
             exit(-1);
     }
 }
@@ -674,7 +660,6 @@ static const char*GetUsbDataTypeString(Ucs_Usb_SocketDataType_t dtyp)
         CASE(UCS_USB_SCKT_IPC_PACKET);
         default:
             ConsolePrintf(PRIO_ERROR, "GetUsbDataTypeString Ucs_Usb_SocketDataType_t:%d not implemented\n", dtyp);
-            assert(false);
             exit(-1);
     }
 }
@@ -686,7 +671,6 @@ static const char*GetStreamDataTypeString(Ucs_Stream_SocketDataType_t dtyp)
         CASE(UCS_STREAM_PORT_SCKT_SYNC_DATA);
         default:
             ConsolePrintf(PRIO_ERROR, "GetStramDataTypeString Ucs_Stream_SocketDataType_t:%d not implemented\n", dtyp);
-            assert(false);
             exit(-1);
     }
 }
@@ -700,7 +684,6 @@ static const char*GetPortTypeString(Ucs_Xrm_PortType_t ptyp)
         CASE(UCS_XRM_PORT_TYPE_STRM);
         default:
             ConsolePrintf(PRIO_ERROR, "GetPortTypeString Ucs_Xrm_PortType_t:%d not implemented\n", ptyp);
-            assert(false);
             exit(-1);
     }
 }
@@ -758,7 +741,6 @@ static void PrintUcsElement(Ucs_Xrm_ResObject_t *element)
         break;
     default:
         ConsolePrintf(PRIO_ERROR, "PrintUcsElement ResourceType:%d not implemented\n", typ);
-        assert(false);
         exit(-1);
     }
 }
@@ -892,7 +874,6 @@ static const char*GetEndpointTypeString(Ucs_Rm_EndPointType_t eptyp)
         CASE(UCS_RM_EP_SINK);
         default:
             ConsolePrintf(PRIO_ERROR, "GetEndpointTypeString ep-type:%d not implemented\n", eptyp);
-            assert(false);
             exit(-1);
     }
 }
@@ -915,8 +896,8 @@ static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routeP
 static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len)
 {
     uint8_t i;
-    CHECK_ASSERT(routes);
-    CHECK_ASSERT(len);
+    if (NULL == routes || 0 == len)
+        return;
     /* Iterate all routes to create Endpoints */
     for (i = 0; i < len; i++)
     {

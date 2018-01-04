@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* Console Print Component                                                                        */
+/* UNICENS XML Parser                                                                             */
 /* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -27,91 +27,90 @@
 /* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE                  */
 /* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                           */
 /*------------------------------------------------------------------------------------------------*/
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include "Console.h"
+#ifndef UCSXMLDRIVERCONFIG_H_
+#define UCSXMLDRIVERCONFIG_H_
 
-/*! \cond PRIVATE */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdbool.h>
+#include <stdint.h>
+    
+typedef enum
+{
+    DriverCfgDirection_Tx,
+    DriverCfgDirection_Rx
+} DriverCfgDirection_t;
+
+typedef enum
+{
+    DriverCfgDataType_Control,
+    DriverCfgDataType_Async,
+    DriverCfgDataType_Sync,
+    DriverCfgDataType_Isoc
+} DriverCfgDataType_t;
+
+typedef enum
+{
+    Driver_LinuxCdev,
+    Driver_LinuxAlsa,
+    Driver_LinuxV4l2
+} DriverType_t;
+
 typedef struct
 {
-    /**Minimum priority to be printed. If lower, message will be discarded.*/
-    ConsolePrio_t minPrio;
-    /**If is in a critical segmented print, this variable will hold the prio for Start, Continue, Exit.*/
-    ConsolePrio_t contPrio;
-} LocalData_t;
-/*! \endcond */
+    const char *channelName;
+    const char *aimName;
+    DriverCfgDataType_t dataType;
+    DriverCfgDirection_t direction;
+    uint16_t numBuffers;
+    uint16_t bufferSize;
+    uint16_t subBufferSize;
+    uint16_t packetsPerXact;
+} LinuxDriverCdev_t;
 
-static LocalData_t data = { 0 };
-
-void ConsoleSetPrio( ConsolePrio_t prio )
+typedef struct
 {
-    data.minPrio = prio;
-}
+    const char *channelName;
+    const char *aimName;
+    DriverCfgDataType_t dataType;
+    DriverCfgDirection_t direction;
+    uint16_t numBuffers;
+    uint16_t bufferSize;
+    uint16_t subBufferSize;
+    uint16_t packetsPerXact;
+} LinuxDriverV4l2_t;
 
-void ConsolePrintf( ConsolePrio_t prio, const char *statement, ... )
+typedef struct
 {
-    va_list args;
-    if( prio < data.minPrio || NULL == statement )
-        return;
-    va_start( args, statement );
-    vfprintf( (PRIO_ERROR == prio ? stderr : stdout), statement, args );
-    va_end( args );
-}
+    const char *channelName;
+    const char *aimName;
+    DriverCfgDataType_t dataType;
+    DriverCfgDirection_t direction;
+    uint16_t numBuffers;
+    uint16_t bufferSize;
+    uint16_t subBufferSize;
+    uint16_t packetsPerXact;
+    uint8_t amountOfChannels;
+    uint8_t resolutionInBit;
+} LinuxDriverAlsa_t;
 
-void ConsolePrintfStart( ConsolePrio_t prio, const char *statement, ... )
+typedef struct
 {
-    va_list args;
-    data.contPrio = prio;
-    if( data.contPrio < data.minPrio || NULL == statement )
-        return;
-    va_start( args, statement );
-    vfprintf( (PRIO_ERROR == prio ? stderr : stdout), statement, args );
-    va_end( args );
+    const char *linkName;
+    uint16_t nodeAddress;
+    DriverType_t driverType;
+    union
+    {
+        LinuxDriverCdev_t LinuxCdev;
+        LinuxDriverV4l2_t LinuxV4l2;
+        LinuxDriverAlsa_t LinuxAlsa;
+    } drv;
+} DriverInformation_t;
+    
+#ifdef __cplusplus
 }
+#endif
 
-void ConsolePrintfContinue( const char *statement, ... )
-{
-    va_list args;
-    if( data.contPrio < data.minPrio || NULL == statement )
-        return;
-    va_start( args, statement );
-    vfprintf( (PRIO_ERROR == data.contPrio ? stderr : stdout), statement, args );
-    va_end( args );
-}
-
-void ConsolePrintfExit( const char *statement, ... )
-{
-    va_list args;
-    if( data.contPrio < data.minPrio || NULL == statement )
-        return;
-    va_start( args, statement );
-    vfprintf( (PRIO_ERROR == data.contPrio ? stderr : stdout), statement, args );
-    va_end( args );
-}
-
-static const char* ExtractFileName(const char* filePath)
-{
-	/* We could also use strrchr, but this works without a library function */
-	int fileNameStartPos=0;
-	int i;
-	for (i=0; filePath[i] != 0; i++)
-	{
-		if ((filePath[i] == '\\') || (filePath[i] == '/'))
-		{
-			fileNameStartPos = i+1;
-		}
-	}
-	return filePath + fileNameStartPos;
-}
-
-void ConsolePrintfError(const char* filePath, const int lineNumber, const int columnNumber, const char* severity, const char* statement, ... )
-{
-    va_list args;
-	char buffer[1000];
-    va_start(args, statement);
-	sprintf(buffer, "%s:%d:%d: %s - %s", ExtractFileName(filePath), lineNumber, columnNumber, severity, statement);
-    vfprintf(stderr, buffer, args);
-    va_end(args);
-}
+#endif /* UCSXMLDRIVERCONFIG_H_ */

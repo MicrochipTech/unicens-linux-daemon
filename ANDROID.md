@@ -99,15 +99,18 @@ set(CMAKE_SYSTEM_VERSION 1)
 
 set(CMAKE_C_COMPILER /tmp/arm-linux-androideabi/bin/arm-linux-androideabi-gcc)
 set(CMAKE_CXX_COMPILER /tmp/arm-linux-androideabi/bin/arm-linux-androideabi-g++)
+set(ANDROID_API_LEVEL 21)
 
 UNSET(CMAKE_EXE_LINKER_FLAGS CACHE)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC" CACHE STRING "" FORCE)
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pie" CACHE STRING "" FORCE)
 
 set(ADDITIONAL_PLATFORM_LIBS "log")
-set(ADDITIONAL_PLATFORM_FLAGS "-DANDROID")
+set(ADDITIONAL_PLATFORM_FLAGS "-DANDROID -D__ANDROID_API__=${ANDROID_API_LEVEL}")
 ```
 Double check that the compilers specified with variables `CMAKE_C_COMPILER` and `CMAKE_CXX_COMPILER` are present on your system (done in step 4)
+
+Also check if the variable `ANDROID_API_LEVEL` matches to your Android API level (step 3).
 
 **6.) Cross compile your cmake project**
 
