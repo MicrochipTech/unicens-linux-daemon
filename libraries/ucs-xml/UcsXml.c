@@ -572,7 +572,15 @@ static bool GetPayload(mxml_node_t *element, const char *name, uint8_t **pPayloa
     char *token;
     if (!GetString(element, name, &txt, mandatory))
         return false;
-    tempLen = strlen(txt) + 1;
+    tempLen = strlen(txt);
+    if (0 == tempLen)
+    {
+        /* Empty payload is OK*/
+        *pPayload = NULL;
+        *outLen = 0;
+        return true;
+    }
+    tempLen += 1; /* Add space for zero termination */
     txtCopy = malloc(tempLen);
     if (NULL == txtCopy)
         return false;
@@ -1315,12 +1323,11 @@ static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, 
     res->FBlockId = req->FBlockId;
     res->FunktId = req->FunktId;
 
-    if (GetUInt8(act, OP_TYPE_RESPONSE, &res->OpCode, false))
-        GetPayload(act, PAYLOAD_RES_HEX, &res->DataPtr, &res->DataLen, 0, &priv->objList, false);
+    if (!GetUInt8(act, OP_TYPE_RESPONSE, &res->OpCode, false))
+        res->OpCode = 0xFF;
+    GetPayload(act, PAYLOAD_RES_HEX, &res->DataPtr, &res->DataLen, 0, &priv->objList, false);
 
     if (!GetPayload(act, PAYLOAD_REQ_HEX, &req->DataPtr, &req->DataLen, 0, &priv->objList, true))
-        RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-    if (0 == req->DataLen || NULL == req->DataPtr)
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     return Parse_Success;
 }
