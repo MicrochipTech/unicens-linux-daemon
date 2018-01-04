@@ -1671,8 +1671,7 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
     }
     if (routeAmount != ucs->routesSize)
     {
-        UcsXml_CB_OnError("At least one sink is not connected, because of wrong Route name! Sources:%d Sinks:%d", 2, srcCnt, snkCnt);
-        RETURN_ASSERT(Parse_XmlError, "Route error");
+        UcsXml_CB_OnError("Warning: At least one sink is not connected, Sources:%d Sinks:%d", 2, srcCnt, snkCnt);
     }
 
 #ifdef DEBUG
