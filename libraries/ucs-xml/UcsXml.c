@@ -29,6 +29,7 @@
 /*------------------------------------------------------------------------------------------------*/
 #include <assert.h>
 #include <string.h>
+#include <assert.h>
 #include "mxml.h"
 #include "UcsXml_Private.h"
 #include "UcsXml.h"
@@ -40,7 +41,7 @@
 /************************************************************************/
 
 #define COMPILETIME_CHECK(cond)  (void)sizeof(int[2 * !!(cond) - 1])
-#define RETURN_ASSERT(result, reason) { UcsXml_CB_OnError("Assertion in file=%s, line=%d reason='%s'", 3, __FILE__, __LINE__, reason); return result; }
+#define RETURN_ASSERT(result, reason) { UcsXml_CB_OnError("Assertion in file=%s, line=%d reason='%s'", 3, __FILE__, __LINE__, reason); assert(false); return result; }
 #define MISC_HB(value)      ((uint8_t)((uint16_t)(value) >> 8))
 #define MISC_LB(value)      ((uint8_t)((uint16_t)(value) & (uint16_t)0xFF))
 #define ROUTE_AUTO_ID_START (0x8000)

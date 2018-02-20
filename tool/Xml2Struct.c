@@ -42,6 +42,7 @@
 #define CHECK_ASSERT(X) { \
     if (!(X)) { \
         ConsolePrintf(PRIO_ERROR, RED"Statement '"#X"' is false"RESETCOLOR"\n"); \
+        assert(false); \
         exit(-1); } }
 
 #ifdef C99_STRUCTS
