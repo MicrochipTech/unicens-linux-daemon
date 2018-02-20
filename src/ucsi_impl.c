@@ -533,6 +533,7 @@ static void OnLldCtrlStart( Ucs_Lld_Api_t* api_ptr, void *inst_ptr, void *lld_us
     assert(MAGIC == my->magic);
     my->uniLld = api_ptr;
     my->uniLldHPtr = inst_ptr;
+    UCSI_CB_OnStart(my->tag);
 }
 
 static void OnLldCtrlStop( void *lld_user_ptr )
@@ -541,6 +542,7 @@ static void OnLldCtrlStop( void *lld_user_ptr )
     assert(MAGIC == my->magic);
     my->uniLld = NULL;
     my->uniLldHPtr = NULL;
+    UCSI_CB_OnStop(my->tag);
 }
 
 static void OnLldCtrlRxMsgAvailable( void *lld_user_ptr )

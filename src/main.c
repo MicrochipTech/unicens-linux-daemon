@@ -61,6 +61,7 @@ typedef struct
 {
     bool allowRun;
     UCSI_Data_t unicens;
+    bool unicensRunning;
     bool unicensTimeout;
     bool unicensTrigger;
     bool amsReceived;
@@ -207,7 +208,13 @@ int main(int argc, const char *argv[])
             uint32_t len;
             if (Cdev_GetRx(&m.ctrlRx, &pData, &len))
             {
-                if (UCSI_ProcessRxData(&m.unicens, pData, len))
+                if (!m.unicensRunning)
+                {
+                    /* Discard data, UNICENS is not yet ready */
+                    m.unicensDataAvailable = false;
+                    Cdev_PopRx(&m.ctrlRx);
+                }
+                else if (UCSI_ProcessRxData(&m.unicens, pData, len))
                 {
 #ifdef LLD_TRACE
                     uint32_t i;
@@ -352,9 +359,16 @@ void UCSI_CB_OnTxRequest(void *pTag,
     }
 }
 
+void UCSI_CB_OnStart(void *pTag)
+{
+    pTag = pTag;
+    m.unicensRunning = true;
+}
+
 void UCSI_CB_OnStop(void *pTag)
 {
     pTag = pTag;
+    m.unicensRunning = false;
 }
 
 void UCSI_CB_OnAmsMessageReceived(void *pTag)
