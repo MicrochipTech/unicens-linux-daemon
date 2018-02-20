@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- committed 2017-12-04 -->
+<!-- committed 2018-01-08 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:element name="Unicens">
 		<xs:annotation>
@@ -22,6 +22,19 @@ Node is a connection point that can receive, create, store or send data along di
 								<xs:complexContent>
 									<xs:extension base="SpecifiedElement">
 										<xs:sequence>
+											<xs:element name="Configuration" minOccurs="0" maxOccurs="unbounded">
+												<xs:complexType>
+													<xs:sequence>
+														<xs:element name="Property">
+															<xs:complexType>
+																<xs:attribute name="Name" use="required"/>
+																<xs:attribute name="Value" use="required"/>
+															</xs:complexType>
+														</xs:element>
+													</xs:sequence>
+													<xs:attribute name="Type" type="xs:string" use="required"/>
+												</xs:complexType>
+											</xs:element>
 											<xs:choice minOccurs="0" maxOccurs="unbounded">
 												<xs:element name="USBPort">
 													<xs:annotation>
@@ -719,7 +732,7 @@ The same combiner may be used in multiple connections, which enables grouping of
 			<xs:documentation>Hexadecimal or decimal number in the format 0xd..d</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string">
-			<xs:pattern value="([0-9]+)|(0x(0|[1-9a-fA-F][0-9a-fA-F]*))"/>
+			<xs:pattern value="([0-9]+)|(0x[0-9a-fA-F]+)"/>
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:simpleType name="USBPortPhysicalLayer">
@@ -868,12 +881,17 @@ Total number of data bytes to be transferred each network frame.
 		</xs:annotation>
 		<xs:complexContent>
 			<xs:extension base="SpecifiedElement">
-				<xs:attribute name="Route" type="xs:string" use="required">
+				<xs:attribute name="Route" use="required">
 					<xs:annotation>
 						<xs:documentation>
 							<UCSElementPath>/NetworkSocketType/@Route</UCSElementPath>
 A (virtual) route is a logical unidirectional connection between two endpoints. An endpoint acts as a Network connection in INIC plus the internal linked resources</xs:documentation>
 					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:pattern value="^\S+(\s+\S+)*$"/>
+						</xs:restriction>
+					</xs:simpleType>
 				</xs:attribute>
 				<xs:attribute name="Bandwidth" type="xs:integer" use="required">
 					<xs:annotation>

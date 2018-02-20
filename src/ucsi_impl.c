@@ -792,11 +792,6 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
     {
         UnicensCmdEntry_t e;
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Available", 1, node_address);
-        /* Enable usage of remote GPIO ports */
-        e.cmd = UnicensCmd_GpioCreatePort;
-        e.val.GpioCreatePort.destination = node_address;
-        e.val.GpioCreatePort.debounceTime = 20;
-        EnqueueCommand(my, &e);
         /* Execute scripts, if there are any */
         if (node_ptr && node_ptr->script_list_ptr && node_ptr->script_list_size)
         {
