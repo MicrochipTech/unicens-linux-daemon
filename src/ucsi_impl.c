@@ -342,7 +342,11 @@ bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
     if (NULL == my || NULL == pData || 0 == dataLen) return false;
-    if (dataLen > I2C_WRITE_MAX_LEN) return false;
+    if (dataLen > I2C_WRITE_MAX_LEN)
+    {
+        UCSI_CB_OnUserMessage(my->tag, true, "I2CWrite was called with payload length=%d, allowed is=%d", 2, dataLen, I2C_WRITE_MAX_LEN);
+        return false;
+    }
     entry.cmd = UnicensCmd_I2CWrite;
     entry.val.I2CWrite.destination = targetAddress;
     entry.val.I2CWrite.isBurst = isBurst;
@@ -884,7 +888,7 @@ void App_TraceError(void *ucs_user_ptr, const char module_str[], const char entr
         tag = my->tag;
     }
     va_start(argptr, vargs_cnt);
-    vsprintf(outbuf, entry_str, argptr);
+    vsnprintf(outbuf, sizeof(outbuf), entry_str, argptr);
     va_end(argptr);
     UCSI_CB_OnUserMessage(tag, true, "Error | %s | %s", 2, module_str, outbuf);
 }
@@ -901,7 +905,7 @@ void App_TraceInfo(void *ucs_user_ptr, const char module_str[], const char entry
         tag = my->tag;
     }
     va_start(argptr, vargs_cnt);
-    vsprintf(outbuf, entry_str, argptr);
+    vsnprintf(outbuf, sizeof(outbuf), entry_str, argptr);
     va_end(argptr);
     UCSI_CB_OnUserMessage(tag, false, "Info | %s | %s", 2, module_str, outbuf);
 }
