@@ -33,8 +33,11 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                  USER ADJUSTABLE VALUES                              */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-
+#ifdef DEBUG
+#define ENABLE_INIC_WATCHDOG    (false)
+#else
 #define ENABLE_INIC_WATCHDOG    (true)
+#endif
 #define ENABLE_AMS_LIB          (true)
 #define DEBUG_XRM
 #define BOARD_PMS_TX_SIZE       (72)
