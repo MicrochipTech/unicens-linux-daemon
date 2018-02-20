@@ -33,13 +33,17 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                  USER ADJUSTABLE VALUES                              */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-
+#ifdef DEBUG
+#define ENABLE_INIC_WATCHDOG    (false)
+#else
 #define ENABLE_INIC_WATCHDOG    (true)
+#endif
 #define ENABLE_AMS_LIB          (true)
 #define DEBUG_XRM
 #define BOARD_PMS_TX_SIZE       (72)
 #define CMD_QUEUE_LEN           (40)
 #define I2C_WRITE_MAX_LEN       (32)
+#define AMS_MSG_MAX_LEN         (45)
 
 #include <string.h>
 #include <stdarg.h>
@@ -76,7 +80,8 @@ typedef enum
     UnicensCmd_NsRun,
     UnicensCmd_GpioCreatePort,
     UnicensCmd_GpioWritePort,
-    UnicensCmd_I2CWrite
+    UnicensCmd_I2CWrite,
+    UnicensCmd_SendAmsMessage
 } UnicensCmd_t;
 
 /**
@@ -138,7 +143,18 @@ typedef struct
 } UnicensCmdI2CWrite_t;
 
 /**
- * \brief Internal struct for Unicens Integration
+ * \brief Internal struct for UNICENS Integration
+ */
+typedef struct
+{
+    uint16_t msgId;
+    uint16_t targetAddress;
+    uint8_t pPayload[AMS_MSG_MAX_LEN];
+    uint32_t payloadLen;
+} UnicensCmdSendAmsMessage_t;
+
+/**
+ * \brief Internal struct for UNICENS Integration
  */
 typedef struct
 {
@@ -151,6 +167,7 @@ typedef struct
         UnicensCmdGpioCreatePort_t GpioCreatePort;
         UnicensCmdGpioWritePort_t GpioWritePort;
         UnicensCmdI2CWrite_t I2CWrite;
+        UnicensCmdSendAmsMessage_t SendAms;
     } val;
 } UnicensCmdEntry_t;
 

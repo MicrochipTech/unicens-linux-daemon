@@ -227,7 +227,7 @@ extern void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout);
 extern void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwidth, uint8_t amountOfNodes);
 
 /**
- * \brief Callback when ever an UNICENS forms a human readable message.
+ * \brief Callback when ever UNICENS forms a human readable message.
  *        This can be error events or when enabled also debug messages.
  * \note This function must be implemented by the integrator
  * \param pTag - Pointer given by the integrator by UCSI_Init
@@ -257,9 +257,18 @@ extern void UCSI_CB_OnTxRequest(void *pTag,
     const uint8_t *pPayload, uint32_t payloadLen);
 
 /**
+ * \brief Callback when UNICENS instance has been started.
+ * \note This event can be used to enable control message reception
+ * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ */
+extern void UCSI_CB_OnStart(void *pTag);
+
+/**
  * \brief Callback when UNICENS instance has been stopped.
  * \note This event can be used to free memory holding the resources
  *       passed with UCSI_NewConfig
+ * \note This event can be used to stop control message reception
  * \note This function must be implemented by the integrator
  * \param pTag - Pointer given by the integrator by UCSI_Init
  */

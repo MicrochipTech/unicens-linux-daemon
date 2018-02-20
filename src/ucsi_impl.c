@@ -73,6 +73,7 @@ static void OnUcsGpioTriggerEventStatus(uint16_t node_address, uint16_t gpio_por
     uint16_t rising_edges, uint16_t falling_edges, uint16_t levels, void * user_ptr);
 static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     uint8_t i2c_slave_address, uint8_t data_len, Ucs_I2c_Result_t result, void *user_ptr);
+static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
 
 /************************************************************************/
 /* Public Function Implementations                                      */
@@ -228,6 +229,37 @@ void UCSI_Service(UCSI_Data_t *my)
             else
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Gpio_CreatePort failed", 0);
             break;
+        case UnicensCmd_SendAmsMessage:
+        {
+            Ucs_AmsTx_Msg_t *msg;
+            msg = Ucs_AmsTx_AllocMsg(my->unicens, e->val.SendAms.payloadLen);
+            if (NULL == msg)
+            {
+                /* Try again later */
+                popEntry = false;
+                break;
+            }
+            if (0 != e->val.SendAms.payloadLen)
+            {
+                assert(NULL != msg->data_ptr);
+                memcpy(msg->data_ptr, e->val.SendAms.pPayload, e->val.SendAms.payloadLen);
+            }
+            msg->custom_info_ptr = NULL;
+            msg->data_size = e->val.SendAms.payloadLen;
+            msg->destination_address = e->val.SendAms.targetAddress;
+            msg->llrbc = 10;
+            msg->msg_id = e->val.SendAms.msgId;
+            if (UCS_RET_SUCCESS == Ucs_AmsTx_SendMsg(my->unicens, msg, OnUcsAmsWrite))
+            {
+                popEntry = false;
+            }
+            else
+            {
+                Ucs_AmsTx_FreeUnusedMsg(my->unicens, msg);
+                UCSI_CB_OnUserMessage(my->tag, true, "Ucs_AmsTx_SendMsg failed", 0);
+            }
+            break;
+        }
         default:
             assert(false);
             break;
@@ -248,26 +280,20 @@ void UCSI_Timeout(UCSI_Data_t *my)
 
 bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen)
 {
-    Ucs_AmsTx_Msg_t *msg;
-    Ucs_Return_t result;
+    UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
-    if (NULL == my->unicens) return false;
-    msg = Ucs_AmsTx_AllocMsg(my->unicens, payloadLen);
-    if (NULL == msg) return false;
-    if (0 != payloadLen)
+    if (NULL == my) return false;
+    if (payloadLen > AMS_MSG_MAX_LEN)
     {
-        assert(NULL != msg->data_ptr);
-        memcpy(msg->data_ptr, pPayload, payloadLen);
+        UCSI_CB_OnUserMessage(my->tag, true, "SendAms was called with payload length=%d, allowed is=%d", 2, payloadLen, AMS_MSG_MAX_LEN);
+        return false;
     }
-    msg->custom_info_ptr = NULL;
-    msg->data_size = payloadLen;
-    msg->destination_address = targetAddress;
-    msg->llrbc = 10;
-    msg->msg_id = msgId;
-    result = Ucs_AmsTx_SendMsg(my->unicens, msg, NULL);
-    if (UCS_RET_SUCCESS != result)
-        Ucs_AmsTx_FreeUnusedMsg(my->unicens, msg);
-    return UCS_RET_SUCCESS == result;
+    entry.cmd = UnicensCmd_SendAmsMessage;
+    entry.val.SendAms.msgId = msgId;
+    entry.val.SendAms.targetAddress = targetAddress;
+    entry.val.SendAms.payloadLen = payloadLen;
+    memcpy(entry.val.SendAms.pPayload, pPayload, payloadLen);
+    return EnqueueCommand(my, &entry);
 }
 
 bool UCSI_GetAmsMessage(UCSI_Data_t *my, uint16_t *pMsgId, uint16_t *pSourceAddress, uint8_t **pPayload, uint32_t *pPayloadLen)
@@ -316,7 +342,11 @@ bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
     if (NULL == my || NULL == pData || 0 == dataLen) return false;
-    if (dataLen > I2C_WRITE_MAX_LEN) return false;
+    if (dataLen > I2C_WRITE_MAX_LEN)
+    {
+        UCSI_CB_OnUserMessage(my->tag, true, "I2CWrite was called with payload length=%d, allowed is=%d", 2, dataLen, I2C_WRITE_MAX_LEN);
+        return false;
+    }
     entry.cmd = UnicensCmd_I2CWrite;
     entry.val.I2CWrite.destination = targetAddress;
     entry.val.I2CWrite.isBurst = isBurst;
@@ -345,6 +375,7 @@ bool UCSI_SetGpioState(UCSI_Data_t *my, uint16_t targetAddress, uint8_t gpioPinI
 /************************************************************************/
 /* Private Functions                                                    */
 /************************************************************************/
+
 static bool EnqueueCommand(UCSI_Data_t *my, UnicensCmdEntry_t *cmd)
 {
     UnicensCmdEntry_t *e;
@@ -502,6 +533,7 @@ static void OnLldCtrlStart( Ucs_Lld_Api_t* api_ptr, void *inst_ptr, void *lld_us
     assert(MAGIC == my->magic);
     my->uniLld = api_ptr;
     my->uniLldHPtr = inst_ptr;
+    UCSI_CB_OnStart(my->tag);
 }
 
 static void OnLldCtrlStop( void *lld_user_ptr )
@@ -510,6 +542,7 @@ static void OnLldCtrlStop( void *lld_user_ptr )
     assert(MAGIC == my->magic);
     my->uniLld = NULL;
     my->uniLldHPtr = NULL;
+    UCSI_CB_OnStop(my->tag);
 }
 
 static void OnLldCtrlRxMsgAvailable( void *lld_user_ptr )
@@ -759,11 +792,6 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
     {
         UnicensCmdEntry_t e;
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Available", 1, node_address);
-        /* Enable usage of remote GPIO ports */
-        e.cmd = UnicensCmd_GpioCreatePort;
-        e.val.GpioCreatePort.destination = node_address;
-        e.val.GpioCreatePort.debounceTime = 20;
-        EnqueueCommand(my, &e);
         /* Execute scripts, if there are any */
         if (node_ptr && node_ptr->script_list_ptr && node_ptr->script_list_size)
         {
@@ -830,6 +858,15 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
         UCSI_CB_OnUserMessage(my->tag, true, "Remote I2C Write to node=0x%X failed", 1, node_address);
 }
 
+static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr)
+{
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(MAGIC == my->magic);
+    OnCommandExecuted(my, UnicensCmd_SendAmsMessage);
+    if (UCS_AMSTX_RES_SUCCESS != result)
+        UCSI_CB_OnUserMessage(my->tag, true, "SendAms failed with result=0x%x, info=0x%X", 2, result, info);
+}
+
 /************************************************************************/
 /* Debug Message output from UNICENS stack:                             */
 /************************************************************************/
@@ -848,7 +885,7 @@ void App_TraceError(void *ucs_user_ptr, const char module_str[], const char entr
         tag = my->tag;
     }
     va_start(argptr, vargs_cnt);
-    vsprintf(outbuf, entry_str, argptr);
+    vsnprintf(outbuf, sizeof(outbuf), entry_str, argptr);
     va_end(argptr);
     UCSI_CB_OnUserMessage(tag, true, "Error | %s | %s", 2, module_str, outbuf);
 }
@@ -865,7 +902,7 @@ void App_TraceInfo(void *ucs_user_ptr, const char module_str[], const char entry
         tag = my->tag;
     }
     va_start(argptr, vargs_cnt);
-    vsprintf(outbuf, entry_str, argptr);
+    vsnprintf(outbuf, sizeof(outbuf), entry_str, argptr);
     va_end(argptr);
     UCSI_CB_OnUserMessage(tag, false, "Info | %s | %s", 2, module_str, outbuf);
 }

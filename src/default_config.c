@@ -689,23 +689,41 @@ Ucs_Ns_ConfigMsg_t Response3ForNode240 = {
     0x04,
     PayloadResponse3ForNode240 };
 uint8_t PayloadRequest4ForNode240[] = {
-    0x1D, 0x00, 0x03, 0x35, 0x04, 0x35, 0x05, 0x35, 0x06, 0x35, 0x07, 0x41, 0x08, 0x40 };
+    0x00, 0x00, 0x64 };
 Ucs_Ns_ConfigMsg_t Request4ForNode240 = {
+    0x00,
+    0x01,
+    0x0701,
+    0x02,
+    0x03,
+    PayloadRequest4ForNode240 };
+uint8_t PayloadResponse4ForNode240[] = {
+    0x1D, 0x00 };
+Ucs_Ns_ConfigMsg_t Response4ForNode240 = {
+    0x00,
+    0x01,
+    0x0701,
+    0x0C,
+    0x02,
+    PayloadResponse4ForNode240 };
+uint8_t PayloadRequest5ForNode240[] = {
+    0x1D, 0x00, 0x03, 0x35, 0x04, 0x35, 0x05, 0x35, 0x06, 0x35, 0x07, 0x41, 0x08, 0x40 };
+Ucs_Ns_ConfigMsg_t Request5ForNode240 = {
     0x00,
     0x01,
     0x0703,
     0x02,
     0x0E,
-    PayloadRequest4ForNode240 };
-uint8_t PayloadResponse4ForNode240[] = {
+    PayloadRequest5ForNode240 };
+uint8_t PayloadResponse5ForNode240[] = {
     0x1D, 0x00, 0x03, 0x35, 0x04, 0x35, 0x05, 0x35, 0x06, 0x35, 0x07, 0x41, 0x08, 0x40 };
-Ucs_Ns_ConfigMsg_t Response4ForNode240 = {
+Ucs_Ns_ConfigMsg_t Response5ForNode240 = {
     0x00,
     0x01,
     0x0703,
     0x0C,
     0x0E,
-    PayloadResponse4ForNode240 };
+    PayloadResponse5ForNode240 };
 Ucs_Ns_Script_t ScriptsForNode240[] = {
     {
         0,
@@ -723,6 +741,10 @@ Ucs_Ns_Script_t ScriptsForNode240[] = {
         0,
         &Request4ForNode240,
         &Response4ForNode240
+    }, {
+        0,
+        &Request5ForNode240,
+        &Response5ForNode240
     } };
 Ucs_Ns_Script_t ScriptsForNode241[] = {
     {
@@ -741,6 +763,10 @@ Ucs_Ns_Script_t ScriptsForNode241[] = {
         0,
         &Request4ForNode240,
         &Response4ForNode240
+    }, {
+        0,
+        &Request5ForNode240,
+        &Response5ForNode240
     } };
 Ucs_Ns_Script_t ScriptsForNode242[] = {
     {
@@ -759,6 +785,10 @@ Ucs_Ns_Script_t ScriptsForNode242[] = {
         0,
         &Request4ForNode240,
         &Response4ForNode240
+    }, {
+        0,
+        &Request5ForNode240,
+        &Response5ForNode240
     } };
 Ucs_Signature_t SignatureForNode200 = { 0x200 };
 Ucs_Signature_t SignatureForNode270 = { 0x270 };
@@ -787,15 +817,15 @@ Ucs_Rm_Node_t AllNodes[] = {
     }, {
         &SignatureForNode240,
         ScriptsForNode240,
-        4
+        5
     }, {
         &SignatureForNode241,
         ScriptsForNode241,
-        4
+        5
     }, {
         &SignatureForNode242,
         ScriptsForNode242,
-        4
+        5
     } };
 Ucs_Rm_EndPoint_t SourceEndpointForRoute1 = {
     UCS_RM_EP_SOURCE,
