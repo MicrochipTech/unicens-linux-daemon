@@ -198,7 +198,9 @@ static const char* FUNCTION_ID =            "FunctionId";
 static const char* OP_TYPE_REQUEST =        "OpTypeRequest";
 static const char* OP_TYPE_RESPONSE =       "OpTypeResponse";
 static const char* PAYLOAD_REQ_HEX =        "PayloadRequest";
+#ifndef SCRIPT_RESPONSE_USE_WILDCAST
 static const char* PAYLOAD_RES_HEX =        "PayloadResponse";
+#endif
 static const char* PAUSE_MS =               "WaitTime";
 static const char* DEBOUNCE_TIME =          "DebounceTime";
 static const char* PIN_CONFIG =             "PinConfiguration";
@@ -226,6 +228,9 @@ static const char* I2C_TIMEOUT =            "Timeout";
 #define SCRIPT_I2C_PORT_WRITE               "I2CPortWrite"
 #define SCRIPT_I2C_PORT_READ                "I2CPortRead"
 static const char* ALL_SCRIPTS[] = { SCRIPT_MSG_SEND, SCRIPT_PAUSE,
+    SCRIPT_GPIO_PORT_CREATE, SCRIPT_GPIO_PORT_PIN_MODE, SCRIPT_GPIO_PIN_STATE,
+    SCRIPT_I2C_PORT_CREATE, SCRIPT_I2C_PORT_WRITE, SCRIPT_I2C_PORT_READ, NULL };
+static const char* ALL_SCRIPTS_NO_PAUSE[] = { SCRIPT_MSG_SEND,
     SCRIPT_GPIO_PORT_CREATE, SCRIPT_GPIO_PORT_PIN_MODE, SCRIPT_GPIO_PIN_STATE,
     SCRIPT_I2C_PORT_CREATE, SCRIPT_I2C_PORT_WRITE, SCRIPT_I2C_PORT_READ, NULL };
 
@@ -286,7 +291,7 @@ static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *
 static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
 static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
 static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptPause(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
+static ParseResult_t ParseScriptPause(mxml_node_t *act, PrivateData_t *priv);
 static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv);
 static bool AddDriverInfo(struct UcsXmlDriverInfoList **drvList, DriverInformation_t *drvInfo, struct UcsXmlObjectList *objList);
 static ParseResult_t ParseDriver(mxml_node_t *soc, UcsXmlVal_t *ucs, PrivateData_t *priv);
@@ -1217,14 +1222,13 @@ static ParseResult_t ParseScript(mxml_node_t *scr, PrivateData_t *priv)
     bool found = false;
     mxml_node_t *act;
     uint32_t actCnt;
-    uint32_t i = 0;
     const char *txt;
     struct UcsXmlScript *scrlist;
     Ucs_Ns_Script_t *script;
     assert(NULL != scr && NULL != priv);
     priv->scriptData.pause = 0;
     scrlist = priv->pScrLst;
-    if (!GetCountArray(scr->child, ALL_SCRIPTS, &actCnt, true)) RETURN_ASSERT(Parse_XmlError, "Script without any action");
+    if (!GetCountArray(scr->child, ALL_SCRIPTS_NO_PAUSE, &actCnt, true)) RETURN_ASSERT(Parse_XmlError, "Script without any action");
     if (NULL == (script = MCalloc(&priv->objList, actCnt, sizeof(Ucs_Ns_Script_t))))
         RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     actCnt = 0;
@@ -1233,35 +1237,35 @@ static ParseResult_t ParseScript(mxml_node_t *scr, PrivateData_t *priv)
     while(act)
     {
         if (0 == strcmp(txt, SCRIPT_MSG_SEND)) {
-            ParseResult_t result = ParseScriptMsgSend(act, &script[i], priv);
+            ParseResult_t result = ParseScriptMsgSend(act, &script[actCnt], priv);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_GPIO_PORT_CREATE)) {
-            ParseResult_t result = ParseScriptGpioPortCreate(act, &script[i], priv);
+            ParseResult_t result = ParseScriptGpioPortCreate(act, &script[actCnt], priv);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_GPIO_PORT_PIN_MODE)) {
-            ParseResult_t result = ParseScriptGpioPinMode(act, &script[i], priv);
+            ParseResult_t result = ParseScriptGpioPinMode(act, &script[actCnt], priv);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_GPIO_PIN_STATE)) {
-            ParseResult_t result = ParseScriptGpioPinState(act, &script[i], priv);
+            ParseResult_t result = ParseScriptGpioPinState(act, &script[actCnt], priv);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_I2C_PORT_CREATE)) {
-            ParseResult_t result = ParseScriptPortCreate(act, &script[i], priv);
+            ParseResult_t result = ParseScriptPortCreate(act, &script[actCnt], priv);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_I2C_PORT_WRITE)) {
-            ParseResult_t result = ParseScriptPortWrite(act, &script[i], priv);
+            ParseResult_t result = ParseScriptPortWrite(act, &script[actCnt], priv);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_I2C_PORT_READ)) {
-            ParseResult_t result = ParseScriptPortRead(act, &script[i], priv);
+            ParseResult_t result = ParseScriptPortRead(act, &script[actCnt], priv);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_PAUSE)) {
-            ParseResult_t result = ParseScriptPause(act, &script[i], priv);
+            ParseResult_t result = ParseScriptPause(act, priv);
             if (Parse_Success != result) return result;
         } else {
             UcsXml_CB_OnError("Unknown script action:'%s'", 1, txt);
@@ -1269,7 +1273,6 @@ static ParseResult_t ParseScript(mxml_node_t *scr, PrivateData_t *priv)
         }
         if (!GetElementArray(act, ALL_SCRIPTS, &txt, &act))
             break;
-        ++i;
     }
     if (!GetString(scr, NAME, &txt, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
@@ -1326,10 +1329,16 @@ static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, 
 
     if (!GetUInt8(act, OP_TYPE_RESPONSE, &res->OpCode, false))
         res->OpCode = 0xFF;
-    GetPayload(act, PAYLOAD_RES_HEX, &res->DataPtr, &res->DataLen, 0, &priv->objList, false);
 
     if (!GetPayload(act, PAYLOAD_REQ_HEX, &req->DataPtr, &req->DataLen, 0, &priv->objList, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+    
+#ifdef SCRIPT_RESPONSE_USE_WILDCAST
+    res->DataLen = 0xFF; /* Using Wildcard */
+#else
+    if (!GetPayload(act, PAYLOAD_RES_HEX, &res->DataPtr, &res->DataLen, 0, &priv->objList, true))
+        RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+#endif    
     return Parse_Success;
 }
 
@@ -1597,7 +1606,7 @@ static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr,
     return Parse_Success;
 }
 
-static ParseResult_t ParseScriptPause(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseScriptPause(mxml_node_t *act, PrivateData_t *priv)
 {
     assert(NULL != act && NULL != priv);
     if (!GetUInt16(act, PAUSE_MS, &priv->scriptData.pause, true))
@@ -1608,8 +1617,6 @@ static ParseResult_t ParseScriptPause(mxml_node_t *act, Ucs_Ns_Script_t *scr, Pr
 static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
 {
     uint16_t routeAmount = 0;
-    uint16_t srcCnt = 0;
-    uint16_t snkCnt = 0;
     struct UcsXmlRoute *sourceRoute;
     assert(NULL != ucs && NULL != priv);
     /*First: Count the amount of routes and allocate the correct amount*/
@@ -1617,15 +1624,21 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
     while (NULL != sourceRoute)
     {
         if (sourceRoute->isSource)
-            ++srcCnt;
-        else
-            ++snkCnt;
+        {
+            struct UcsXmlRoute *sinkRoute = priv->pRtLst;
+            while (NULL != sinkRoute)
+            {
+                if (sourceRoute != sinkRoute
+                    && !sinkRoute->isSource
+                    && (0 == strncmp(sourceRoute->routeName, sinkRoute->routeName, sizeof(sourceRoute->routeName))))
+                {
+                    routeAmount++;
+                }
+                sinkRoute = sinkRoute->next;
+            }
+        }
         sourceRoute = sourceRoute->next;
     }
-    if (srcCnt >= snkCnt)
-        routeAmount = srcCnt;
-    else
-        routeAmount = snkCnt;
     if (0 == routeAmount)
         return Parse_Success; /*Its okay to have no routes at all (e.g. MEP traffic only)*/
     ucs->pRoutes = MCalloc(&priv->objList, routeAmount, sizeof(Ucs_Rm_Route_t));
@@ -1647,9 +1660,7 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
                     Ucs_Rm_Route_t *route;
                     if(ucs->routesSize >= routeAmount)
                     {
-                        ucs->routesSize++;
-                        sinkRoute = sinkRoute->next;
-                        continue;
+                        RETURN_ASSERT(Parse_MemoryError, "Internal routing error");
                     }
                     route = &ucs->pRoutes[ucs->routesSize++];
                     route->source_endpoint_ptr = sourceRoute->ep;
@@ -1669,10 +1680,6 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
             }
         }
         sourceRoute = sourceRoute->next;
-    }
-    if (routeAmount != ucs->routesSize)
-    {
-        UcsXml_CB_OnError("Warning: At least one sink is not connected, Sources:%d Sinks:%d", 2, srcCnt, snkCnt);
     }
 
 #ifdef DEBUG
