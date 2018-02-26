@@ -229,6 +229,12 @@ int main(int argc, const char *argv[])
                     m.unicensDataAvailable = false;
                     Cdev_PopRx(&m.ctrlRx);
                 }
+                else
+                {
+                    ConsolePrintf(PRIO_ERROR, "RX buffer overflow\r\n");
+                    /* UNICENS is busy. Try to reactive it, by calling service routine */
+                    m.unicensTrigger = true;
+                }
             }
             else assert(false); /*Must not happen*/
         }
