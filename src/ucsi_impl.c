@@ -789,16 +789,14 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
         UCSI_CB_OnUserMessage(my->tag, true, "Node=%X: Ignored, because duplicated", 1, node_address);
         break;
     case UCS_MGR_REP_AVAILABLE:
-    {
-        UnicensCmdEntry_t e;
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Available", 1, node_address);
         /* Execute scripts, if there are any */
         if (node_ptr && node_ptr->script_list_ptr && node_ptr->script_list_size)
         {
+            UnicensCmdEntry_t e;
             e.cmd = UnicensCmd_NsRun;
             e.val.NsRun.node_ptr = node_ptr;
             EnqueueCommand(my, &e);
-        }
         break;
     }
     case UCS_MGR_REP_NOT_AVAILABLE:
