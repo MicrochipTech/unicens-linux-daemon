@@ -797,8 +797,8 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
             e.cmd = UnicensCmd_NsRun;
             e.val.NsRun.node_ptr = node_ptr;
             EnqueueCommand(my, &e);
+        }
         break;
-    }
     case UCS_MGR_REP_NOT_AVAILABLE:
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Not available", 1, node_address);
         break;
