@@ -150,6 +150,10 @@ void PrintUcsStructures(
         m.isSourceJob = false;
         PrintJobs(route->sink_endpoint_ptr->jobs_list_ptr);
     }
+    if (0 == routesSize)
+    {
+        ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Route_t *AllRoutes = NULL;\n");
+    }
     /* Iterate all scripts */
     for (i = 0; i < nodSize; i++)
     {
@@ -160,6 +164,10 @@ void PrintUcsStructures(
             CHECK_ASSERT(0 != node->signature_ptr->node_address);
             PrintScripts(node->script_list_ptr, node->script_list_size, node->signature_ptr->node_address);
         }
+    }
+    if (0 == nodSize)
+    {
+        ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Node_t *AllNodes = NULL;\n");
     }
     PrintNodes(pNod, nodSize);
     PrintRoutes(pRoutes, routesSize);
