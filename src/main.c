@@ -53,6 +53,12 @@
 /* Debug feature */
 /*#define LLD_TRACE*/
 
+#ifdef NO_RAW_CLOCK
+#define CLOCK_SRC CLOCK_MONOTONIC
+#else
+#define CLOCK_SRC CLOCK_MONOTONIC_RAW
+#endif
+
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                      DEFINES AND LOCAL VARIABLES                     */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
@@ -431,7 +437,7 @@ static bool TimerInitialize(void)
     t_sev.sigev_notify = SIGEV_THREAD;
     t_sev.sigev_notify_function = &UcsTimerOnTimeout;
     t_sev.sigev_value.sival_ptr = NULL;
-    if (0 != timer_create(CLOCK_MONOTONIC, &t_sev, &m.ucsTimer))
+    if (0 != timer_create(CLOCK_SRC, &t_sev, &m.ucsTimer))
         return false;
     return true;
 }
@@ -483,7 +489,7 @@ static bool InitializeCdevs(void)
 static uint32_t GetTicks( void )
 {
     struct timespec currentTime;
-    if (clock_gettime(CLOCK_MONOTONIC_RAW, &currentTime))
+    if (clock_gettime(CLOCK_SRC, &currentTime))
     {
         assert(false);
         return 0;
