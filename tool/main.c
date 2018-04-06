@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
 /* UNICENS XML to C-Struct converter tool                                                         */
-/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
+/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -55,6 +55,7 @@
 typedef enum
 {
     JOB_PRINT_UCS_STRUCTURE,
+    JOB_PRINT_UCS_HEADER,
     JOB_PRINT_SINGLE_DRIVER,
     JOB_PRINT_ALL_DRIVERS
 } Job_t;
@@ -71,6 +72,7 @@ static char *ReadFileToString(const char *fileName);
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 static const char* globalFileName = NULL;
+static char *variablePrefix = NULL;
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                         PUBLIC FUNCTIONS                             */
@@ -105,6 +107,20 @@ int main(int argc, char *argv[])
         {
             job = JOB_PRINT_UCS_STRUCTURE;
         }
+        else if (0 == strcmp("-header", argv[i]))
+        {
+            job = JOB_PRINT_UCS_HEADER;
+        }
+        else if (0 == strcmp("-prefix", argv[i]))
+        {
+            if (argc <= (i+1))
+            {
+                ConsolePrintfError(fileName ? fileName : "NoFile", 0 ,0, "Error", "-prefix parameter needs additional name to be concated at the begin of each variable\r\n");
+                return -1;
+            }
+            variablePrefix = argv[i + 1];
+            ++i;
+        }
         else if (0 == strcmp("-drv", argv[i]))
         {
             if (argc <= (i+1))
@@ -136,6 +152,12 @@ int main(int argc, char *argv[])
             return -1;
         }
     }
+    if (JOB_PRINT_UCS_HEADER == job)
+    {
+        /* Special handling for header file. It does not need a XML file as input */
+        PrintHeaderFile(variablePrefix);
+        return 0;
+    }
     if (!fileName)
     {
         ConsolePrintfError("NoFile", 0 ,0, "Error", "Can not start, please provide path to XML\r\n");
@@ -158,7 +180,7 @@ int main(int argc, char *argv[])
     switch(job)
     {
     case JOB_PRINT_UCS_STRUCTURE:
-        PrintUcsStructures(cfg->packetBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize);
+        PrintUcsStructures(cfg->packetBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize, variablePrefix);
         break;
     case JOB_PRINT_SINGLE_DRIVER:
         found = false;
@@ -211,6 +233,8 @@ static void PrintHelp(void)
     ConsolePrintfStart(PRIO_HIGH, "Usage: xml2struct [OPTION]... [FILE]\r\n");
     ConsolePrintfContinue("Translate a UNICENS XML file into structures for the UNICENS library or structures for the MOST Linux Driver.\r\n\r\n");
     ConsolePrintfContinue("  -ucs                     Print UNICENS C structures\r\n");
+    ConsolePrintfContinue("  -header                  Print UNICENS H file\r\n");
+    ConsolePrintfContinue("  -prefix [Name]           Adds the given name before any variable or structure (-ucs and -header mode only)\r\n");
     ConsolePrintfContinue("  -drv [Address]           Print MOST Linux Driver structure for the given node address (value will be interpreted as hex)\r\n");
     ConsolePrintfContinue("  -all                     Print all possible MOST Linux Driver structures for all nodes.\r\n");
     ConsolePrintfContinue("                           There is a file seperator inserted after each configuration\r\n");

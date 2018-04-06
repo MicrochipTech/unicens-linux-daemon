@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
 /* UNICENS Stucture Printing module                                                               */
-/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
+/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -70,6 +70,7 @@ struct LocalVar
     struct NameLookupTable allNames;
     uint16_t currentRoute;
     bool isSourceJob;
+    const char *prefix;
 };
 
 static void PrintHeader(void);
@@ -80,7 +81,7 @@ static void StoreNameInTable(Ucs_Xrm_ResObject_t *element, char *name);
 static char *AllocateString(const char format[], uint16_t vargsCnt, ...);
 static char *GetVariableName(Ucs_Xrm_ResObject_t *element, const char *shortName);
 static void PrintDcPort(Ucs_Xrm_DefaultCreatedPort_t *port);
-static void PrintMostSocket(Ucs_Xrm_MostSocket_t *socket);
+static void PrintNetworkSocket(Ucs_Xrm_MostSocket_t *socket);
 static const char*GetMlbClkString(Ucs_Mlb_ClockConfig_t clk);
 static void PrintMlbPort(Ucs_Xrm_MlbPort_t *port);
 static void PrintMlbSocket(Ucs_Xrm_MlbSocket_t *socket);
@@ -121,16 +122,22 @@ void PrintUcsStructures(
     Ucs_Rm_Route_t *pRoutes,
     uint16_t routesSize,
     Ucs_Rm_Node_t *pNod,
-    uint16_t nodSize)
+    uint16_t nodSize,
+    const char *variablePrefix)
 {
     uint16_t i;
     memset(&m, 0, sizeof(struct LocalVar));
     CHECK_ASSERT(pNod);
     CHECK_ASSERT(nodSize);
+    if (NULL == variablePrefix)
+        m.prefix = "";
+    else
+        m.prefix = variablePrefix;
     PrintHeader();
-    ConsolePrintf(PRIO_HIGH, "uint16_t PacketBandwidth = %u;\n", packetBw);
-    ConsolePrintf(PRIO_HIGH, "uint16_t RoutesSize = %u;\n", routesSize);
-    ConsolePrintf(PRIO_HIGH, "uint16_t NodeSize = %u;\n\n", nodSize);
+    ConsolePrintf(PRIO_HIGH, "#include \"ucs_api.h\"\n\n");
+    ConsolePrintf(PRIO_HIGH, "uint16_t %sPacketBandwidth = %u;\n", m.prefix, packetBw);
+    ConsolePrintf(PRIO_HIGH, "uint16_t %sRoutesSize = %u;\n", m.prefix, routesSize);
+    ConsolePrintf(PRIO_HIGH, "uint16_t %sNodeSize = %u;\n\n", m.prefix, nodSize);
     /* Iterate all routes for printing the resources*/
     for (i = 0; i < routesSize; i++)
     {
@@ -152,7 +159,7 @@ void PrintUcsStructures(
     }
     if (0 == routesSize)
     {
-        ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Route_t *AllRoutes = NULL;\n");
+        ConsolePrintf(PRIO_HIGH, "Ucs_Rm_Route_t *%sAllRoutes = NULL;\n", m.prefix);
     }
     /* Iterate all scripts */
     for (i = 0; i < nodSize; i++)
@@ -167,17 +174,42 @@ void PrintUcsStructures(
     }
     if (0 == nodSize)
     {
-        ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Node_t *AllNodes = NULL;\n");
+        ConsolePrintf(PRIO_HIGH, "Ucs_Rm_Node_t *%sAllNodes = NULL;\n", m.prefix);
     }
     PrintNodes(pNod, nodSize);
     PrintRoutes(pRoutes, routesSize);
     Mfree(&m.objList);
 }
 
+void PrintHeaderFile(const char *variablePrefix)
+{
+    const char *prefix;
+    if (NULL == variablePrefix)
+        prefix = "";
+    else
+        prefix = variablePrefix;
+    PrintHeader();
+    ConsolePrintfStart(PRIO_HIGH,"#ifndef %s_DEFAULT_CONFIG_H_\n", prefix);
+    ConsolePrintfContinue("#define %s_DEFAULT_CONFIG_H_\n\n", prefix);
+    ConsolePrintfContinue("#ifdef __cplusplus\n");
+    ConsolePrintfContinue("extern \"C\" {\n");
+    ConsolePrintfContinue("#endif\n\n");
+    ConsolePrintfContinue("#include \"ucs_api.h\"\n\n");
+    ConsolePrintfContinue("extern uint16_t %sPacketBandwidth;\n", prefix);
+    ConsolePrintfContinue("extern uint16_t %sRoutesSize;\n", prefix);
+    ConsolePrintfContinue("extern uint16_t %sNodeSize;\n", prefix);
+    ConsolePrintfContinue("extern Ucs_Rm_Route_t %sAllRoutes[];\n", prefix);
+    ConsolePrintfContinue("extern Ucs_Rm_Node_t %sAllNodes[];\n\n", prefix);
+    ConsolePrintfContinue("#ifdef __cplusplus\n");
+    ConsolePrintfContinue("}\n");
+    ConsolePrintfContinue("#endif\n\n");
+    ConsolePrintfExit("#endif /* %s_DEFAULT_CONFIG_H_ */\n", prefix);
+}
+
 static void PrintHeader(void) {
     ConsolePrintfStart(PRIO_HIGH, "/*------------------------------------------------------------------------------------------------*/\n");
-    ConsolePrintfContinue("/* UNICENS Static Network Configuration                                                           */\n");
-    ConsolePrintfContinue("/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */\n");
+    ConsolePrintfContinue("/* UNICENS Generated Network Configuration                                                        */\n");
+    ConsolePrintfContinue("/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */\n");
     ConsolePrintfContinue("/*                                                                                                */\n");
     ConsolePrintfContinue("/* Redistribution and use in source and binary forms, with or without                             */\n");
     ConsolePrintfContinue("/* modification, are permitted provided that the following conditions are met:                    */\n");
@@ -203,8 +235,7 @@ static void PrintHeader(void) {
     ConsolePrintfContinue("/* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,                  */\n");
     ConsolePrintfContinue("/* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE                  */\n");
     ConsolePrintfContinue("/* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                           */\n");
-    ConsolePrintfContinue("/*------------------------------------------------------------------------------------------------*/\n");
-    ConsolePrintfExit("#include \"ucs_api.h\"\n\n");
+    ConsolePrintfExit("/*------------------------------------------------------------------------------------------------*/\n");
 }
 
 void *Mcalloc(struct ObjectList *list, uint32_t nElem, uint32_t elemSize)
@@ -297,7 +328,8 @@ static char *GetVariableName(Ucs_Xrm_ResObject_t *element, const char *shortName
     if (name)
         return name;
     if (!shortName) return NULL;
-    name = AllocateString("%sOfRoute%d_%s", 3,
+    name = AllocateString("%s%sOfRoute%d_%s", 4, 
+        m.prefix,
         m.isSourceJob ? "Src" : "Snk",
         m.currentRoute,
         shortName);
@@ -317,11 +349,11 @@ static void PrintDcPort(Ucs_Xrm_DefaultCreatedPort_t *port)
     ConsolePrintfExit(" };\n");
 }
 
-static void PrintMostSocket(Ucs_Xrm_MostSocket_t *socket)
+static void PrintNetworkSocket(Ucs_Xrm_MostSocket_t *socket)
 {
     ConsolePrintfStart(PRIO_HIGH, "%s %s = { \n"TAB C99(".resource_type = ")"%s,\n"TAB, 
             GetTypeString(socket), 
-            GetVariableName(socket, "MostSocket"),
+            GetVariableName(socket, "NetworkSocket"),
             GetResourceTypeString(&socket->resource_type));
     ConsolePrintfContinue(C99(".most_port_handle = ")"0x%04X,\n"TAB, socket->most_port_handle);
     ConsolePrintfContinue(C99(".direction = ")"%s,\n"TAB, GetDirectionString(socket->direction));
@@ -716,7 +748,7 @@ static void PrintUcsElement(Ucs_Xrm_ResObject_t *element)
         PrintDcPort((Ucs_Xrm_DefaultCreatedPort_t *)element);
         break;
     case UCS_XRM_RC_TYPE_MOST_SOCKET:
-        PrintMostSocket((Ucs_Xrm_MostSocket_t *)element);
+        PrintNetworkSocket((Ucs_Xrm_MostSocket_t *)element);
         break;
     case UCS_XRM_RC_TYPE_MLB_PORT:
         PrintMlbPort((Ucs_Xrm_MlbPort_t *)element);
@@ -781,7 +813,8 @@ static void PrintScriptMessage(Ucs_Ns_ConfigMsg_t *msg, uint16_t nodeAddress, bo
     char *varName;
     bool gotPayload = (0xFF != msg->DataLen && NULL != msg->DataPtr);
     if (GetNameFromTable(msg)) return;
-    varName = AllocateString("%s%dForNode%x", 2, 
+    varName = AllocateString("%s%s%dForNode%x", 3, 
+        m.prefix,
         isRequest ? "Request" : "Response", 
         scriptNr, nodeAddress);
     StoreNameInTable(msg, varName);
@@ -812,7 +845,9 @@ static void PrintScripts(Ucs_Ns_Script_t *scripts, uint8_t len, uint16_t nodeAdd
 {
     uint8_t i;
     Ucs_Ns_Script_t *script = NULL;
+    char *varName;
     if (NULL == scripts || 0 == len) return;
+    if (GetNameFromTable(scripts)) return;
     for (i = 0; i < len; i++ )
     {
         script = &scripts[i];
@@ -821,7 +856,9 @@ static void PrintScripts(Ucs_Ns_Script_t *scripts, uint8_t len, uint16_t nodeAdd
         if (script->exp_result)
             PrintScriptMessage(script->exp_result, nodeAddress, false, (i + 1));
     }
-    ConsolePrintfStart(PRIO_HIGH, "Ucs_Ns_Script_t ScriptsForNode%X[] = {\n"TAB"{\n"TAB, nodeAddress);
+    varName = AllocateString("%sScriptsForNode%X", 2, m.prefix, nodeAddress);
+    StoreNameInTable(scripts, varName);
+    ConsolePrintfStart(PRIO_HIGH, "Ucs_Ns_Script_t %s[] = {\n"TAB"{\n"TAB, varName);
     for (i = 0; i < len; i++ )
     {
         script = &scripts[i];
@@ -840,8 +877,8 @@ static void PrintScripts(Ucs_Ns_Script_t *scripts, uint8_t len, uint16_t nodeAdd
 static void PrintSignature(Ucs_Signature_t *signature)
 {
     CHECK_ASSERT(signature);
-    ConsolePrintf(PRIO_HIGH, "Ucs_Signature_t SignatureForNode%X = { "C99(".node_address = ")"0x%X };\n",
-        signature->node_address, signature->node_address);
+    ConsolePrintf(PRIO_HIGH, "Ucs_Signature_t %sSignatureForNode%X = { "C99(".node_address = ")"0x%X };\n",
+        m.prefix, signature->node_address, signature->node_address);
 }
 
 static void PrintNodes(Ucs_Rm_Node_t *nodes, uint8_t len)
@@ -856,20 +893,25 @@ static void PrintNodes(Ucs_Rm_Node_t *nodes, uint8_t len)
         PrintSignature(node->signature_ptr);
     }
     /* Iterate all nodes for printing node informations*/
-    ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Node_t AllNodes[] = {\n"TAB"{\n"TAB);
+    ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Node_t %sAllNodes[] = {\n"TAB"{\n"TAB, m.prefix);
     for (i = 0; i < len; i++)
     {
         Ucs_Rm_Node_t *node = &nodes[i];
         uint16_t addr = node->signature_ptr->node_address;
-        char *varName = AllocateString("AllNodes[%d]", 1, i);
+        char *varName = AllocateString("%sAllNodes[%d]", 2, m.prefix, i);
         StoreNameInTable(node, varName);
         if(i) ConsolePrintfContinue(", {\n"TAB);
-        ConsolePrintfContinue(TAB C99(".signature_ptr = ")"&SignatureForNode%X,\n"TAB, addr);
+        ConsolePrintfContinue(TAB C99(".signature_ptr = ")"&%sSignatureForNode%X,\n"TAB, m.prefix, addr);
         if (node->script_list_ptr && node->script_list_size)
-            ConsolePrintfContinue(TAB C99(".script_list_ptr = ")"ScriptsForNode%X,\n"TAB, addr);
+        {
+            ConsolePrintfContinue(TAB C99(".script_list_ptr = ")"%s,\n"TAB, GetNameFromTable(node->script_list_ptr));
+            ConsolePrintfContinue(TAB C99(".script_list_size = ")"%u\n"TAB, node->script_list_size);
+        }
         else
+        {
             ConsolePrintfContinue(TAB C99(".script_list_ptr = ")"NULL,\n"TAB);
-        ConsolePrintfContinue(TAB C99(".script_list_size = ")"%u\n"TAB, node->script_list_size);
+            ConsolePrintfContinue(TAB C99(".script_list_size = ")"0\n"TAB);
+        }
         ConsolePrintfContinue("}");
     }
     ConsolePrintfExit(" };\n");
@@ -892,14 +934,14 @@ static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routeP
     char *varName;
     CHECK_ASSERT(ep);
     if (GetNameFromTable(ep)) return;
-    varName = AllocateString("%sEndpointForRoute%u", 
-        2, (isSourceEp ? "Source" : "Sink"), (routePos + 1));
+    varName = AllocateString("%s%sEndpointForRoute%u", 
+        3, m.prefix, (isSourceEp ? "Source" : "Sink"), (routePos + 1));
     StoreNameInTable(ep, varName);
     ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_EndPoint_t %s = {\n"TAB, varName);
     ConsolePrintfContinue(C99(".endpoint_type = ")"%s,\n"TAB, GetEndpointTypeString(ep->endpoint_type));
     ConsolePrintfContinue(C99(".jobs_list_ptr = ")"%s,\n"TAB, GetNameFromTable(ep->jobs_list_ptr));
     ConsolePrintfContinue(C99(".node_obj_ptr = ")"&%s", GetNameFromTable(ep->node_obj_ptr));
-    ConsolePrintfContinue(" };\n");
+    ConsolePrintfExit(" };\n");
 }
 
 static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len)
@@ -915,7 +957,7 @@ static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len)
         PrintEndpoint(route->sink_endpoint_ptr, false, i);
     }
     /* Iterate all routes for each route */
-    ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Route_t AllRoutes[] = { {\n"TAB);
+    ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Route_t %sAllRoutes[] = { {\n"TAB, m.prefix);
     for (i = 0; i < len; i++)
     {
         Ucs_Rm_Route_t *route = &routes[i];
