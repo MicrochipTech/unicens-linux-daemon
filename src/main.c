@@ -408,7 +408,7 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPin
 static void PrintHelp(void)
 {
     ConsolePrintfStart(PRIO_HIGH, "Usage: unicensd [OPTION]... [FILE]\r\n");
-    ConsolePrintfContinue("Executes the UNICENS daemon to start and configure MOST network and devices,\r\n\r\n");
+    ConsolePrintfContinue("Executes the UNICENS daemon to start and configure INICnet devices.\r\n\r\n");
     ConsolePrintfContinue("  [File]                   Path to UNICENS XML configuration file, if not set, the compiled default config will be used\r\n");
     ConsolePrintfContinue("  -crx [RX char device]    Path to the receiver character device\r\n");
     ConsolePrintfContinue("  -ctx [TX char device]    Path to the sender character device\r\n");
