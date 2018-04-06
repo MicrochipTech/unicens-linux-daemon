@@ -437,7 +437,7 @@ static bool TimerInitialize(void)
     t_sev.sigev_notify = SIGEV_THREAD;
     t_sev.sigev_notify_function = &UcsTimerOnTimeout;
     t_sev.sigev_value.sival_ptr = NULL;
-    if (0 != timer_create(CLOCK_SRC, &t_sev, &m.ucsTimer))
+    if (0 != timer_create(CLOCK_MONOTONIC, &t_sev, &m.ucsTimer))
         return false;
     return true;
 }
