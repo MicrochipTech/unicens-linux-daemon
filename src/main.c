@@ -87,7 +87,6 @@ static LocalVar_t m;
 /*                     PRIVTATE FUNCTION PROTOTYPES                     */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
-static char *ReadFile(const char *fileName);
 static bool TimerInitialize(void);
 static void TimerSetTimeOut(uint16_t timeout, timer_t timer);
 static void UcsTimerOnTimeout(union sigval sv);
@@ -105,7 +104,6 @@ int main(int argc, const char *argv[])
 {
     bool fileNameSet = false;
     int32_t i;
-    char *xmlContent;
     UcsXmlVal_t *cfg = NULL;
     memset(&m, 0, sizeof(LocalVar_t));
     m.controlRxCdev = DEFAULT_CONTROL_CDEV_RX;
@@ -121,15 +119,7 @@ int main(int argc, const char *argv[])
             }
             fileNameSet = true;
 
-            xmlContent = ReadFile(argv[i]);
-            if (NULL == xmlContent)
-            {
-                ConsolePrintf(PRIO_ERROR, RED"File could not be opened: '%s', Reason:'%s'"RESETCOLOR"\r\n",
-                    argv[1], GetErrnoString());
-                return -1;
-            }
-            cfg = UcsXml_Parse(xmlContent);
-            free(xmlContent);
+            cfg = UcsXml_ParseFile(argv[i]);
             if (NULL == cfg)
             {
                 ConsolePrintf(PRIO_ERROR, RED"Could not parse UNICENS XML"RESETCOLOR"\r\n");
@@ -409,27 +399,6 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPin
 /*                  PRIVATE FUNCTION IMPLEMENTATIONS                    */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
-static char *ReadFile(const char *fileName)
-{
-    char *buffer;
-    int stringSize, readSize;
-    FILE *fh = fopen(fileName, "r");
-    if (!fh) return NULL;
-    fseek(fh, 0, SEEK_END);
-    stringSize = ftell(fh);
-    rewind(fh);
-    buffer = (char *)malloc(stringSize + 1);
-    readSize = fread(buffer, sizeof(char), stringSize, fh);
-    buffer[stringSize] = '\0'; /*In any case, terminate it.*/
-    if (stringSize != readSize)
-    {
-        free(buffer);
-        buffer = NULL;
-    }
-    fclose(fh);
-    return buffer;
-}
-
 static bool TimerInitialize(void)
 {
     struct sigevent t_sev;
@@ -437,7 +406,7 @@ static bool TimerInitialize(void)
     t_sev.sigev_notify = SIGEV_THREAD;
     t_sev.sigev_notify_function = &UcsTimerOnTimeout;
     t_sev.sigev_value.sival_ptr = NULL;
-    if (0 != timer_create(CLOCK_SRC, &t_sev, &m.ucsTimer))
+    if (0 != timer_create(CLOCK_MONOTONIC, &t_sev, &m.ucsTimer))
         return false;
     return true;
 }
