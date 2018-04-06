@@ -152,7 +152,7 @@ void PrintUcsStructures(
     }
     if (0 == routesSize)
     {
-        ConsolePrintf(PRIO_HIGH, "Ucs_Rm_Route_t *%sAllRoutes = NULL;\n", m.prefix);
+        ConsolePrintf(PRIO_HIGH, "Ucs_Rm_Route_t *AllRoutes = NULL;\n");
     }
     /* Iterate all scripts */
     for (i = 0; i < nodSize; i++)
@@ -167,7 +167,7 @@ void PrintUcsStructures(
     }
     if (0 == nodSize)
     {
-        ConsolePrintf(PRIO_HIGH, "Ucs_Rm_Node_t *%sAllNodes = NULL;\n", m.prefix);
+        ConsolePrintf(PRIO_HIGH, "Ucs_Rm_Node_t *AllNodes = NULL;\n");
     }
     PrintNodes(pNod, nodSize);
     PrintRoutes(pRoutes, routesSize);

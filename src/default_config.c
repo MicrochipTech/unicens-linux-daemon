@@ -50,7 +50,7 @@ Ucs_Xrm_Splitter_t SrcOfRoute1_Splitter = {
     &SrcOfRoute1_UsbSocket,
     0x0D00,
     12 };
-Ucs_Xrm_MostSocket_t SrcOfRoute1_MostSocket = { 
+Ucs_Xrm_MostSocket_t SrcOfRoute1_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_OUTPUT,
@@ -59,17 +59,17 @@ Ucs_Xrm_MostSocket_t SrcOfRoute1_MostSocket = {
 Ucs_Xrm_SyncCon_t SrcOfRoute1_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
     &SrcOfRoute1_Splitter,
-    &SrcOfRoute1_MostSocket,
+    &SrcOfRoute1_NetworkSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     0 };
 Ucs_Xrm_ResObject_t *SrcOfRoute1_JobList[] = {
     &SrcOfRoute1_DcPort,
     &SrcOfRoute1_UsbSocket,
     &SrcOfRoute1_Splitter,
-    &SrcOfRoute1_MostSocket,
+    &SrcOfRoute1_NetworkSocket,
     &SrcOfRoute1_SyncCon,
     NULL };
-Ucs_Xrm_MostSocket_t SnkOfRoute1_MostSocket = { 
+Ucs_Xrm_MostSocket_t SnkOfRoute1_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_INPUT,
@@ -94,19 +94,19 @@ Ucs_Xrm_StrmSocket_t SnkOfRoute1_StrmSocket = {
     UCS_STREAM_PORT_PIN_ID_SRXA0 };
 Ucs_Xrm_SyncCon_t SnkOfRoute1_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute1_MostSocket,
+    &SnkOfRoute1_NetworkSocket,
     &SnkOfRoute1_StrmSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute1_JobList[] = {
-    &SnkOfRoute1_MostSocket,
+    &SnkOfRoute1_NetworkSocket,
     &SnkOfRoute1_StrmPort0,
     &SnkOfRoute1_StrmPort1,
     &SnkOfRoute1_StrmSocket,
     &SnkOfRoute1_SyncCon,
     NULL };
 /* Route 2 from source-node=0x200 to sink-node=0x240 */
-Ucs_Xrm_MostSocket_t SnkOfRoute2_MostSocket = { 
+Ucs_Xrm_MostSocket_t SnkOfRoute2_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_INPUT,
@@ -131,19 +131,19 @@ Ucs_Xrm_StrmSocket_t SnkOfRoute2_StrmSocket = {
     UCS_STREAM_PORT_PIN_ID_SRXA1 };
 Ucs_Xrm_SyncCon_t SnkOfRoute2_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute2_MostSocket,
+    &SnkOfRoute2_NetworkSocket,
     &SnkOfRoute2_StrmSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute2_JobList[] = {
-    &SnkOfRoute2_MostSocket,
+    &SnkOfRoute2_NetworkSocket,
     &SnkOfRoute2_StrmPort0,
     &SnkOfRoute2_StrmPort1,
     &SnkOfRoute2_StrmSocket,
     &SnkOfRoute2_SyncCon,
     NULL };
 /* Route 3 from source-node=0x200 to sink-node=0x271 */
-Ucs_Xrm_MostSocket_t SrcOfRoute3_MostSocket = { 
+Ucs_Xrm_MostSocket_t SrcOfRoute3_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_OUTPUT,
@@ -152,17 +152,17 @@ Ucs_Xrm_MostSocket_t SrcOfRoute3_MostSocket = {
 Ucs_Xrm_SyncCon_t SrcOfRoute3_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
     &SrcOfRoute1_Splitter,
-    &SrcOfRoute3_MostSocket,
+    &SrcOfRoute3_NetworkSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     4 };
 Ucs_Xrm_ResObject_t *SrcOfRoute3_JobList[] = {
     &SrcOfRoute1_DcPort,
     &SrcOfRoute1_UsbSocket,
     &SrcOfRoute1_Splitter,
-    &SrcOfRoute3_MostSocket,
+    &SrcOfRoute3_NetworkSocket,
     &SrcOfRoute3_SyncCon,
     NULL };
-Ucs_Xrm_MostSocket_t SnkOfRoute3_MostSocket = { 
+Ucs_Xrm_MostSocket_t SnkOfRoute3_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_INPUT,
@@ -187,19 +187,19 @@ Ucs_Xrm_StrmSocket_t SnkOfRoute3_StrmSocket = {
     UCS_STREAM_PORT_PIN_ID_SRXA0 };
 Ucs_Xrm_SyncCon_t SnkOfRoute3_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute3_MostSocket,
+    &SnkOfRoute3_NetworkSocket,
     &SnkOfRoute3_StrmSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute3_JobList[] = {
-    &SnkOfRoute3_MostSocket,
+    &SnkOfRoute3_NetworkSocket,
     &SnkOfRoute3_StrmPort0,
     &SnkOfRoute3_StrmPort1,
     &SnkOfRoute3_StrmSocket,
     &SnkOfRoute3_SyncCon,
     NULL };
 /* Route 4 from source-node=0x200 to sink-node=0x241 */
-Ucs_Xrm_MostSocket_t SnkOfRoute4_MostSocket = { 
+Ucs_Xrm_MostSocket_t SnkOfRoute4_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_INPUT,
@@ -224,19 +224,19 @@ Ucs_Xrm_StrmSocket_t SnkOfRoute4_StrmSocket = {
     UCS_STREAM_PORT_PIN_ID_SRXA1 };
 Ucs_Xrm_SyncCon_t SnkOfRoute4_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute4_MostSocket,
+    &SnkOfRoute4_NetworkSocket,
     &SnkOfRoute4_StrmSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute4_JobList[] = {
-    &SnkOfRoute4_MostSocket,
+    &SnkOfRoute4_NetworkSocket,
     &SnkOfRoute4_StrmPort0,
     &SnkOfRoute4_StrmPort1,
     &SnkOfRoute4_StrmSocket,
     &SnkOfRoute4_SyncCon,
     NULL };
 /* Route 5 from source-node=0x200 to sink-node=0x272 */
-Ucs_Xrm_MostSocket_t SrcOfRoute5_MostSocket = { 
+Ucs_Xrm_MostSocket_t SrcOfRoute5_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_OUTPUT,
@@ -245,17 +245,17 @@ Ucs_Xrm_MostSocket_t SrcOfRoute5_MostSocket = {
 Ucs_Xrm_SyncCon_t SrcOfRoute5_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
     &SrcOfRoute1_Splitter,
-    &SrcOfRoute5_MostSocket,
+    &SrcOfRoute5_NetworkSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     8 };
 Ucs_Xrm_ResObject_t *SrcOfRoute5_JobList[] = {
     &SrcOfRoute1_DcPort,
     &SrcOfRoute1_UsbSocket,
     &SrcOfRoute1_Splitter,
-    &SrcOfRoute5_MostSocket,
+    &SrcOfRoute5_NetworkSocket,
     &SrcOfRoute5_SyncCon,
     NULL };
-Ucs_Xrm_MostSocket_t SnkOfRoute5_MostSocket = { 
+Ucs_Xrm_MostSocket_t SnkOfRoute5_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_INPUT,
@@ -280,19 +280,19 @@ Ucs_Xrm_StrmSocket_t SnkOfRoute5_StrmSocket = {
     UCS_STREAM_PORT_PIN_ID_SRXA0 };
 Ucs_Xrm_SyncCon_t SnkOfRoute5_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute5_MostSocket,
+    &SnkOfRoute5_NetworkSocket,
     &SnkOfRoute5_StrmSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute5_JobList[] = {
-    &SnkOfRoute5_MostSocket,
+    &SnkOfRoute5_NetworkSocket,
     &SnkOfRoute5_StrmPort0,
     &SnkOfRoute5_StrmPort1,
     &SnkOfRoute5_StrmSocket,
     &SnkOfRoute5_SyncCon,
     NULL };
 /* Route 6 from source-node=0x200 to sink-node=0x242 */
-Ucs_Xrm_MostSocket_t SnkOfRoute6_MostSocket = { 
+Ucs_Xrm_MostSocket_t SnkOfRoute6_NetworkSocket = { 
     UCS_XRM_RC_TYPE_MOST_SOCKET,
     0x0D00,
     UCS_SOCKET_DIR_INPUT,
@@ -317,12 +317,12 @@ Ucs_Xrm_StrmSocket_t SnkOfRoute6_StrmSocket = {
     UCS_STREAM_PORT_PIN_ID_SRXA1 };
 Ucs_Xrm_SyncCon_t SnkOfRoute6_SyncCon = { 
     UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute6_MostSocket,
+    &SnkOfRoute6_NetworkSocket,
     &SnkOfRoute6_StrmSocket,
     UCS_SYNC_MUTE_MODE_NO_MUTING,
     0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute6_JobList[] = {
-    &SnkOfRoute6_MostSocket,
+    &SnkOfRoute6_NetworkSocket,
     &SnkOfRoute6_StrmPort0,
     &SnkOfRoute6_StrmPort1,
     &SnkOfRoute6_StrmSocket,
