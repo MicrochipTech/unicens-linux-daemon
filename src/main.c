@@ -87,7 +87,7 @@ static LocalVar_t m;
 /*                     PRIVTATE FUNCTION PROTOTYPES                     */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
-static char *ReadFile(const char *fileName);
+static void PrintHelp(void);
 static bool TimerInitialize(void);
 static void TimerSetTimeOut(uint16_t timeout, timer_t timer);
 static void UcsTimerOnTimeout(union sigval sv);
@@ -105,7 +105,6 @@ int main(int argc, const char *argv[])
 {
     bool fileNameSet = false;
     int32_t i;
-    char *xmlContent;
     UcsXmlVal_t *cfg = NULL;
     memset(&m, 0, sizeof(LocalVar_t));
     m.controlRxCdev = DEFAULT_CONTROL_CDEV_RX;
@@ -121,20 +120,17 @@ int main(int argc, const char *argv[])
             }
             fileNameSet = true;
 
-            xmlContent = ReadFile(argv[i]);
-            if (NULL == xmlContent)
-            {
-                ConsolePrintf(PRIO_ERROR, RED"File could not be opened: '%s', Reason:'%s'"RESETCOLOR"\r\n",
-                    argv[1], GetErrnoString());
-                return -1;
-            }
-            cfg = UcsXml_Parse(xmlContent);
-            free(xmlContent);
+            cfg = UcsXml_ParseFile(argv[i]);
             if (NULL == cfg)
             {
                 ConsolePrintf(PRIO_ERROR, RED"Could not parse UNICENS XML"RESETCOLOR"\r\n");
                 return -1;
             }
+        }
+        else if (0 == strcmp("--help", argv[i]))
+        {
+            PrintHelp();
+            return 0;
         }
         else if (0 == strcmp("-crx", argv[i]))
         {
@@ -186,7 +182,7 @@ int main(int argc, const char *argv[])
     }
     else
     {
-        ConsolePrintf(PRIO_HIGH, YELLOW"No filename was provided, executing default configuration (default_config.c)"RESETCOLOR"\r\n");
+        ConsolePrintf(PRIO_HIGH, YELLOW "No filename was provided, executing default configuration (default_config.c).\r\nUse \"--help\" for details." RESETCOLOR "\r\n");
         if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize))
         {
             ConsolePrintf(PRIO_ERROR, RED"Could not enqueue new UNICENS config"RESETCOLOR"\r\n");
@@ -409,25 +405,18 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPin
 /*                  PRIVATE FUNCTION IMPLEMENTATIONS                    */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
-static char *ReadFile(const char *fileName)
+static void PrintHelp(void)
 {
-    char *buffer;
-    int stringSize, readSize;
-    FILE *fh = fopen(fileName, "r");
-    if (!fh) return NULL;
-    fseek(fh, 0, SEEK_END);
-    stringSize = ftell(fh);
-    rewind(fh);
-    buffer = (char *)malloc(stringSize + 1);
-    readSize = fread(buffer, sizeof(char), stringSize, fh);
-    buffer[stringSize] = '\0'; /*In any case, terminate it.*/
-    if (stringSize != readSize)
-    {
-        free(buffer);
-        buffer = NULL;
-    }
-    fclose(fh);
-    return buffer;
+    ConsolePrintfStart(PRIO_HIGH, "Usage: unicensd [OPTION]... [FILE]\r\n");
+    ConsolePrintfContinue("Executes the UNICENS daemon to start and configure MOST network and devices,\r\n\r\n");
+    ConsolePrintfContinue("  [File]                   Path to UNICENS XML configuration file, if not set, the compiled default config will be used\r\n");
+    ConsolePrintfContinue("  -crx [RX char device]    Path to the receiver character device\r\n");
+    ConsolePrintfContinue("  -ctx [TX char device]    Path to the sender character device\r\n");
+    ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
+    ConsolePrintfContinue("Examples:\r\n");
+    ConsolePrintfExit("  unicensd\r\n");
+    ConsolePrintfExit("  unicensd config.xml\r\n");
+    ConsolePrintfExit("  unicensd -ctx /dev/inic-control-tx -crx /dev/inic-control-rx\r\n");
 }
 
 static bool TimerInitialize(void)

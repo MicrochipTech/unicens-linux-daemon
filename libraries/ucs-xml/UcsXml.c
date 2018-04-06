@@ -34,7 +34,9 @@
 #include "UcsXml_Private.h"
 #include "UcsXml.h"
 
-/* #define SCRIPT_RESPONSE_USE_WILDCAST */
+#ifdef XML_FILE_SUPPORTED
+#include <stdio.h>
+#endif
 
 /************************************************************************/
 /* PRIVATE DECLARATIONS                                                 */
@@ -260,6 +262,9 @@ static const char* VALUE_0 =                "0";
 /* Private Function Prototypes                                          */
 /************************************************************************/
 
+#ifdef XML_FILE_SUPPORTED
+static char *ReadFile(const char *fileName);
+#endif
 static void FreeVal(UcsXmlVal_t *ucs);
 static bool GetElement(mxml_node_t *element, const char *name, bool goDeep, mxml_node_t **out, bool mandatory);
 static bool GetElementArray(mxml_node_t *element, const char *array[], const char **foundName, mxml_node_t **out);
@@ -331,6 +336,22 @@ ERROR:
     return NULL;
 }
 
+#ifdef XML_FILE_SUPPORTED
+UcsXmlVal_t *UcsXml_ParseFile(const char *fileName)
+{
+    UcsXmlVal_t *val;
+    char *content = ReadFile(fileName);
+    if (NULL == content)
+    {
+        UcsXml_CB_OnError("UcsXml_ParseFile:Could not read file:'%s', Reason:'%s'", 1, fileName);
+        return NULL;
+    }
+    val = UcsXml_Parse(content);
+    free(content);
+    return val;
+}
+#endif
+
 void UcsXml_FreeVal(UcsXmlVal_t *val)
 {
     FreeVal(val);
@@ -340,7 +361,30 @@ void UcsXml_FreeVal(UcsXmlVal_t *val)
 /* Private Function Implementations                                     */
 /************************************************************************/
 
-void FreeVal(UcsXmlVal_t *ucs)
+#ifdef XML_FILE_SUPPORTED
+static char *ReadFile(const char *fileName)
+{
+    char *buffer;
+    int stringSize, readSize;
+    FILE *fh = fopen(fileName, "r");
+    if (!fh) return NULL;
+    fseek(fh, 0, SEEK_END);
+    stringSize = ftell(fh);
+    rewind(fh);
+    buffer = (char *)malloc(stringSize + 1);
+    readSize = fread(buffer, sizeof(char), stringSize, fh);
+    buffer[stringSize] = '\0'; /*In any case, terminate it.*/
+    if (stringSize != readSize)
+    {
+        free(buffer);
+        buffer = NULL;
+    }
+    fclose(fh);
+    return buffer;
+}
+#endif
+
+static void FreeVal(UcsXmlVal_t *ucs)
 {
     PrivateData_t *priv;
     if (NULL == ucs || NULL == ucs->pInternal)
@@ -840,7 +884,7 @@ static ParseResult_t ParseAll(mxml_node_t *tree, UcsXmlVal_t *ucs, PrivateData_t
                 break;
         }
     }
-    
+
     /*Fill driver informations*/
     ucs->driverSize = GetDrvInfCount(priv->drvInfLst);
     if (0 != ucs->driverSize)
