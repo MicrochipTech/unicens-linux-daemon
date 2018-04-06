@@ -152,7 +152,7 @@ void PrintUcsStructures(
     }
     if (0 == routesSize)
     {
-        ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Route_t *AllRoutes = NULL;\n");
+        ConsolePrintf(PRIO_HIGH, "Ucs_Rm_Route_t *%sAllRoutes = NULL;\n", m.prefix);
     }
     /* Iterate all scripts */
     for (i = 0; i < nodSize; i++)
@@ -167,7 +167,7 @@ void PrintUcsStructures(
     }
     if (0 == nodSize)
     {
-        ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_Node_t *AllNodes = NULL;\n");
+        ConsolePrintf(PRIO_HIGH, "Ucs_Rm_Node_t *%sAllNodes = NULL;\n", m.prefix);
     }
     PrintNodes(pNod, nodSize);
     PrintRoutes(pRoutes, routesSize);
@@ -899,7 +899,7 @@ static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routeP
     ConsolePrintfContinue(C99(".endpoint_type = ")"%s,\n"TAB, GetEndpointTypeString(ep->endpoint_type));
     ConsolePrintfContinue(C99(".jobs_list_ptr = ")"%s,\n"TAB, GetNameFromTable(ep->jobs_list_ptr));
     ConsolePrintfContinue(C99(".node_obj_ptr = ")"&%s", GetNameFromTable(ep->node_obj_ptr));
-    ConsolePrintfContinue(" };\n");
+    ConsolePrintfExit(" };\n");
 }
 
 static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len)
