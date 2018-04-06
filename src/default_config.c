@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
-/* UNICENS Static Network Configuration                                                           */
-/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
+/* UNICENS Generated Network Configuration                                                        */
+/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -550,90 +550,6 @@ Ucs_Ns_Script_t ScriptsForNode270[] = {
         &Request10ForNode270,
         &Response10ForNode270
     } };
-Ucs_Ns_Script_t ScriptsForNode271[] = {
-    {
-        0,
-        &Request1ForNode270,
-        &Response1ForNode270
-    }, {
-        0,
-        &Request2ForNode270,
-        &Response2ForNode270
-    }, {
-        0,
-        &Request3ForNode270,
-        &Response3ForNode270
-    }, {
-        0,
-        &Request4ForNode270,
-        &Response4ForNode270
-    }, {
-        0,
-        &Request5ForNode270,
-        &Response5ForNode270
-    }, {
-        0,
-        &Request6ForNode270,
-        &Response6ForNode270
-    }, {
-        0,
-        &Request7ForNode270,
-        &Response7ForNode270
-    }, {
-        0,
-        &Request8ForNode270,
-        &Response8ForNode270
-    }, {
-        0,
-        &Request9ForNode270,
-        &Response9ForNode270
-    }, {
-        0,
-        &Request10ForNode270,
-        &Response10ForNode270
-    } };
-Ucs_Ns_Script_t ScriptsForNode272[] = {
-    {
-        0,
-        &Request1ForNode270,
-        &Response1ForNode270
-    }, {
-        0,
-        &Request2ForNode270,
-        &Response2ForNode270
-    }, {
-        0,
-        &Request3ForNode270,
-        &Response3ForNode270
-    }, {
-        0,
-        &Request4ForNode270,
-        &Response4ForNode270
-    }, {
-        0,
-        &Request5ForNode270,
-        &Response5ForNode270
-    }, {
-        0,
-        &Request6ForNode270,
-        &Response6ForNode270
-    }, {
-        0,
-        &Request7ForNode270,
-        &Response7ForNode270
-    }, {
-        0,
-        &Request8ForNode270,
-        &Response8ForNode270
-    }, {
-        0,
-        &Request9ForNode270,
-        &Response9ForNode270
-    }, {
-        0,
-        &Request10ForNode270,
-        &Response10ForNode270
-    } };
 uint8_t PayloadRequest1ForNode240[] = {
     0x00, 0x00, 0x01, 0x01 };
 Ucs_Ns_ConfigMsg_t Request1ForNode240 = {
@@ -746,50 +662,6 @@ Ucs_Ns_Script_t ScriptsForNode240[] = {
         &Request5ForNode240,
         &Response5ForNode240
     } };
-Ucs_Ns_Script_t ScriptsForNode241[] = {
-    {
-        0,
-        &Request1ForNode240,
-        &Response1ForNode240
-    }, {
-        0,
-        &Request2ForNode240,
-        &Response2ForNode240
-    }, {
-        0,
-        &Request3ForNode240,
-        &Response3ForNode240
-    }, {
-        0,
-        &Request4ForNode240,
-        &Response4ForNode240
-    }, {
-        0,
-        &Request5ForNode240,
-        &Response5ForNode240
-    } };
-Ucs_Ns_Script_t ScriptsForNode242[] = {
-    {
-        0,
-        &Request1ForNode240,
-        &Response1ForNode240
-    }, {
-        0,
-        &Request2ForNode240,
-        &Response2ForNode240
-    }, {
-        0,
-        &Request3ForNode240,
-        &Response3ForNode240
-    }, {
-        0,
-        &Request4ForNode240,
-        &Response4ForNode240
-    }, {
-        0,
-        &Request5ForNode240,
-        &Response5ForNode240
-    } };
 Ucs_Signature_t SignatureForNode200 = { 0x200 };
 Ucs_Signature_t SignatureForNode270 = { 0x270 };
 Ucs_Signature_t SignatureForNode271 = { 0x271 };
@@ -808,11 +680,11 @@ Ucs_Rm_Node_t AllNodes[] = {
         10
     }, {
         &SignatureForNode271,
-        ScriptsForNode271,
+        ScriptsForNode270,
         10
     }, {
         &SignatureForNode272,
-        ScriptsForNode272,
+        ScriptsForNode270,
         10
     }, {
         &SignatureForNode240,
@@ -820,11 +692,11 @@ Ucs_Rm_Node_t AllNodes[] = {
         5
     }, {
         &SignatureForNode241,
-        ScriptsForNode241,
+        ScriptsForNode240,
         5
     }, {
         &SignatureForNode242,
-        ScriptsForNode242,
+        ScriptsForNode240,
         5
     } };
 Ucs_Rm_EndPoint_t SourceEndpointForRoute1 = {

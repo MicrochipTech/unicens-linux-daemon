@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
 /* UNICENS Stucture Printing module                                                               */
-/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
+/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -45,7 +45,10 @@ void PrintUcsStructures(
     Ucs_Rm_Route_t *pRoutes,
     uint16_t routesSize,
     Ucs_Rm_Node_t *pNod,
-    uint16_t nodSize);
+    uint16_t nodSize,
+    const char *variablePrefix);
+
+void PrintHeaderFile(const char *variablePrefix);
 
 #ifdef __cplusplus
 }
