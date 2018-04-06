@@ -80,7 +80,7 @@ static void StoreNameInTable(Ucs_Xrm_ResObject_t *element, char *name);
 static char *AllocateString(const char format[], uint16_t vargsCnt, ...);
 static char *GetVariableName(Ucs_Xrm_ResObject_t *element, const char *shortName);
 static void PrintDcPort(Ucs_Xrm_DefaultCreatedPort_t *port);
-static void PrintMostSocket(Ucs_Xrm_MostSocket_t *socket);
+static void PrintNetworkSocket(Ucs_Xrm_MostSocket_t *socket);
 static const char*GetMlbClkString(Ucs_Mlb_ClockConfig_t clk);
 static void PrintMlbPort(Ucs_Xrm_MlbPort_t *port);
 static void PrintMlbSocket(Ucs_Xrm_MlbSocket_t *socket);
@@ -317,11 +317,11 @@ static void PrintDcPort(Ucs_Xrm_DefaultCreatedPort_t *port)
     ConsolePrintfExit(" };\n");
 }
 
-static void PrintMostSocket(Ucs_Xrm_MostSocket_t *socket)
+static void PrintNetworkSocket(Ucs_Xrm_MostSocket_t *socket)
 {
     ConsolePrintfStart(PRIO_HIGH, "%s %s = { \n"TAB C99(".resource_type = ")"%s,\n"TAB, 
             GetTypeString(socket), 
-            GetVariableName(socket, "MostSocket"),
+            GetVariableName(socket, "NetworkSocket"),
             GetResourceTypeString(&socket->resource_type));
     ConsolePrintfContinue(C99(".most_port_handle = ")"0x%04X,\n"TAB, socket->most_port_handle);
     ConsolePrintfContinue(C99(".direction = ")"%s,\n"TAB, GetDirectionString(socket->direction));
@@ -716,7 +716,7 @@ static void PrintUcsElement(Ucs_Xrm_ResObject_t *element)
         PrintDcPort((Ucs_Xrm_DefaultCreatedPort_t *)element);
         break;
     case UCS_XRM_RC_TYPE_MOST_SOCKET:
-        PrintMostSocket((Ucs_Xrm_MostSocket_t *)element);
+        PrintNetworkSocket((Ucs_Xrm_MostSocket_t *)element);
         break;
     case UCS_XRM_RC_TYPE_MLB_PORT:
         PrintMlbPort((Ucs_Xrm_MlbPort_t *)element);
