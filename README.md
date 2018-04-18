@@ -1,6 +1,9 @@
+
 # UNICENS DAEMON (unicensd)
 
 This project is an example integration of the [UNICENS library](https://github.com/MicrochipTech/unicens) for any kind of Linux and Android.
+
+Compatible Hardware can be found here: [K2L Slim Board Familiy](https://www.k2l.de/products/34/MOST150%20Slim%20Board%20Family/)
 
 To get it running, you will need to get compilers, cmake and git installed. On debian based machines enter:
 ```bash
@@ -23,7 +26,7 @@ $ ./build.sh
 > After performing all steps from the tutorial, you also may use the crossAndroid.sh script.
 
 Now the binaries `unicensd` and `xml2struct` shall be available in the current folder.
-In order to run unicensd, first make sure [MOST Linux Driver](https://github.com/microchip-ais/linux) is loaded.
+In order to run unicensd, first make sure [MOST Linux Driver](https://github.com/microchip-ais/linux/blob/mchp-dev/mld/README.md) is loaded.
 The daemon searches by default for these control enabled character devices (CDEVs):
 
  - /dev/inic-usb-crx
