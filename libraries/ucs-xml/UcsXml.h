@@ -38,7 +38,7 @@ extern "C" {
 /*                        USER ADJUSTABLE DEFINES                       */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     
-#define SCRIPT_RESPONSE_USE_WILDCAST
+/* #define SCRIPT_RESPONSE_USE_WILDCAST */
 #define XML_FILE_SUPPORTED
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
