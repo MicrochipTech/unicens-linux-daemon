@@ -46,7 +46,6 @@
 
 #define NODE_START  "<<<<< FILE START 0x%03x >>>>>\n"
 #define NODE_END    "<<<<< FILE END >>>>>\n"
-#define VERSION_STR "V4.0.3"
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                        PRIVATE DEFINES                               */
@@ -138,7 +137,7 @@ int main(int argc, char *argv[])
         }
         else if (0 == strcmp("--version", argv[i]))
         {
-            ConsolePrintf(PRIO_HIGH, "%s\r\n", VERSION_STR);
+            ConsolePrintf(PRIO_HIGH, "%s\r\n", GetXml2StructVersion());
             return 0;
         }
         else if (0 == strcmp("--help", argv[i]))

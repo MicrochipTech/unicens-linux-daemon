@@ -40,6 +40,8 @@ extern "C" {
 /*#define C99_STRUCTS*/
 #define TAB "    "
 
+const char *GetXml2StructVersion(void);
+
 void PrintUcsStructures(
     uint16_t packetBw,
     Ucs_Rm_Route_t *pRoutes,

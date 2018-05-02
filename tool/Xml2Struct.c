@@ -38,6 +38,8 @@
 #include "Console.h"
 #include "Xml2Struct.h"
 
+static const char *VERSION_STR = "V4.0.4";
+
 #define CASE(X) case X: { return #X; }
 #define CHECK_ASSERT(X) { \
     if (!(X)) { \
@@ -116,6 +118,11 @@ static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routeP
 static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len);
 
 static struct LocalVar m;
+
+const char *GetXml2StructVersion(void)
+{
+	return VERSION_STR;
+}
 
 void PrintUcsStructures(
     uint16_t packetBw,
@@ -209,32 +216,7 @@ void PrintHeaderFile(const char *variablePrefix)
 static void PrintHeader(void) {
     ConsolePrintfStart(PRIO_HIGH, "/*------------------------------------------------------------------------------------------------*/\n");
     ConsolePrintfContinue("/* UNICENS Generated Network Configuration                                                        */\n");
-    ConsolePrintfContinue("/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */\n");
-    ConsolePrintfContinue("/*                                                                                                */\n");
-    ConsolePrintfContinue("/* Redistribution and use in source and binary forms, with or without                             */\n");
-    ConsolePrintfContinue("/* modification, are permitted provided that the following conditions are met:                    */\n");
-    ConsolePrintfContinue("/*                                                                                                */\n");
-    ConsolePrintfContinue("/* 1. Redistributions of source code must retain the above copyright notice, this                 */\n");
-    ConsolePrintfContinue("/*    list of conditions and the following disclaimer.                                            */\n");
-    ConsolePrintfContinue("/*                                                                                                */\n");
-    ConsolePrintfContinue("/* 2. Redistributions in binary form must reproduce the above copyright notice,                   */\n");
-    ConsolePrintfContinue("/*    this list of conditions and the following disclaimer in the documentation                   */\n");
-    ConsolePrintfContinue("/*    and/or other materials provided with the distribution.                                      */\n");
-    ConsolePrintfContinue("/*                                                                                                */\n");
-    ConsolePrintfContinue("/* 3. Neither the name of the copyright holder nor the names of its                               */\n");
-    ConsolePrintfContinue("/*    contributors may be used to endorse or promote products derived from                        */\n");
-    ConsolePrintfContinue("/*    this software without specific prior written permission.                                    */\n");
-    ConsolePrintfContinue("/*                                                                                                */\n");
-    ConsolePrintfContinue("/* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS'                    */\n");
-    ConsolePrintfContinue("/* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE                      */\n");
-    ConsolePrintfContinue("/* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE                 */\n");
-    ConsolePrintfContinue("/* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE                   */\n");
-    ConsolePrintfContinue("/* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL                     */\n");
-    ConsolePrintfContinue("/* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR                     */\n");
-    ConsolePrintfContinue("/* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER                     */\n");
-    ConsolePrintfContinue("/* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,                  */\n");
-    ConsolePrintfContinue("/* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE                  */\n");
-    ConsolePrintfContinue("/* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                           */\n");
+	ConsolePrintfContinue("/* Generator: xml2struct for Linux %s                                                         */\n", VERSION_STR);
     ConsolePrintfExit("/*------------------------------------------------------------------------------------------------*/\n");
 }
 
