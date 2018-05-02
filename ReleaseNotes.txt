@@ -10,6 +10,21 @@ UNICENS V2 Daemon (unicensd)
 !!! Control Channel should be mapped to CDEVs: /dev/inic-usb-crx and /dev/inic-usb-ctx !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+V04.00.04
+=========
+- added support for QNX operating system
+- unicensd AMS sending use command queue
+- unicensd does not automatically create GPIO port.
+  This prevents the error "Synchronization to the remote device failed due to transmission error. ErrorCode: 0x07".
+  But in order to use GPIOs now, you need to create the port in the XML file first
+- unicensd prints verrsion and help screen
+- unicensd recover from LLD failures
+- unicensd xml:fixed non working pause in scripts
+- unicensd xml:improved handling of routes
+- xml2struct tool supports printing C-header (use: -header)
+- xml2struct tool supports adding prefix before any generated variable (use: -prefix)
+- xml2struct tool optimized script generation (less amount of structures)
+
 V04.00.03
 =========
 - XML API change: MOSTSocket is now NetworkSocket (still accepting MOSTSocket, to backward compatible).
