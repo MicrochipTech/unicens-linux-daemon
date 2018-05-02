@@ -1,4 +1,3 @@
-
 # UNICENS DAEMON (unicensd)
 
 This project is an example integration of the [UNICENS library](https://github.com/MicrochipTech/unicens) for any kind of Linux and Android.
