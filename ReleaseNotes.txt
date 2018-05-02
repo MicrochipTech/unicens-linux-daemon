@@ -21,6 +21,8 @@ V04.00.04
 - unicensd recover from LLD failures
 - unicensd xml:fixed non working pause in scripts
 - unicensd xml:improved handling of routes
+- xml2struct tool remove Microchip copyright from generated files
+- xml2struct tool replace MODULE_AUTHOR by generic version info
 - xml2struct tool supports printing C-header (use: -header)
 - xml2struct tool supports adding prefix before any generated variable (use: -prefix)
 - xml2struct tool optimized script generation (less amount of structures)
