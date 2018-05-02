@@ -46,6 +46,9 @@
 /*                          USER ADJUSTABLE                             */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
+/* UNICENS daemon version number */
+#define UNICENSD_VERSION	("V4.0.4")
+
 /* Character device to INIC control channel */
 #define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-usb-ctx")
 #define DEFAULT_CONTROL_CDEV_RX ("/dev/inic-usb-crx")
@@ -109,6 +112,7 @@ int main(int argc, const char *argv[])
     memset(&m, 0, sizeof(LocalVar_t));
     m.controlRxCdev = DEFAULT_CONTROL_CDEV_RX;
     m.controlTxCdev = DEFAULT_CONTROL_CDEV_TX;
+    ConsolePrintf(PRIO_HIGH, YELLOW "------|UNICENS daemon %s (BUILD %s %s)|------" RESETCOLOR "\r\n", UNICENSD_VERSION, __DATE__, __TIME__);
     for (i = 1; i < argc; i++)
     {
         if ('-' != argv[i][0])
