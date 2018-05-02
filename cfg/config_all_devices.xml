@@ -149,7 +149,7 @@
   </Node>
   <!-- Script for Aux IO -->
   <Script Name="aux-io-config">
-    <MsgSend Description="test" FBlockId="0x0" FunctionId="0x500" OpTypeRequest="0x2"  OpTypeResponse="0xc" PayloadRequest="AA BB CC DD EE FF"/>
+    <MsgSend Description="test" FBlockId="0x0" FunctionId="0x500" OpTypeRequest="0x2"  OpTypeResponse="0xc" PayloadRequest="AA BB CC DD EE FF" PayloadResponse="11 22"/>
     <Pause WaitTime="100"/>
     <I2CPortCreate Speed="FastMode"/>
     <I2CPortWrite Mode="BurstMode" BlockCount="10" Address="0x18" Length="3" Timeout="100"
