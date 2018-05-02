@@ -107,6 +107,7 @@ static uint32_t GetTicks(void);
 int main(int argc, const char *argv[])
 {
     bool fileNameSet = false;
+    bool defaultSet = false;
     int32_t i;
     UcsXmlVal_t *cfg = NULL;
     memset(&m, 0, sizeof(LocalVar_t));
@@ -135,6 +136,10 @@ int main(int argc, const char *argv[])
         {
             PrintHelp();
             return 0;
+        }
+        else if (0 == strcmp("-default", argv[i]))
+        {
+            defaultSet = true;
         }
         else if (0 == strcmp("-crx", argv[i]))
         {
@@ -186,7 +191,8 @@ int main(int argc, const char *argv[])
     }
     else
     {
-        ConsolePrintf(PRIO_HIGH, YELLOW "No filename was provided, executing default configuration (default_config.c).\r\nUse \"--help\" for details." RESETCOLOR "\r\n");
+        if (!defaultSet)
+            ConsolePrintf(PRIO_HIGH, YELLOW "No filename was provided, executing default configuration (default_config.c).\r\nUse \"--help\" for details. Use \"-default\" to suppress this waring." RESETCOLOR "\r\n");
         if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize))
         {
             ConsolePrintf(PRIO_ERROR, RED"Could not enqueue new UNICENS config"RESETCOLOR"\r\n");
@@ -414,11 +420,12 @@ static void PrintHelp(void)
     ConsolePrintfStart(PRIO_HIGH, "Usage: unicensd [OPTION]... [FILE]\r\n");
     ConsolePrintfContinue("Executes the UNICENS daemon to start and configure INICnet devices.\r\n\r\n");
     ConsolePrintfContinue("  [File]                   Path to UNICENS XML configuration file, if not set, the compiled default config will be used\r\n");
+    ConsolePrintfContinue("  -default                 Uses default configuration (default_config.c) instead of parsing XML file\r\n");
     ConsolePrintfContinue("  -crx [RX char device]    Path to the receiver character device\r\n");
     ConsolePrintfContinue("  -ctx [TX char device]    Path to the sender character device\r\n");
     ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
     ConsolePrintfContinue("Examples:\r\n");
-    ConsolePrintfExit("  unicensd\r\n");
+    ConsolePrintfExit("  unicensd -default\r\n");
     ConsolePrintfExit("  unicensd config.xml\r\n");
     ConsolePrintfExit("  unicensd -ctx /dev/inic-control-tx -crx /dev/inic-control-rx\r\n");
 }
