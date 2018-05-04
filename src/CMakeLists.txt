@@ -5,12 +5,13 @@ target_include_directories (unicensd
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_SOURCE_DIR}/libraries/unicens/cfg-daemon
 	${CMAKE_SOURCE_DIR}/libraries/unicens/ucs2/inc
+	${CMAKE_SOURCE_DIR}/libraries/mld-configurator
 	${CMAKE_SOURCE_DIR}/libraries/mxml
 	${CMAKE_SOURCE_DIR}/libraries/ucs-xml
 )
 find_package (Threads)
 target_link_libraries(unicensd
-	ucs2 ucsxml ${CMAKE_THREAD_LIBS_INIT} ${ADDITIONAL_PLATFORM_LIBS}
+	mldc ucs2 ucsxml ${CMAKE_THREAD_LIBS_INIT} ${ADDITIONAL_PLATFORM_LIBS}
 )
 
 CHECK_LIBRARY_EXISTS(rt timer_settime "time.h" NEED_LIBRT)

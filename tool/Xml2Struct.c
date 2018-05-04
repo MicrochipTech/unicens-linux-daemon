@@ -38,7 +38,7 @@
 #include "Console.h"
 #include "Xml2Struct.h"
 
-static const char *VERSION_STR = "V4.0.4";
+static const char *VERSION_STR = "V4.1.0";
 
 #define CASE(X) case X: { return #X; }
 #define CHECK_ASSERT(X) { \

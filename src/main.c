@@ -40,6 +40,7 @@
 #include "ucsi_api.h"
 #include "UcsXml.h"
 #include "CdevHandler.h"
+#include "mld-configurator-v1.h"
 #include "default_config.h"
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
@@ -47,7 +48,7 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSD_VERSION	("V4.0.4")
+#define UNICENSD_VERSION    ("V4.1.0")
 
 /* Character device to INIC control channel */
 #define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-usb-ctx")
@@ -82,6 +83,9 @@ typedef struct
     CdevData_t ctrlRx;
     const char *controlRxCdev;
     const char *controlTxCdev;
+    bool enableDrv1;
+    uint16_t drvNodeAddr;
+    char *drvFilter;
 } LocalVar_t;
 
 static LocalVar_t m;
@@ -104,7 +108,7 @@ static uint32_t GetTicks(void);
 /*                         PUBLIC FUNCTIONS                             */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
     bool fileNameSet = false;
     bool defaultSet = false;
@@ -140,6 +144,33 @@ int main(int argc, const char *argv[])
         else if (0 == strcmp("-default", argv[i]))
         {
             defaultSet = true;
+        }
+        else if (0 == strcmp("-drv1", argv[i]))
+        {
+            uint8_t j = 0;
+            char *tkPtr;
+            char *token;
+            if (argc <= (i+1))
+            {
+                ConsolePrintf(PRIO_ERROR, RED"-drv1 parameter needs additional node address of the local network controller"RESETCOLOR"\r\n");
+                return -1;
+            }
+            m.enableDrv1 = true;
+            token = strtok_r( argv[i + 1], ":", &tkPtr );
+            while( NULL != token )
+            {
+                if (0 == j)
+                    m.drvNodeAddr = strtol( token, NULL, 0 );
+                else if (1 == j)
+                    m.drvFilter = token;
+                token = strtok_r( NULL, ":", &tkPtr );
+                ++j;
+            }
+            ++i;
+        }
+        else if (0 == strcmp("-drv2", argv[i]))
+        {
+            ConsolePrintf(PRIO_ERROR, RED"-drv2 is currently reserved"RESETCOLOR"\r\n");
         }
         else if (0 == strcmp("-crx", argv[i]))
         {
@@ -182,6 +213,19 @@ int main(int argc, const char *argv[])
     UCSI_Init(&m.unicens, &m);
     if (cfg)
     {
+        if (m.enableDrv1)
+        {
+            if (NULL != cfg->ppDriver && 0 != cfg->driverSize)
+            {
+                if (!MldConfigV1_Start(cfg->ppDriver, cfg->driverSize, m.drvNodeAddr, m.drvFilter, 1000))
+                {
+                    ConsolePrintf(PRIO_ERROR, RED"Could not start driver configuration service"RESETCOLOR"\r\n");
+                    return -1;
+                }
+            } else {
+                ConsolePrintf(PRIO_ERROR, RED"MOST Linux Driver Configurator V1 is enabled, but the XML does not provide any information"RESETCOLOR"\r\n");
+            }
+        }
         if (!UCSI_NewConfig(&m.unicens, cfg->packetBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize))
         {
             ConsolePrintf(PRIO_ERROR, RED"Could not enqueue new UNICENS config"RESETCOLOR"\r\n");
@@ -412,6 +456,23 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPin
 }
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+/*                      Linux Driver Configurator                       */
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+void MldConfigV1_CB_OnMessage(bool isError, const char format[], uint16_t vargsCnt, ...)
+{
+    va_list argptr;
+    char outbuf[300];
+    va_start(argptr, vargsCnt);
+    vsprintf(outbuf, format, argptr);
+    va_end(argptr);
+    if (isError)
+        ConsolePrintf(PRIO_ERROR, RED"Driver config error: %s"RESETCOLOR"\r\n", outbuf);
+    else
+        ConsolePrintf(PRIO_MEDIUM, "Driver config: %s\r\n", outbuf);
+}
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                  PRIVATE FUNCTION IMPLEMENTATIONS                    */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
@@ -423,10 +484,16 @@ static void PrintHelp(void)
     ConsolePrintfContinue("  -default                 Uses default configuration (default_config.c) instead of parsing XML file\r\n");
     ConsolePrintfContinue("  -crx [RX char device]    Path to the receiver character device\r\n");
     ConsolePrintfContinue("  -ctx [TX char device]    Path to the sender character device\r\n");
+    ConsolePrintfContinue("  -drv1 [Node Addr:Filter] Configures the Microchip MOST Linux Driver V1.X with the XML file and the local node address\r\n");
+    ConsolePrintfContinue("                           An additional filter string can be passed with a colon as delimiter. This filter applies to\r\n");
+    ConsolePrintfContinue("                           description file inside the sys fs from the MOST Linux Driver.\r\n");
+    ConsolePrintfContinue("  -drv2                    Configures the Microchip MOST Linux Driver V2.X (reserved)\r\n");
     ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
     ConsolePrintfContinue("Examples:\r\n");
     ConsolePrintfExit("  unicensd -default\r\n");
     ConsolePrintfExit("  unicensd config.xml\r\n");
+    ConsolePrintfExit("  unicensd config.xml -drv1 0x200\r\n");
+    ConsolePrintfExit("  unicensd config.xml -drv1 0x200:1-1.3:1\r\n");
     ConsolePrintfExit("  unicensd -ctx /dev/inic-control-tx -crx /dev/inic-control-rx\r\n");
 }
 
