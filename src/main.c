@@ -373,7 +373,7 @@ void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16
     char outbuf[300];
     pTag = pTag;
     va_start(argptr, vargsCnt);
-    vsprintf(outbuf, format, argptr);
+    vsnprintf(outbuf, sizeof(outbuf), format, argptr);
     va_end(argptr);
     if (isError)
         ConsolePrintf(PRIO_ERROR, RED"%s"RESETCOLOR"\r\n", outbuf);

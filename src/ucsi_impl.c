@@ -30,6 +30,11 @@
 #include <assert.h>
 #include <stdio.h>
 #include "ucsi_api.h"
+/************************************************************************/
+/* Private Definitions and variables                                    */
+/************************************************************************/
+#define TRACE_BUFFER_SZ 100
+static char m_traceBuffer[TRACE_BUFFER_SZ];
 
 /************************************************************************/
 /* Private Definitions and variables                                    */
@@ -511,20 +516,19 @@ static void OnUnicensAppTimer( uint16_t timeout, void *user_ptr )
 
 static void OnUnicensDebugErrorMsg(Msg_MostTel_t *m, void *user_ptr)
 {
-    char buffer[100];
     char val[5];
     uint8_t i;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    buffer[0] = '\0';
+    m_traceBuffer[0] = '\0';
     for (i = 0; NULL != m->tel.tel_data_ptr && i < m->tel.tel_len; i++)
     {
         snprintf(val, sizeof(val), "%02X ", m->tel.tel_data_ptr[i]);
-        strcat(buffer, val);
+        strcat(m_traceBuffer, val);
     }
     UCSI_CB_OnUserMessage(my->tag, true, "Received error message, source=%x, %X.%X.%X.%X, [ %s ]",
         6, m->source_addr, m->id.fblock_id, m->id.instance_id,
-        m->id.function_id, m->id.op_type, buffer);
+        m->id.function_id, m->id.op_type, m_traceBuffer);
 }
 
 static void OnLldCtrlStart( Ucs_Lld_Api_t* api_ptr, void *inst_ptr, void *lld_user_ptr )
@@ -870,11 +874,9 @@ static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, U
 /************************************************************************/
 #if defined(UCS_TR_ERROR) || defined(UCS_TR_INFO)
 #include <stdio.h>
-#define TRACE_BUFFER_SZ 200
 void App_TraceError(void *ucs_user_ptr, const char module_str[], const char entry_str[], uint16_t vargs_cnt, ...)
 {
     va_list argptr;
-    char outbuf[TRACE_BUFFER_SZ];
     void *tag = NULL;
     UCSI_Data_t *my = (UCSI_Data_t *)ucs_user_ptr;
     if (my)
@@ -883,15 +885,14 @@ void App_TraceError(void *ucs_user_ptr, const char module_str[], const char entr
         tag = my->tag;
     }
     va_start(argptr, vargs_cnt);
-    vsnprintf(outbuf, sizeof(outbuf), entry_str, argptr);
+    vsnprintf(m_traceBuffer, sizeof(m_traceBuffer), entry_str, argptr);
     va_end(argptr);
-    UCSI_CB_OnUserMessage(tag, true, "Error | %s | %s", 2, module_str, outbuf);
+    UCSI_CB_OnUserMessage(tag, true, "Error | %s | %s", 2, module_str, m_traceBuffer);
 }
 
 void App_TraceInfo(void *ucs_user_ptr, const char module_str[], const char entry_str[], uint16_t vargs_cnt, ...)
 {
     va_list argptr;
-    char outbuf[TRACE_BUFFER_SZ];
     void *tag = NULL;
     UCSI_Data_t *my = (UCSI_Data_t *)ucs_user_ptr;
     if (my)
@@ -900,8 +901,8 @@ void App_TraceInfo(void *ucs_user_ptr, const char module_str[], const char entry
         tag = my->tag;
     }
     va_start(argptr, vargs_cnt);
-    vsnprintf(outbuf, sizeof(outbuf), entry_str, argptr);
+    vsnprintf(m_traceBuffer, sizeof(m_traceBuffer), entry_str, argptr);
     va_end(argptr);
-    UCSI_CB_OnUserMessage(tag, false, "Info | %s | %s", 2, module_str, outbuf);
+    UCSI_CB_OnUserMessage(tag, false, "Info | %s | %s", 2, module_str, m_traceBuffer);
 }
 #endif
