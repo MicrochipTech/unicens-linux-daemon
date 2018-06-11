@@ -251,7 +251,7 @@ static const char* L_DRIVER_ALSARES_32BIT = "32bit";
 #define L_DRIVER_ALSA                       "Alsa"
 #define L_DRIVER_CDEV                       "Cdev"
 #define L_DRIVER_V4L2                       "V4l2"
-static const char * ALL_DRIVERS[] = { L_DRIVER_ALSA, L_DRIVER_CDEV, L_DRIVER_V4L2 };
+static const char * ALL_DRIVERS[] = { L_DRIVER_ALSA, L_DRIVER_CDEV, L_DRIVER_V4L2, NULL };
 
 static const char* VALUE_TRUE =             "true";
 static const char* VALUE_FALSE =            "false";
@@ -1920,7 +1920,7 @@ static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink
         Ucs_Xrm_MlbSocket_t *mlbSock = (Ucs_Xrm_MlbSocket_t *)con->inSocket;
         cfgDirection = DriverCfgDirection_Tx;
         subBufferSize = mlbSock->bandwidth;
-        snprintf(channelName, MAX_CHANNEL_NAME_LENGTH, "ca%02X", mlbSock->channel_address);
+        snprintf(channelName, MAX_CHANNEL_NAME_LENGTH, "ca%d", mlbSock->channel_address);
         break;
     }
     case UCS_XRM_RC_TYPE_USB_SOCKET:
@@ -1938,6 +1938,7 @@ static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink
     case UCS_XRM_RC_TYPE_SPLITTER:
     {
         Ucs_Xrm_Splitter_t *splitter = (Ucs_Xrm_Splitter_t *)con->inSocket;
+        subBufferSize = splitter->bytes_per_frame;
         cfgDirection = DriverCfgDirection_Tx;
         if (UCS_XRM_RC_TYPE_USB_SOCKET == GetResourceType(splitter->socket_in_obj_ptr))
         {
@@ -1948,7 +1949,7 @@ static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink
         else if (UCS_XRM_RC_TYPE_MLB_SOCKET == GetResourceType(splitter->socket_in_obj_ptr))
         {
             Ucs_Xrm_MlbSocket_t *mlbSock = (Ucs_Xrm_MlbSocket_t *)splitter->socket_in_obj_ptr;
-            snprintf(channelName, MAX_CHANNEL_NAME_LENGTH, "ca%02X", mlbSock->channel_address);
+            snprintf(channelName, MAX_CHANNEL_NAME_LENGTH, "ca%d", mlbSock->channel_address);
         }
         break;
     }
@@ -1991,7 +1992,7 @@ static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink
     {
         Ucs_Xrm_MlbSocket_t *mlbSock = (Ucs_Xrm_MlbSocket_t *)con->outSocket;
         subBufferSize = mlbSock->bandwidth;
-        snprintf(channelName, MAX_CHANNEL_NAME_LENGTH, "ca%02X", mlbSock->channel_address);
+        snprintf(channelName, MAX_CHANNEL_NAME_LENGTH, "ca%d", mlbSock->channel_address);
         break;
     }
     case UCS_XRM_RC_TYPE_USB_SOCKET:
@@ -2016,7 +2017,7 @@ static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink
         else if (UCS_XRM_RC_TYPE_MLB_SOCKET == GetResourceType(combiner->port_socket_obj_ptr))
         {
             Ucs_Xrm_MlbSocket_t *mlbSock = (Ucs_Xrm_MlbSocket_t *)combiner->port_socket_obj_ptr;
-            snprintf(channelName, MAX_CHANNEL_NAME_LENGTH, "ca%02X", mlbSock->channel_address);
+            snprintf(channelName, MAX_CHANNEL_NAME_LENGTH, "ca%d", mlbSock->channel_address);
         }
         break;
     }
