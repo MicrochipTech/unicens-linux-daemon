@@ -1709,15 +1709,15 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
                     route = &ucs->pRoutes[ucs->routesSize++];
                     route->source_endpoint_ptr = sourceRoute->ep;
                     route->sink_endpoint_ptr = sinkRoute->ep;
-                    if (!IsAutoRouteId(sourceRoute->routeId, priv))
-                    {
-                        route->active = sourceRoute->isActive;
-                        route->route_id = sourceRoute->routeId;
-                    }
-                    else
+                    if (!IsAutoRouteId(sinkRoute->routeId, priv))
                     {
                         route->active = sinkRoute->isActive;
                         route->route_id = sinkRoute->routeId;
+                    }
+                    else
+                    {
+                        route->active = sourceRoute->isActive;
+                        route->route_id = sourceRoute->routeId;
                     }
                 }
                 sinkRoute = sinkRoute->next;
