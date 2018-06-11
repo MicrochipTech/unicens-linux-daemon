@@ -13,6 +13,7 @@ UNICENS V2 Daemon (unicensd)
 V04.00.04
 =========
 - added support for QNX operating system
+- unicensd supports using command line parameter to execute default configuration (use: -default)
 - unicensd AMS sending use command queue
 - unicensd does not automatically create GPIO port.
   This prevents the error "Synchronization to the remote device failed due to transmission error. ErrorCode: 0x07".
