@@ -344,6 +344,14 @@ void Cdev_CB_OnDataAvailable()
 /*                  CALLBACK FUNCTIONS FROM UNICENS                     */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
+void UCSI_CB_OnCommandResult(void *pTag, UnicensCmd_t command, bool success, uint16_t nodeAddress)
+{
+    pTag = pTag;
+    command = command;
+    success = success;
+    nodeAddress = nodeAddress;
+}
+
 uint16_t UCSI_CB_OnGetTime(void *pTag)
 {
     pTag = pTag;

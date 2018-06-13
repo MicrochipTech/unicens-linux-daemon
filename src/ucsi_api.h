@@ -238,6 +238,16 @@ bool UCSI_SetGpioState(UCSI_Data_t *pPriv, uint16_t targetAddress, uint8_t gpioP
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /**
+ * \brief Callback when ever a function above was tried to be executed.
+ * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param command - Enumeration value, identify the used command
+ * \param success - true, if given command was successfully executed. false, either the direct call of the command or its async callback signaled an error
+ * \param nodeAddress - the address of the node reporting this event. 0x1 in case of the local master node. 0xFFFF in case if the node address is unknown.
+ */
+extern void UCSI_CB_OnCommandResult(void *pTag, UnicensCmd_t command, bool success, uint16_t nodeAddress);
+
+/**
  * \brief Callback when ever a timestamp is needed
  * \note This function must be implemented by the integrator
  * \param pTag - Pointer given by the integrator by UCSI_Init
