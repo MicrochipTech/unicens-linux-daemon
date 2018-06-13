@@ -81,6 +81,7 @@ typedef enum
     UnicensCmd_GpioCreatePort,
     UnicensCmd_GpioWritePort,
     UnicensCmd_I2CWrite,
+    UnicensCmd_I2CRead,
     UnicensCmd_SendAmsMessage
 } UnicensCmd_t;
 
@@ -147,6 +148,17 @@ typedef struct
  */
 typedef struct
 {
+    uint16_t destination;
+    uint8_t slaveAddr;
+    uint16_t timeout;
+    uint8_t dataLen;
+} UnicensCmdI2CRead_t;
+
+/**
+ * \brief Internal struct for UNICENS Integration
+ */
+typedef struct
+{
     uint16_t msgId;
     uint16_t targetAddress;
     uint8_t pPayload[AMS_MSG_MAX_LEN];
@@ -167,6 +179,7 @@ typedef struct
         UnicensCmdGpioCreatePort_t GpioCreatePort;
         UnicensCmdGpioWritePort_t GpioWritePort;
         UnicensCmdI2CWrite_t I2CWrite;
+        UnicensCmdI2CRead_t I2CRead;
         UnicensCmdSendAmsMessage_t SendAms;
     } val;
 } UnicensCmdEntry_t;

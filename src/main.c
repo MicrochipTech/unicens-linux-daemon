@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
 /* UNICENS Daemon (unicensd) main-loop                                                            */
-/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
+/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -453,6 +453,12 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPin
     pTag = pTag;
     ConsolePrintf(PRIO_HIGH, "GPIO state changed, nodeAddress=0x%X, gpioPinId=%d, isHighState=%s\r\n",
                   nodeAddress, gpioPinId, isHighState ? "yes" : "no");
+}
+
+void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, uint8_t slaveAddr, const uint8_t *pBuffer, uint32_t bufLen)
+{
+    if(!success)
+         ConsolePrintf(PRIO_ERROR, "I2C read failed for node=0x%X slave=0x%X\r\n" , targetAddress, slaveAddr);
 }
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/

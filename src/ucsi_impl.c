@@ -78,6 +78,8 @@ static void OnUcsGpioTriggerEventStatus(uint16_t node_address, uint16_t gpio_por
     uint16_t rising_edges, uint16_t falling_edges, uint16_t levels, void * user_ptr);
 static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     uint8_t i2c_slave_address, uint8_t data_len, Ucs_I2c_Result_t result, void *user_ptr);
+static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle, 
+            uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr);
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
 
 /************************************************************************/
@@ -234,6 +236,13 @@ void UCSI_Service(UCSI_Data_t *my)
             else
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Gpio_CreatePort failed", 0);
             break;
+        case UnicensCmd_I2CRead:
+            if (UCS_RET_SUCCESS == Ucs_I2c_ReadPort(my->unicens, e->val.I2CRead.destination, 0x0F00, 
+                e->val.I2CRead.slaveAddr, e->val.I2CRead.timeout, e->val.I2CRead.dataLen, OnUcsI2CRead))
+                popEntry = false;
+            else
+                UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Gpio_CreatePort failed", 0);
+            break;
         case UnicensCmd_SendAmsMessage:
         {
             Ucs_AmsTx_Msg_t *msg;
@@ -342,7 +351,7 @@ bool UCSI_SetRouteActive(UCSI_Data_t *my, uint16_t routeId, bool isActive)
 }
 
 bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_t blockCount,
-    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, uint8_t *pData)
+    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData)
 {
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
@@ -360,6 +369,19 @@ bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_
     entry.val.I2CWrite.timeout = timeout;
     entry.val.I2CWrite.dataLen = dataLen;
     memcpy(entry.val.I2CWrite.data, pData, dataLen);
+    return EnqueueCommand(my, &entry);
+}
+
+bool UCSI_I2CRead(UCSI_Data_t *my, uint16_t targetAddress, uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen)
+{
+    UnicensCmdEntry_t entry;
+    assert(MAGIC == my->magic);
+    if (NULL == my || 0 == dataLen) return false;
+    entry.cmd = UnicensCmd_I2CRead;
+    entry.val.I2CRead.destination = targetAddress;
+    entry.val.I2CRead.slaveAddr = slaveAddr;
+    entry.val.I2CRead.timeout = timeout;
+    entry.val.I2CRead.dataLen = dataLen;
     return EnqueueCommand(my, &entry);
 }
 
@@ -858,6 +880,15 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     OnCommandExecuted(my, UnicensCmd_I2CWrite);
     if (UCS_I2C_RES_SUCCESS != result.code)
         UCSI_CB_OnUserMessage(my->tag, true, "Remote I2C Write to node=0x%X failed", 1, node_address);
+}
+
+static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle, 
+            uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr)
+{
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(MAGIC == my->magic);
+    OnCommandExecuted(my, UnicensCmd_I2CRead);
+    UCSI_CB_OnI2CRead(my->tag, (UCS_I2C_RES_SUCCESS == result.code), node_address, i2c_slave_address, data_ptr, data_len);
 }
 
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr)
