@@ -38,6 +38,7 @@ extern "C" {
 /*                        USER ADJUSTABLE DEFINES                       */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     
+/*#define TDM_STREAM_FORMAT_SUPPORTED*/
 /* #define SCRIPT_RESPONSE_USE_WILDCAST */
 #define XML_FILE_SUPPORTED
 
@@ -50,7 +51,7 @@ extern "C" {
 #include "ucs_api.h"
 #include "UcsXmlDriverConfig.h"
 
-/** Structure holding information to startup UNICENS (UCS).
+/** Structure holding informations to startup UNICENS (UCS).
  *  Pass all these variables to the UCS manager structure, but not pInternal.
  *  */
 typedef struct
