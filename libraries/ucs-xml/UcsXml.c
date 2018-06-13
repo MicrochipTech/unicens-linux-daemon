@@ -60,6 +60,7 @@ struct UcsXmlRoute
 
 struct UcsXmlScript
 {
+    bool singleShot;
     bool inUse;
     char scriptName[32];
     Ucs_Rm_Node_t *node;
@@ -134,9 +135,14 @@ typedef struct {
     struct UcsXmlScript *pScrLst;
     NodeData_t nodeData;
     ConnectionData_t conData;
-    ScriptData_t scriptData;
     struct UcsXmlDriverInfoList *drvInfLst;
 } PrivateData_t;
+
+typedef struct {
+    struct UcsXmlObjectList objList;
+    struct UcsXmlScript *pScrLst;
+    ScriptData_t scriptData;
+} PrivateDataScript_t;
 
 /************************************************************************/
 /* Constants                                                            */
@@ -266,8 +272,9 @@ static const char* VALUE_0 =                "0";
 static char *ReadFile(const char *fileName);
 #endif
 static void FreeVal(UcsXmlVal_t *ucs);
+static void FreeValScript(UcsXmlScript_t *script);
 static bool GetElement(mxml_node_t *element, const char *name, bool goDeep, mxml_node_t **out, bool mandatory);
-static bool GetElementArray(mxml_node_t *element, const char *array[], const char **foundName, mxml_node_t **out);
+static bool GetElementArray(mxml_node_t *element, const char *array[], const char **foundName, mxml_node_t **out, bool skipFirstElement);
 static bool GetCount(mxml_node_t *element, const char *name, uint32_t *out, bool mandatory);
 static bool GetCountArray(mxml_node_t *element, const char *array[], uint32_t *out, bool mandatory);
 static bool GetString(mxml_node_t *element, const char *key, const char **out, bool mandatory);
@@ -287,16 +294,17 @@ static ParseResult_t ParseAll(mxml_node_t *tree, UcsXmlVal_t *ucs, PrivateData_t
 static ParseResult_t ParseNode(mxml_node_t * node, PrivateData_t *priv);
 static ParseResult_t ParseConnection(mxml_node_t * node, const char *conType, PrivateData_t *priv);
 static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t socketType, struct UcsXmlJobList **jobList, PrivateData_t *priv);
-static ParseResult_t ParseScript(mxml_node_t *scr, PrivateData_t *priv);
-static bool FillScriptInitialValues(Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv);
-static ParseResult_t ParseScriptPause(mxml_node_t *act, PrivateData_t *priv);
+static ParseResult_t ParseAllScripts(mxml_node_t *tree, struct UcsXmlScript *scrlist, struct UcsXmlObjectList *objList, bool checkReference);
+static ParseResult_t ParseScript(mxml_node_t *scr, struct UcsXmlScript *scrlist, struct UcsXmlObjectList *objList);
+static bool FillScriptInitialValues(Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData);
+static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData);
+static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData);
+static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData);
+static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData);
+static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData);
+static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData);
+static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData);
+static ParseResult_t ParseScriptPause(mxml_node_t *act, ScriptData_t *scriptData);
 static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv);
 static bool AddDriverInfo(struct UcsXmlDriverInfoList **drvList, DriverInformation_t *drvInfo, struct UcsXmlObjectList *objList);
 static ParseResult_t ParseDriver(mxml_node_t *soc, UcsXmlVal_t *ucs, PrivateData_t *priv);
@@ -357,6 +365,64 @@ void UcsXml_FreeVal(UcsXmlVal_t *val)
     FreeVal(val);
 }
 
+UcsXmlScript_t *UcsXml_ParseScript(const char *xmlString)
+{
+    ParseResult_t result = Parse_MemoryError;
+    UcsXmlScript_t *script = NULL;
+    mxml_node_t *tree = NULL;
+    PrivateDataScript_t *priv = NULL;
+    struct UcsXmlScript scriptLst = { 0 };
+    Ucs_Rm_Node_t node = { 0 };
+    scriptLst.node = &node;
+    scriptLst.singleShot = true;
+    if (!(tree = mxmlLoadString(NULL, xmlString, MXML_NO_CALLBACK))) goto ERROR;
+    if (!GetElement(tree, UNICENS, true, &tree, true)) goto ERROR;
+    if (!GetElement(tree, SCRIPT, true, &tree, true)) goto ERROR;
+    /*Do not use MCalloc for the root element*/
+    script = calloc(1, sizeof(UcsXmlScript_t));
+    if (!script) goto ERROR;
+    priv = script->pInternal = calloc(1, sizeof(PrivateDataScript_t));
+    if (!priv) goto ERROR;
+    result = ParseScript(tree, &scriptLst, &priv->objList);
+    if (Parse_Success != result) goto ERROR;
+    script->pScriptList = node.script_list_ptr;
+    script->scriptListLength = node.script_list_size;
+    return script;
+ERROR:
+    if (Parse_MemoryError == result)
+        UcsXml_CB_OnError("XML memory error, aborting..", 0);
+    else
+        UcsXml_CB_OnError("XML parsing error, aborting..", 0);
+    if (tree)
+        mxmlDelete(tree);
+    if (script)
+        FreeValScript(script);
+    if (priv)
+        free(priv);
+    return NULL;
+}
+
+#ifdef XML_FILE_SUPPORTED
+UcsXmlScript_t *UcsXml_ParseScriptFile(const char *fileName)
+{
+    UcsXmlScript_t *script;
+    char *content = ReadFile(fileName);
+    if (NULL == content)
+    {
+        UcsXml_CB_OnError("UcsXml_ParseScriptFile:Could not read file:'%s'", 1, fileName);
+        return NULL;
+    }
+    script = UcsXml_ParseScript(content);
+    free(content);
+    return script;
+}
+#endif
+
+void UcsXml_FreeScript(UcsXmlScript_t *script)
+{
+    FreeValScript(script);
+}
+
 /************************************************************************/
 /* Private Function Implementations                                     */
 /************************************************************************/
@@ -395,6 +461,17 @@ static void FreeVal(UcsXmlVal_t *ucs)
     free(ucs);
 }
 
+static void FreeValScript(UcsXmlScript_t *script)
+{
+    PrivateDataScript_t *priv;
+    if (NULL == script || NULL == script->pInternal)
+        return;
+    priv = script->pInternal;
+    FreeObjList(&priv->objList);
+    free(script->pInternal);
+    free(script);
+}
+
 static bool GetElement(mxml_node_t *element, const char *name, bool goDeep, mxml_node_t **out, bool mandatory)
 {
     mxml_node_t *n = element;
@@ -419,15 +496,20 @@ static bool GetElement(mxml_node_t *element, const char *name, bool goDeep, mxml
     return false;
 }
 
-static bool GetElementArray(mxml_node_t *element, const char *array[], const char **foundName, mxml_node_t **out)
+static bool GetElementArray(mxml_node_t *element, const char *array[], const char **foundName, mxml_node_t **out, bool skipFirstElement)
 {
     mxml_node_t *n = element;
     if (NULL == n || NULL == array || NULL == foundName || NULL == out) return false;
-    while ((n = n->next))
+    if (skipFirstElement)
+        n = n->next;
+    while (n)
     {
         uint32_t i;
         if (MXML_ELEMENT != n->type)
+        {
+            n = n->next;
             continue;
+        }
         for (i = 0; NULL != array[i]; i++)
         {
             if (0 == strcmp(array[i], n->value.opaque))
@@ -437,6 +519,7 @@ static bool GetElementArray(mxml_node_t *element, const char *array[], const cha
                 return true;
             }
         }
+        n = n->next;
     }
     return false;
 }
@@ -472,7 +555,7 @@ static bool GetCountArray(mxml_node_t *element, const char *array[], uint32_t *o
     n = element;
     while(NULL != n)
     {
-        if(!GetElementArray(n, array, &tmp, &n))
+        if(!GetElementArray(n, array, &tmp, &n, true))
             break;
         ++cnt;
     }
@@ -806,7 +889,7 @@ static ParseResult_t ParseAll(mxml_node_t *tree, UcsXmlVal_t *ucs, PrivateData_t
         if (Parse_Success != (result = ParseNode(sub, priv)))
             return result;
         /*/Iterate all connections. Node without any connection is also valid.*/
-        if (GetElementArray(sub->child, ALL_CONNECTIONS, &conType, &con))
+        if (GetElementArray(sub->child, ALL_CONNECTIONS, &conType, &con, false))
         {
             while(con)
             {
@@ -818,21 +901,21 @@ static ParseResult_t ParseAll(mxml_node_t *tree, UcsXmlVal_t *ucs, PrivateData_t
                 if (Parse_Success != (result = ParseConnection(con, conType, priv)))
                     return result;
                 /*Iterate all sockets*/
-                if(!GetElementArray(con->child, ALL_SOCKETS, &socTypeStr, &soc)) RETURN_ASSERT(Parse_XmlError, "No Sockets defined");
+                if(!GetElementArray(con->child, ALL_SOCKETS, &socTypeStr, &soc, false)) RETURN_ASSERT(Parse_XmlError, "No Sockets defined");
                 while(soc)
                 {
                     if (!GetSocketType(socTypeStr, &socType)) RETURN_ASSERT(Parse_XmlError, "Could not get socket type");
                     if (Parse_Success != (result = ParseSocket(soc, (0 == priv->conData.sockCnt), socType, &priv->conData.jobList, priv)))
                         return result;
                     ++priv->conData.sockCnt;
-                    if(!GetElementArray(soc, ALL_SOCKETS, &socTypeStr, &soc))
+                    if(!GetElementArray(soc, ALL_SOCKETS, &socTypeStr, &soc, true))
                         break;
                 }
                 if (GetString(con, L_DRIVER_ATTR, &driverLink, false)) {
                     result = StoreDriverInfo(priv, driverLink);
                     if (Parse_Success != result) return result;
                 }
-                if(!GetElementArray(con, ALL_CONNECTIONS, &conType, &con))
+                if(!GetElementArray(con, ALL_CONNECTIONS, &conType, &con, true))
                     break;
             }
         }
@@ -846,32 +929,12 @@ static ParseResult_t ParseAll(mxml_node_t *tree, UcsXmlVal_t *ucs, PrivateData_t
     if (Parse_MemoryError == result) RETURN_ASSERT(Parse_MemoryError, "Aborting further parsing, because nodes failed")
     else if (Parse_XmlError == result) RETURN_ASSERT(Parse_XmlError, "Aborting further parsing, because nodes failed");
 
-    /*Iterate all scripts. No scripts at all is allowed*/
-    if(GetElement(tree, SCRIPT, true, &sub, false))
-    {
-        bool found = true;
-        struct UcsXmlScript *scrlist = priv->pScrLst;
-        while(sub)
-        {
-            result = ParseScript(sub, priv);
-            if (Parse_MemoryError == result) RETURN_ASSERT(Parse_MemoryError, "Aborting further parsing, because scripts failed")
-            else if (Parse_XmlError == result) RETURN_ASSERT(Parse_XmlError, "Aborting further parsing, because scripts failed");
-            if(!GetElement(sub, SCRIPT, false, &sub, false))
-                break;
-        }
-        /* Check if all scripts where referenced */
-        while(NULL != scrlist)
-        {
-            if (!scrlist->inUse)
-            {
-                UcsXml_CB_OnError("Script not defined:'%s', used by node=0x%X", 1, scrlist->scriptName, scrlist->node->signature_ptr->node_address);
-                found = false;
-            }
-            scrlist = scrlist->next;
-        }
-        if (!found)
-            RETURN_ASSERT(Parse_XmlError, "Script not found");
-    }
+
+    /* Parse all scripts*/
+    result = ParseAllScripts(tree, priv->pScrLst, &priv->objList, true);
+    if (Parse_MemoryError == result) RETURN_ASSERT(Parse_MemoryError, "Aborting further parsing, because scripts failed")
+    else if (Parse_XmlError == result) RETURN_ASSERT(Parse_XmlError, "Aborting further parsing, because scripts failed");
+
     /*Iterate all drivers. No driver at all is allowed*/
     if(GetElement(tree, L_DRIVER_TAG, true, &sub, false))
     {
@@ -915,7 +978,7 @@ static ParseResult_t ParseNode(mxml_node_t *node, PrivateData_t *priv)
         AddScript(&priv->pScrLst, scr);
     }
     /*Iterate all ports*/
-    if(GetElementArray(node->child, ALL_PORTS, &txt, &port))
+    if(GetElementArray(node->child, ALL_PORTS, &txt, &port, false))
     {
         while(port)
         {
@@ -952,7 +1015,7 @@ static ParseResult_t ParseNode(mxml_node_t *node, PrivateData_t *priv)
                 UcsXml_CB_OnError("Unknown Port:'%s'", 1, txt);
                 RETURN_ASSERT(Parse_XmlError, "Internal error");
             }
-            if(!GetElementArray(port, ALL_PORTS, &txt, &port))
+            if(!GetElementArray(port, ALL_PORTS, &txt, &port, true))
                 break;
         }
     }
@@ -1261,70 +1324,102 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
     return Parse_Success;
 }
 
-static ParseResult_t ParseScript(mxml_node_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseAllScripts(mxml_node_t *tree, struct UcsXmlScript *scrlist, struct UcsXmlObjectList *objList, bool checkReference)
+{
+    mxml_node_t *sub;
+    ParseResult_t result = Parse_Success; /* It's okay to have no scripts */
+    /*Iterate all scripts. No scripts at all is allowed*/
+    if(GetElement(tree, SCRIPT, true, &sub, false))
+    {
+        bool found = true;
+        while(sub)
+        {
+            result = ParseScript(sub, scrlist, objList);
+            if (Parse_MemoryError == result) RETURN_ASSERT(Parse_MemoryError, "Aborting further parsing, because scripts failed")
+            else if (Parse_XmlError == result) RETURN_ASSERT(Parse_XmlError, "Aborting further parsing, because scripts failed");
+            if(!GetElement(sub, SCRIPT, false, &sub, false))
+                break;
+        }
+        /* Check if all scripts where referenced */
+        while(checkReference && NULL != scrlist)
+        {
+            if (!scrlist->inUse)
+            {
+                UcsXml_CB_OnError("Script not defined:'%s', used by node=0x%X", 1, scrlist->scriptName, scrlist->node->signature_ptr->node_address);
+                found = false;
+            }
+            scrlist = scrlist->next;
+        }
+        if (!found)
+            RETURN_ASSERT(Parse_XmlError, "Script not found");
+    }
+    return result;
+}
+
+static ParseResult_t ParseScript(mxml_node_t *scr, struct UcsXmlScript *scrlist, struct UcsXmlObjectList *objList)
 {
     bool found = false;
     mxml_node_t *act;
     uint32_t actCnt;
     const char *txt;
-    struct UcsXmlScript *scrlist;
     Ucs_Ns_Script_t *script;
-    assert(NULL != scr && NULL != priv);
-    priv->scriptData.pause = 0;
-    scrlist = priv->pScrLst;
+    ScriptData_t scriptData = { 0 };
+    assert(NULL != scr && NULL != scrlist && NULL != objList);
     if (!GetCountArray(scr->child, ALL_SCRIPTS_NO_PAUSE, &actCnt, true)) RETURN_ASSERT(Parse_XmlError, "Script without any action");
-    if (NULL == (script = MCalloc(&priv->objList, actCnt, sizeof(Ucs_Ns_Script_t))))
+    if (NULL == (script = MCalloc(objList, actCnt, sizeof(Ucs_Ns_Script_t))))
         RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     actCnt = 0;
     /*Iterate all actions*/
-    if (!GetElementArray(scr->child, ALL_SCRIPTS, &txt, &act)) RETURN_ASSERT(Parse_XmlError, "Script without any action");
+    if (!GetElementArray(scr->child, ALL_SCRIPTS, &txt, &act, false)) RETURN_ASSERT(Parse_XmlError, "Script without any action");
     while(act)
     {
         if (0 == strcmp(txt, SCRIPT_MSG_SEND)) {
-            ParseResult_t result = ParseScriptMsgSend(act, &script[actCnt], priv);
+            ParseResult_t result = ParseScriptMsgSend(act, &script[actCnt], objList, &scriptData);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_GPIO_PORT_CREATE)) {
-            ParseResult_t result = ParseScriptGpioPortCreate(act, &script[actCnt], priv);
+            ParseResult_t result = ParseScriptGpioPortCreate(act, &script[actCnt], objList, &scriptData);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_GPIO_PORT_PIN_MODE)) {
-            ParseResult_t result = ParseScriptGpioPinMode(act, &script[actCnt], priv);
+            ParseResult_t result = ParseScriptGpioPinMode(act, &script[actCnt], objList, &scriptData);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_GPIO_PIN_STATE)) {
-            ParseResult_t result = ParseScriptGpioPinState(act, &script[actCnt], priv);
+            ParseResult_t result = ParseScriptGpioPinState(act, &script[actCnt], objList, &scriptData);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_I2C_PORT_CREATE)) {
-            ParseResult_t result = ParseScriptPortCreate(act, &script[actCnt], priv);
+            ParseResult_t result = ParseScriptPortCreate(act, &script[actCnt], objList, &scriptData);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_I2C_PORT_WRITE)) {
-            ParseResult_t result = ParseScriptPortWrite(act, &script[actCnt], priv);
+            ParseResult_t result = ParseScriptPortWrite(act, &script[actCnt], objList, &scriptData);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_I2C_PORT_READ)) {
-            ParseResult_t result = ParseScriptPortRead(act, &script[actCnt], priv);
+            ParseResult_t result = ParseScriptPortRead(act, &script[actCnt], objList, &scriptData);
             if (Parse_Success != result) return result;
             ++actCnt;
         } else if (0 == strcmp(txt, SCRIPT_PAUSE)) {
-            ParseResult_t result = ParseScriptPause(act, priv);
+            ParseResult_t result = ParseScriptPause(act, &scriptData);
             if (Parse_Success != result) return result;
         } else {
             UcsXml_CB_OnError("Unknown script action:'%s'", 1, txt);
             RETURN_ASSERT(Parse_XmlError, "Wrong enum");
         }
-        if (!GetElementArray(act, ALL_SCRIPTS, &txt, &act))
+        if (!GetElementArray(act, ALL_SCRIPTS, &txt, &act, true))
             break;
     }
     if (!GetString(scr, NAME, &txt, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     while(NULL != scrlist)
     {
-        if (0 == strcmp(txt, scrlist->scriptName))
+        if (scrlist->singleShot || 0 == strcmp(txt, scrlist->scriptName))
         {
             Ucs_Rm_Node_t *node = scrlist->node;
+            if (NULL == node)
+                return Parse_MemoryError;
             node->script_list_ptr = script;
             node->script_list_size = actCnt;
             scrlist->inUse = true;
@@ -1340,22 +1435,22 @@ static ParseResult_t ParseScript(mxml_node_t *scr, PrivateData_t *priv)
     return Parse_Success;
 }
 
-static bool FillScriptInitialValues(Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static bool FillScriptInitialValues(Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData)
 {
-    assert(NULL != scr && NULL != priv);
-    scr->send_cmd = MCalloc(&priv->objList, 1, sizeof(Ucs_Ns_ConfigMsg_t));
-    scr->exp_result = MCalloc(&priv->objList, 1, sizeof(Ucs_Ns_ConfigMsg_t));
+    assert(NULL != scr && NULL != objList && NULL != scriptData);
+    scr->send_cmd = MCalloc(objList, 1, sizeof(Ucs_Ns_ConfigMsg_t));
+    scr->exp_result = MCalloc(objList, 1, sizeof(Ucs_Ns_ConfigMsg_t));
     if (NULL == scr->send_cmd || NULL == scr->exp_result) RETURN_ASSERT(false, "calloc returned NULL");
-    scr->pause = priv->scriptData.pause;
-    priv->scriptData.pause = 0;
+    scr->pause = scriptData->pause;
+    scriptData->pause = 0;
     return true;
 }
 
-static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData)
 {
     Ucs_Ns_ConfigMsg_t *req, *res;
-    assert(NULL != act && NULL != scr && NULL != priv);
-    if (!FillScriptInitialValues(scr, priv)) return Parse_MemoryError;
+    assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
+    if (!FillScriptInitialValues(scr, objList, scriptData)) return Parse_MemoryError;
     req = scr->send_cmd;
     res = scr->exp_result;
     req->InstId = res->InstId = 1;
@@ -1374,24 +1469,24 @@ static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, 
     if (!GetUInt8(act, OP_TYPE_RESPONSE, &res->OpCode, false))
         res->OpCode = 0xFF;
 
-    if (!GetPayload(act, PAYLOAD_REQ_HEX, &req->DataPtr, &req->DataLen, 0, &priv->objList, true))
+    if (!GetPayload(act, PAYLOAD_REQ_HEX, &req->DataPtr, &req->DataLen, 0, objList, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
     res->DataLen = 0xFF; /* Using Wildcard */
 #else
-    if (!GetPayload(act, PAYLOAD_RES_HEX, &res->DataPtr, &res->DataLen, 0, &priv->objList, true))
+    if (!GetPayload(act, PAYLOAD_RES_HEX, &res->DataPtr, &res->DataLen, 0, objList, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
 #endif    
     return Parse_Success;
 }
 
-static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData)
 {
     uint16_t debounce;
     Ucs_Ns_ConfigMsg_t *req, *res;
-    assert(NULL != act && NULL != scr && NULL != priv);
-    if (!FillScriptInitialValues(scr, priv))
+    assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
+    if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
     if (!GetUInt16(act, DEBOUNCE_TIME, &debounce, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
@@ -1402,7 +1497,7 @@ static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t
     req->OpCode = 0x2;
     res->OpCode = 0xC;
     req->DataLen = 3;
-    req->DataPtr = MCalloc(&priv->objList, req->DataLen, 1);
+    req->DataPtr = MCalloc(objList, req->DataLen, 1);
     if (NULL == req->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     req->DataPtr[0] = 0; /*GPIO Port instance, always 0*/
     req->DataPtr[1] = MISC_HB(debounce);
@@ -1411,7 +1506,7 @@ static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t
     res->DataLen = 0xFF; /* Using Wildcard */
 #else
     res->DataLen = 2;
-    res->DataPtr = MCalloc(&priv->objList, res->DataLen, 1);
+    res->DataPtr = MCalloc(objList, res->DataLen, 1);
     if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     res->DataPtr[0] = 0x1D;
     res->DataPtr[1] = 0x00;
@@ -1419,14 +1514,14 @@ static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t
     return Parse_Success;
 }
 
-static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData)
 {
 #define PORT_HANDLE_OFFSET (2)
     uint8_t *payload;
     uint8_t payloadLen = 0;
     Ucs_Ns_ConfigMsg_t *req, *res;
-    assert(NULL != act && NULL != scr && NULL != priv);
-    if (!FillScriptInitialValues(scr, priv))
+    assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
+    if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
     req = scr->send_cmd;
     res = scr->exp_result;
@@ -1436,7 +1531,7 @@ static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *s
     res->OpCode = 0xC;
     if (!GetPayload(act, PIN_CONFIG, &payload, &payloadLen,
         PORT_HANDLE_OFFSET, /* First two bytes are reserved for port handle */
-        &priv->objList, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+        objList, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     payload[0] = 0x1D;
     payload[1] = 0x00;
     req->DataPtr = payload;
@@ -1450,12 +1545,12 @@ static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *s
     return Parse_Success;
 }
 
-static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData)
 {
     uint16_t mask, data;
     Ucs_Ns_ConfigMsg_t *req, *res;
-    assert(NULL != act && NULL != scr && NULL != priv);
-    if (!FillScriptInitialValues(scr, priv))
+    assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
+    if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
     if (!GetUInt16(act, PIN_MASK, &mask, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
@@ -1468,7 +1563,7 @@ static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *
     req->OpCode = 0x2;
     res->OpCode = 0xC;
     req->DataLen = 6;
-    req->DataPtr = MCalloc(&priv->objList, req->DataLen, 1);
+    req->DataPtr = MCalloc(objList, req->DataLen, 1);
     if (NULL == req->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     req->DataPtr[0] = 0x1D;
     req->DataPtr[1] = 0x00;
@@ -1480,7 +1575,7 @@ static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *
     res->DataLen = 0xFF; /* Using Wildcard */
 #else
     res->DataLen = 8;
-    res->DataPtr = MCalloc(&priv->objList, res->DataLen, 1);
+    res->DataPtr = MCalloc(objList, res->DataLen, 1);
     if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     memcpy(res->DataPtr, req->DataPtr, req->DataLen);
     res->DataPtr[6] = 0x00;
@@ -1489,13 +1584,13 @@ static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *
     return Parse_Success;
 }
 
-static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData)
 {
     const char *txt;
     uint8_t speed;
     Ucs_Ns_ConfigMsg_t *req, *res;
-    assert(NULL != act && NULL != scr && NULL != priv);
-    if (!FillScriptInitialValues(scr, priv))
+    assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
+    if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
     if (!GetString(act, I2C_SPEED, &txt, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
@@ -1515,7 +1610,7 @@ static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *sc
     req->OpCode = 0x2;
     res->OpCode = 0xC;
     req->DataLen = 4;
-    req->DataPtr = MCalloc(&priv->objList, req->DataLen, 1);
+    req->DataPtr = MCalloc(objList, req->DataLen, 1);
     if (NULL == req->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     req->DataPtr[0] = 0x00; /* I2C Port Instance always 0 */
     req->DataPtr[1] = 0x00; /* I2C slave address, always 0, because we are Master */
@@ -1525,7 +1620,7 @@ static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *sc
     res->DataLen = 0xFF; /* Using Wildcard */
 #else
     res->DataLen = 2;
-    res->DataPtr = MCalloc(&priv->objList, res->DataLen, 1);
+    res->DataPtr = MCalloc(objList, res->DataLen, 1);
     if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     res->DataPtr[0] = 0x0F;
     res->DataPtr[1] = 0x00;
@@ -1533,7 +1628,7 @@ static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *sc
     return Parse_Success;
 }
 
-static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData)
 {
 #define HEADER_OFFSET 8
     const char *txt;
@@ -1541,7 +1636,7 @@ static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr
     uint16_t timeout;
     uint8_t *payload;
     Ucs_Ns_ConfigMsg_t *req, *res;
-    assert(NULL != act && NULL != scr && NULL != priv);
+    assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
     if (GetString(act, I2C_WRITE_MODE, &txt, false))
     {
         if (0 == strcmp(txt, I2C_WRITE_MODE_DEFAULT))
@@ -1566,11 +1661,11 @@ static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr
         length = 0;
     if (!GetUInt16(act, I2C_TIMEOUT, &timeout, false))
         timeout = 100;
-    if (!GetPayload(act, I2C_PAYLOAD, &payload, &payloadLength, HEADER_OFFSET, &priv->objList, true))
+    if (!GetPayload(act, I2C_PAYLOAD, &payload, &payloadLength, HEADER_OFFSET, objList, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     if (0 == length)
         length = payloadLength;
-    if (!FillScriptInitialValues(scr, priv))
+    if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
     req = scr->send_cmd;
     res = scr->exp_result;
@@ -1593,7 +1688,7 @@ static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr
     res->DataLen = 0xFF; /* Using Wildcard */
 #else
     res->DataLen = 4;
-    res->DataPtr = MCalloc(&priv->objList, res->DataLen, 1);
+    res->DataPtr = MCalloc(objList, res->DataLen, 1);
     if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     res->DataPtr[0] = 0x0F;
     res->DataPtr[1] = 0x00;
@@ -1606,19 +1701,19 @@ static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr
     return Parse_Success;
 }
 
-static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr, PrivateData_t *priv)
+static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr, struct UcsXmlObjectList *objList, ScriptData_t *scriptData)
 {
     uint8_t address, length;
     uint16_t timeout;
     Ucs_Ns_ConfigMsg_t *req, *res;
-    assert(NULL != act && NULL != scr && NULL != priv);
+    assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
     if (!GetUInt8(act, I2C_SLAVE_ADDRESS, &address, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     if (!GetUInt8(act, I2C_PAYLOAD_LENGTH, &length, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     if (!GetUInt16(act, I2C_TIMEOUT, &timeout, false))
         timeout = 100;
-    if (!FillScriptInitialValues(scr, priv))
+    if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
     req = scr->send_cmd;
     res = scr->exp_result;
@@ -1627,7 +1722,7 @@ static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr,
     req->OpCode = 0x2;
     res->OpCode = 0xC;
     req->DataLen = 6;
-    req->DataPtr = MCalloc(&priv->objList, req->DataLen, 1);
+    req->DataPtr = MCalloc(objList, req->DataLen, 1);
     if (NULL == req->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
 
     req->DataPtr[0] = 0x0F;
@@ -1640,7 +1735,7 @@ static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr,
     res->DataLen = 0xFF; /* Using Wildcard */
 #else
     res->DataLen = 4;
-    res->DataPtr = MCalloc(&priv->objList, res->DataLen, 1);
+    res->DataPtr = MCalloc(objList, res->DataLen, 1);
     if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     res->DataPtr[0] = 0x0F;
     res->DataPtr[1] = 0x00;
@@ -1650,10 +1745,10 @@ static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr,
     return Parse_Success;
 }
 
-static ParseResult_t ParseScriptPause(mxml_node_t *act, PrivateData_t *priv)
+static ParseResult_t ParseScriptPause(mxml_node_t *act, ScriptData_t *scriptData)
 {
-    assert(NULL != act && NULL != priv);
-    if (!GetUInt16(act, PAUSE_MS, &priv->scriptData.pause, true))
+    assert(NULL != act && NULL != scriptData);
+    if (!GetUInt16(act, PAUSE_MS, &scriptData->pause, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     return Parse_Success;
 }
@@ -1783,6 +1878,7 @@ static bool AddDriverInfo(struct UcsXmlDriverInfoList **drvList, DriverInformati
 
 static ParseResult_t ParseDriver(mxml_node_t *drv, UcsXmlVal_t *ucs, PrivateData_t *priv)
 {
+    bool found = false;
     mxml_node_t *driver;
     DriverInformation_t *drvInf = NULL;
     const char *driverLink;
@@ -1796,11 +1892,12 @@ static ParseResult_t ParseDriver(mxml_node_t *drv, UcsXmlVal_t *ucs, PrivateData
         if (NULL == drvInf) return Parse_MemoryError;
         /*Iterate all drivers in XML*/
         if(0 == strcmp(driverLink, drvInf->linkName) &&
-            GetElementArray(drv->child, ALL_DRIVERS, &driverType, &driver))
+            GetElementArray(drv->child, ALL_DRIVERS, &driverType, &driver, false))
         {
             bool firstDriverEntry = true;
             while(driver)
             {
+                found = true;
                 if (firstDriverEntry)
                 {
                     firstDriverEntry = false;
@@ -1858,13 +1955,18 @@ static ParseResult_t ParseDriver(mxml_node_t *drv, UcsXmlVal_t *ucs, PrivateData
                     UcsXml_CB_OnError("Invalid Driver Type", 0);
                     RETURN_ASSERT(Parse_XmlError, "Wrong enum");
                 }
-                if(!GetElementArray(driver, ALL_DRIVERS, &driverType, &driver))
+                if(!GetElementArray(driver, ALL_DRIVERS, &driverType, &driver, true))
                     break;
             }
         }
         head = head->next;
     }
     while(NULL != head);
+    if (!found)
+    {
+        UcsXml_CB_OnError("Did not find driver info for '%s'", 1, driverLink);
+        RETURN_ASSERT(Parse_XmlError, "No driver info");
+    }
     return Parse_Success;
 }
 
