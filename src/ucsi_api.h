@@ -81,6 +81,21 @@ bool UCSI_NewConfig(UCSI_Data_t *pPriv,
 
 
 /**
+ * \brief Executes the given script. If already started, all
+ *        existing local and remote INIC resources will be destroyed
+ * \note pScriptList pointer must stay valid until this callback is
+ *       raised: "UCSI_CB_OnStop"
+ * \note UCSI_NewConfig must called first, before calling the function
+ *
+ * \param pPriv - private data section of this instance
+ * \param targetAddress - targetAddress - The target node address
+ * \param pScriptList - Pointer to the array of scripts
+ * \param scriptListLength - Number of scripts in the array
+ * \return true, script successfully enqueued, false otherwise
+ */
+bool UCSI_ExecuteScript(UCSI_Data_t *pPriv, uint16_t targetAddress, Ucs_Ns_Script_t *pScriptList, uint8_t scriptListLength);
+
+/**
  * \brief Offer the received control data from LLD to UNICENS
  * \note Call this function only from single context (not from ISR)
  * \note This function can be called repeated until it return false

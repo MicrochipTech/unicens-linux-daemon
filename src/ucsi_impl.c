@@ -176,6 +176,40 @@ bool UCSI_NewConfig(UCSI_Data_t *my,
     return true;
 }
 
+bool UCSI_ExecuteScript(UCSI_Data_t *my, uint16_t targetAddress, Ucs_Ns_Script_t *pScriptList, uint8_t scriptListLength)
+{
+    uint8_t i = 0;
+    Ucs_Rm_Node_t *pNode = NULL;
+    UnicensCmdEntry_t e;
+    assert(MAGIC == my->magic);
+    if (NULL == my) return false;
+    if (!my->initialized || !my->uniInitData.mgr.enabled
+        || NULL == my->uniInitData.mgr.nodes_list_ptr || 0 == my->uniInitData.mgr.nodes_list_size
+        || NULL == pScriptList || 0 == scriptListLength)
+    {
+        return false;
+    }
+    for (i = 0; i < my->uniInitData.mgr.nodes_list_size; i++)
+    {
+        Ucs_Rm_Node_t *pTempNode = &my->uniInitData.mgr.nodes_list_ptr[i];
+        if (NULL == pTempNode)
+            break;
+        if (pTempNode->signature_ptr && targetAddress == pTempNode->signature_ptr->node_address)
+        {
+            /* Found correct node in List */
+            pNode = pTempNode;
+            break;
+        }
+    }
+    if (NULL == pNode)
+        return false;
+    pNode->script_list_ptr = pScriptList;
+    pNode->script_list_size = scriptListLength;
+    e.cmd = UnicensCmd_NsRun;
+    e.val.NsRun.node_ptr = pNode;
+    return EnqueueCommand(my, &e);
+}
+
 bool UCSI_ProcessRxData(UCSI_Data_t *my,
     const uint8_t *pBuffer, uint32_t len)
 {
