@@ -320,9 +320,15 @@ static bool ConfigureCdev(const char *fullPath, DriverInformation_t *driver)
 static bool LinkCdev(const char* channelName, const char* deviceName, DriverInformation_t *driver)
 {
     char val[VAL_LEN];
-    char aimName[VAL_LEN];
+    char aimName[VAL_LEN] = { 0 };
     LinuxDriverCdev_t *drv = &driver->drv.LinuxCdev;
-    strncpy(aimName, drv->aimName, sizeof(aimName));
+    if (NULL != drv->aimName)
+        strncpy(aimName, drv->aimName, sizeof(aimName));
+    if ('\0' != m.descriptionFilter[0])
+    {
+        strncat(aimName, "-", (sizeof(aimName) - strlen(aimName) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
+    }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
     return WriteCharactersToFile("/sys/devices/virtual/most/mostcore/aims/cdev", "add_link", val);
@@ -357,9 +363,15 @@ static bool ConfigureAlsa(const char *fullPath, DriverInformation_t *driver)
 static bool LinkAlsa(const char* channelName, const char* deviceName, DriverInformation_t *driver)
 {
     char val[VAL_LEN];
-    char aimName[VAL_LEN];
+    char aimName[VAL_LEN] = { 0 };
     LinuxDriverAlsa_t *drv = &driver->drv.LinuxAlsa;
-    strncpy(aimName, drv->aimName, sizeof(aimName));
+    if (NULL != drv->aimName)
+        strncpy(aimName, drv->aimName, sizeof(aimName));
+    if ('\0' != m.descriptionFilter[0])
+    {
+        strncat(aimName, "-", (sizeof(aimName) - strlen(aimName) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
+    }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s-%s.%dx%d", deviceName, channelName, 
         aimName,
@@ -399,9 +411,15 @@ static bool ConfigureV4L2(const char *fullPath, DriverInformation_t *driver)
 static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInformation_t *driver)
 {
     char val[VAL_LEN];
-    char aimName[VAL_LEN];
+    char aimName[VAL_LEN] = { 0 };
     LinuxDriverV4l2_t *drv = &driver->drv.LinuxV4l2;
-    strncpy(aimName, drv->aimName, sizeof(aimName));
+    if (NULL != drv->aimName)
+        strncpy(aimName, drv->aimName, sizeof(aimName));
+    if ('\0' != m.descriptionFilter[0])
+    {
+        strncat(aimName, "-", (sizeof(aimName) - strlen(aimName) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
+    }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
     return WriteCharactersToFile("/sys/devices/virtual/most/mostcore/aims/v4l", "add_link", val);
