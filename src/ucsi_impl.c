@@ -550,15 +550,6 @@ static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd, bool success)
         case UnicensCmd_SendAmsMessage:
                 UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.SendAms.targetAddress);
             break;
-        case UnicensCmd_ProgIsRam:
-                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.ProgIsRam.signature.node_address);
-            break;
-        case UnicensCmd_ProgIsRom:
-                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.ProgIsRom.signature.node_address);
-            break;
-        case UnicensCmd_PacketFilterMode:
-                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.PacketFilterMode.destination_address);
-            break;
         default:
             UCSI_CB_OnCommandResult(my->tag, cmd, success, UNKNOWN_NODE_ADDR);
             break;
