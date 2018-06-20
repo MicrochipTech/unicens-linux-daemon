@@ -2161,6 +2161,8 @@ static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink
         drvInf->drv.LinuxV4l2.subBufferSize = subBufferSize;
         drvInf->drv.LinuxV4l2.packetsPerXact = packetsPerXact;
         break;
+    default:
+        break;
     }
     drvInf->nodeAddress = priv->nodeData.nod->signature_ptr->node_address;
     return Parse_Success;

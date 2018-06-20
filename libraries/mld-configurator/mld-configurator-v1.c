@@ -52,11 +52,14 @@ struct MldConfigLocal
     uint16_t pollTime;
     pthread_t workerThread;
     char descriptionFilter[VAL_LEN];
+    char ctxName[VAL_LEN];
+    char crxName[VAL_LEN];
 };
 
 static struct MldConfigLocal m = { 0 };
 static const char *SYS_FS_PATH = ("/sys/class/most/mostcore/devices");
 static void *Worker(void *tag);
+static bool DoesFileExist(const char *pPathToFile);
 static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLen);
 static bool WriteCharactersToFile( const char *path, const char *pFileName, const char *pString );
 static bool WriteIntegerToFile( const char *path, const char *pFileName, int intValue );
@@ -69,6 +72,8 @@ static bool ConfigureAlsa(const char *fullPath, DriverInformation_t *drv);
 static bool LinkAlsa(const char* channelName, const char* deviceName, DriverInformation_t *driver);
 static bool ConfigureV4L2(const char *fullPath, DriverInformation_t *driver);
 static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInformation_t *driver);
+static bool ConfigureNetwork(const char *fullPath, DriverInformation_t *driver);
+static bool LinkNetwork(const char* channelName, const char* deviceName, DriverInformation_t *driver);
 
 bool MldConfigV1_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint16_t localNodeAddress, const char *descriptionFilter, uint16_t pollTime)
 {
@@ -98,6 +103,47 @@ void MldConfigV1_Stop()
     m.started = false;
 }
 
+static char * ExtendControlCdevName(char *out, char * in)
+{
+    if (NULL == out || NULL == in)
+        return NULL;
+    strcpy(out, "/dev/inic-control-");
+    if ('\0' != m.descriptionFilter[0])
+    {
+        strcat(out, m.descriptionFilter);
+        strcat(out, "-");
+    }
+    ReplaceCharsInString(out, " .:;|!", '_');
+    strcat(out, in);
+    return out;
+}
+
+bool MldConfigV1_GetControlCdevName(char **pControlCdevTx, char **pControlCdevRx)
+{
+    char tempName[VAL_LEN] = { 0 };
+    if (NULL == pControlCdevTx || NULL == pControlCdevRx)
+        return false;
+    *pControlCdevTx = NULL;
+    *pControlCdevRx = NULL;
+    if (!DoesFileExist(ExtendControlCdevName(tempName, "ep0f")) &&
+        !DoesFileExist(ExtendControlCdevName(tempName, "ep07")) &&
+        !DoesFileExist(ExtendControlCdevName(tempName, "ca4")))
+    {
+        return false;
+    }
+    strncpy(m.ctxName, tempName, sizeof(m.ctxName));
+    if (!DoesFileExist(ExtendControlCdevName(tempName, "ep8f")) &&
+        !DoesFileExist(ExtendControlCdevName(tempName, "ep87")) &&
+        !DoesFileExist(ExtendControlCdevName(tempName, "ca2")))
+    {
+        return false;
+    }
+    strncpy(m.crxName, tempName, sizeof(m.ctxName));
+    *pControlCdevTx = m.ctxName;
+    *pControlCdevRx = m.crxName;
+    return true;
+}
+
 static void *Worker(void *tag)
 {
     char intf[VAL_LEN];
@@ -110,6 +156,11 @@ static void *Worker(void *tag)
         usleep(1000 * m.pollTime);
     }
     return tag;
+}
+
+static bool DoesFileExist(const char *pPathToFile)
+{
+    return (-1 != access(pPathToFile, F_OK));
 }
 
 static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLen)
@@ -232,23 +283,60 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     char path[PATH_LEN];
     DriverPhysicalLayer_t curPhy = DriverPhyUnknown;
     DriverInformation_t *drv = NULL;
+    DriverInformation_t localDrv = { 0 };
     if (NULL == m.pConfig || 0 == m.driverSize)
         return;
     if ('\0' != *m.descriptionFilter && NULL != descr && NULL == strstr(descr, m.descriptionFilter))
         return;
-    snprintf(path, sizeof(path), "%s/%s", fullPath, "set_buffer_size");
-    if (!ReadFromFile(path, val, sizeof(val)))
-        return;
-    if (0 != strcmp("0", val))
-        return; /* Already configured */
-    
+
     if (0 == strcmp("usb", intf))
         curPhy = DriverPhyUsb;
     else if (0 == strcmp("mlb_dim2", intf))
         curPhy = DriverPhyMlb;
     else return;
-   
-    for (i = 0; i < m.driverSize; i++)
+
+    if (0 == strcmp("ep0f", channelName) || 0 == strcmp("ep8f", channelName) ||
+        0 == strcmp("ep07", channelName) || 0 == strcmp("ep87", channelName) ||
+        0 == strcmp("ca2", channelName) || 0 == strcmp("ca4", channelName))
+    {
+        drv = &localDrv;
+        localDrv.driverType = Driver_LinuxCdev;
+        localDrv.drv.LinuxCdev.aimName = "control";
+        localDrv.drv.LinuxCdev.dataType = DriverCfgDataType_Control;
+        localDrv.drv.LinuxCdev.numBuffers = 16;
+        localDrv.drv.LinuxCdev.bufferSize = 64;
+    }
+    else if (0 == strcmp("ep0e", channelName) || 0 == strcmp("ep8e", channelName) ||
+        0 == strcmp("ep06", channelName) || 0 == strcmp("ep86", channelName) ||
+        0 == strcmp("ca6", channelName) || 0 == strcmp("ca8", channelName))
+    {
+        drv = &localDrv;
+        localDrv.driverType = Driver_LinuxNetwork;
+        localDrv.drv.LinuxNetwork.aimName = "network";
+        localDrv.drv.LinuxNetwork.dataType = DriverCfgDataType_Async;
+        localDrv.drv.LinuxNetwork.numBuffers = 20;
+        localDrv.drv.LinuxNetwork.bufferSize = 1522;
+    }
+    if (NULL != drv)
+    {
+        if (0 == strcmp("ep0f", channelName) || 0 == strcmp("ep07", channelName) || 0 == strcmp("ca4", channelName))
+        {
+            localDrv.drv.LinuxCdev.direction = DriverCfgDirection_Tx;
+        }
+        else if (0 == strcmp("ep8f", channelName) || 0 == strcmp("ep87", channelName) || 0 == strcmp("ca2", channelName))
+        {
+            localDrv.drv.LinuxCdev.direction = DriverCfgDirection_Rx;
+        }
+        else if (0 == strcmp("ep0e", channelName) || 0 == strcmp("ep06", channelName) || 0 == strcmp("ca8", channelName))
+        {
+            localDrv.drv.LinuxNetwork.direction = DriverCfgDirection_Tx;
+        }
+        if (0 == strcmp("ep8e", channelName) || 0 == strcmp("ep86", channelName) || 0 == strcmp("ca6", channelName))
+        {
+            localDrv.drv.LinuxNetwork.direction = DriverCfgDirection_Rx;
+        }
+    }
+    for (i = 0; NULL == drv && i < m.driverSize; i++)
     {
         DriverInformation_t *tmp = m.pConfig[i];
         if (m.localNodeAddress != tmp->nodeAddress)
@@ -277,6 +365,12 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     }
     if (NULL == drv)
         return;
+    /* Check if channel is already configured */
+    snprintf(path, sizeof(path), "%s/%s", fullPath, "set_buffer_size");
+    if (!ReadFromFile(path, val, sizeof(val)))
+        return;
+    if (0 != strcmp("0", val))
+        return; /* Already configured */
     switch(drv->driverType)
     {
     case Driver_LinuxCdev:
@@ -287,6 +381,9 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
         break;
     case Driver_LinuxV4l2:
         ConfigureV4L2(fullPath, drv) && LinkV4L2(channelName, deviceName, drv);
+        break;
+    case Driver_LinuxNetwork:
+        ConfigureNetwork(fullPath, drv) && LinkNetwork(channelName, deviceName, drv);
         break;
     }
 }
@@ -299,6 +396,10 @@ static bool ConfigureCdev(const char *fullPath, DriverInformation_t *driver)
         success &= WriteCharactersToFile(fullPath, "set_datatype", "sync");
     else if (DriverCfgDataType_Isoc == drv->dataType)
         success &= WriteCharactersToFile(fullPath, "set_datatype", "isoc");
+    else if (DriverCfgDataType_Control == drv->dataType)
+        success &= WriteCharactersToFile(fullPath, "set_datatype", "control");
+    else if (DriverCfgDataType_Async == drv->dataType)
+        success &= WriteCharactersToFile(fullPath, "set_datatype", "async");
     else return false;
 
     if (DriverCfgDirection_Tx == drv->direction)
@@ -423,4 +524,38 @@ static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInfo
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
     return WriteCharactersToFile("/sys/devices/virtual/most/mostcore/aims/v4l", "add_link", val);
+}
+
+static bool ConfigureNetwork(const char *fullPath, DriverInformation_t *driver)
+{
+    bool success = true;
+    LinuxDriverNetwork_t *drv = &driver->drv.LinuxNetwork;
+    success &= WriteCharactersToFile(fullPath, "set_datatype", "async");
+
+    if (DriverCfgDirection_Tx == drv->direction)
+        success &= WriteCharactersToFile(fullPath, "set_direction", "tx");
+    else if (DriverCfgDirection_Rx == drv->direction)
+        success &= WriteCharactersToFile(fullPath, "set_direction", "rx");
+    else return false;
+
+    success &= WriteIntegerToFile(fullPath, "set_number_of_buffers", drv->numBuffers);
+    success &= WriteIntegerToFile(fullPath, "set_buffer_size", drv->bufferSize);
+    return success;
+}
+
+static bool LinkNetwork(const char* channelName, const char* deviceName, DriverInformation_t *driver)
+{
+    char val[VAL_LEN];
+    char aimName[VAL_LEN] = { 0 };
+    LinuxDriverNetwork_t *drv = &driver->drv.LinuxNetwork;
+    if (NULL != drv->aimName)
+        strncpy(aimName, drv->aimName, sizeof(aimName));
+    if ('\0' != m.descriptionFilter[0])
+    {
+        strncat(aimName, "-", (sizeof(aimName) - strlen(aimName) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
+    }
+    ReplaceCharsInString(aimName, " .:;/|!", '_');
+    snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
+    return WriteCharactersToFile("/sys/devices/virtual/most/mostcore/aims/networking", "add_link", val);
 }

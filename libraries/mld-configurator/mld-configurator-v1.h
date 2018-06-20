@@ -61,6 +61,16 @@ bool MldConfigV1_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint1
  */
 void MldConfigV1_Stop();
 
+/**
+ * \brief Get the full path of control character devices
+ * \note Buffers for pControlCdevTx and pControlCdevRx will be provided by this component.
+ *
+ * \param pControlCdevTx - Zero terminated string containing path to control TX CDEV or NULL if not found
+ * \param pControlCdevRx - Zero terminated string containing path to control RX CDEV or NULL if not found
+ * \return true if both devices are available. false, otherwise, then pControlCdevTx and pControlCdevRx are invalid.
+ */
+bool MldConfigV1_GetControlCdevName(char **pControlCdevTx, char **pControlCdevRx);
+
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                        CALLBACK SECTION                              */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/

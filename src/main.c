@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <signal.h>
 #include <assert.h>
@@ -81,8 +82,8 @@ typedef struct
     sem_t serviceSem;
     CdevData_t ctrlTx;
     CdevData_t ctrlRx;
-    const char *controlRxCdev;
-    const char *controlTxCdev;
+    char *controlRxCdev;
+    char *controlTxCdev;
     bool enableDrv1;
     uint16_t drvNodeAddr;
     char *drvFilter;
@@ -156,6 +157,8 @@ int main(int argc, char *argv[])
                 return -1;
             }
             m.enableDrv1 = true;
+            m.controlRxCdev = NULL;
+            m.controlTxCdev = NULL;
             token = strtok_r( argv[i + 1], ":", &tkPtr );
             while( NULL != token )
             {
@@ -203,11 +206,6 @@ int main(int argc, char *argv[])
         ConsolePrintf(PRIO_ERROR, RED"Failed to initialize timer/threading resources"RESETCOLOR"\r\n");
         return -1;
     }
-    if (!InitializeCdevs())
-    {
-        ConsolePrintf(PRIO_ERROR, RED"Failed to initialize Control CDEVs"RESETCOLOR"\r\n");
-        return -1;
-    }
 
     /* Initialize UNICENS */
     UCSI_Init(&m.unicens, &m);
@@ -217,10 +215,19 @@ int main(int argc, char *argv[])
         {
             if (NULL != cfg->ppDriver && 0 != cfg->driverSize)
             {
+                struct timespec t;
+                t.tv_sec = 0;
+                t.tv_nsec = 10000000l;
                 if (!MldConfigV1_Start(cfg->ppDriver, cfg->driverSize, m.drvNodeAddr, m.drvFilter, 1000))
                 {
                     ConsolePrintf(PRIO_ERROR, RED"Could not start driver configuration service"RESETCOLOR"\r\n");
                     return -1;
+                }
+                nanosleep(&t, NULL);
+                while(!MldConfigV1_GetControlCdevName(&m.controlTxCdev, &m.controlRxCdev))
+                {
+                    ConsolePrintf(PRIO_ERROR, YELLOW"Wait for INICs control channel to appear"RESETCOLOR"\r\n");
+                    nanosleep(&t, NULL);
                 }
             } else {
                 ConsolePrintf(PRIO_ERROR, RED"MOST Linux Driver Configurator V1 is enabled, but the XML does not provide any information"RESETCOLOR"\r\n");
@@ -243,6 +250,11 @@ int main(int argc, char *argv[])
             assert(false);
             return -1;
         }
+    }
+    if (!InitializeCdevs())
+    {
+        ConsolePrintf(PRIO_ERROR, RED"Failed to initialize Control CDEVs"RESETCOLOR"\r\n");
+        return -1;
     }
     m.allowRun = true;
     while (m.allowRun)
