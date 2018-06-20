@@ -138,18 +138,6 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
     RB_Init(&my->rb, CMD_QUEUE_LEN, sizeof(UnicensCmdEntry_t), my->rbBuf);
 }
 
-bool UCSI_Wait(UCSI_Data_t *my, uint32_t waitTimeMs)
-{
-    UnicensCmdEntry_t e;
-    assert(MAGIC == my->magic);
-    e.cmd = UnicensCmd_Wait;
-    e.val.Wait.waitTimeEnd = UCSI_CB_OnGetTime(my->tag) + waitTimeMs;
-    if (!EnqueueCommand(my, &e))
-        return false;
-    UCSI_CB_OnServiceRequired(my->tag);
-    return true;
-}
-
 bool UCSI_NewConfig(UCSI_Data_t *my,
     uint16_t packetBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
     Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize)
@@ -253,14 +241,6 @@ void UCSI_Service(UCSI_Data_t *my)
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Init failed", 0);
                 UCSI_CB_OnCommandResult(my->tag, UnicensCmd_Init, false, LOCAL_NODE_ADDR);
             }
-            break;
-        case UnicensCmd_Wait:
-            if (UCSI_CB_OnGetTime(my->tag) < e->val.Wait.waitTimeEnd)
-            {
-                my->currentCmd = NULL;
-                popEntry = false;
-            }
-            UCSI_CB_OnServiceRequired(my->tag);
             break;
         case UnicensCmd_Stop:
             if (UCS_RET_SUCCESS == Ucs_Stop(my->unicens, OnUcsStopResult))

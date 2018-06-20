@@ -75,7 +75,6 @@ typedef enum
 {
     UnicensCmd_Unknown,
     UnicensCmd_Init,
-    UnicensCmd_Wait,
     UnicensCmd_Stop,
     UnicensCmd_RmSetRoute,
     UnicensCmd_NsRun,
@@ -93,15 +92,6 @@ typedef struct
 {
     const Ucs_InitData_t *init_ptr;
 } UnicensCmdInit_t;
-
-/**
- * \brief Internal struct for UNICENS Integration
- */
-typedef struct
-{
-    uint32_t waitTimeEnd;
-} UnicensCmdWait_t;
-
 
 /**
  * \brief Internal struct for UNICENS Integration
@@ -184,7 +174,6 @@ typedef struct
     union
     {
         UnicensCmdInit_t Init;
-        UnicensCmdWait_t Wait;
         UnicensCmdRmSetRoute_t RmSetRoute;
         UnicensCmdNsRun_t NsRun;
         UnicensCmdGpioCreatePort_t GpioCreatePort;

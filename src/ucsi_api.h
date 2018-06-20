@@ -52,16 +52,6 @@ extern "C" {
 void UCSI_Init(UCSI_Data_t *pPriv, void *pTag);
 
 /**
- * \brief Enqueue a wait time between two UNICENS commands.
- *
- * \param pPriv - private data section of this instance
- * \param waitTimeMs - Wait time in milliseconds
- *
- * \return true, if route command was enqueued to UNICENS.
- */
-bool UCSI_Wait(UCSI_Data_t *pPriv, uint32_t waitTimeMs);
-
-/**
  * \brief Executes the given configuration. If already started, all
  *        existing local and remote INIC resources will be destroyed
  * \note All given pointers must stay valid until this callback is
