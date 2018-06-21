@@ -1,4 +1,7 @@
+add_subdirectory (cdev-handler)
+add_subdirectory (console)
 add_subdirectory (mld-configurator)
 add_subdirectory (mxml)
+add_subdirectory (ucsi)
 add_subdirectory (ucs-xml)
 add_subdirectory (unicens)

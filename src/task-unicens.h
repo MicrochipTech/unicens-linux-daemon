@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* MOST Linux Driver Configurator                                                                 */
+/* UNICENS Daemon Task Implementation                                                             */
 /* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -27,66 +27,28 @@
 /* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE                  */
 /* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                           */
 /*------------------------------------------------------------------------------------------------*/
-#ifndef MLD_CONFIGURATOR_V1_H
-#define MLD_CONFIGURATOR_V1_H
+
+#ifndef TASK_UNICENS_H_
+#define TASK_UNICENS_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdbool.h>
-#include <UcsXmlDriverConfig.h>
-
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-/*                            Public API                                */
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-
-/**
- * \brief Starts the background service to configure the MOST Linux Driver
- *
- * \note In case of errors the callback MldConfigV1_CB_OnError will be raised
- * \param pConfig - Array of structures holding driver information. To make live easier, this structure is taken from the XML parser component
- * \param driverSize - Array length
- * \param localNodeAddress - Specify what node address the local node has. Then only informations related to that address will be used
- * \param descriptionFilter - If set, the device must contain this string in its SYSFS description to be accepted. Passing NULL poiner, will disable filter, any file will be accepted
- * \param pollTime - Service sleep time interval in milliseconds.
- * \return true if successfully started the service, false otherwise
- */
-bool MldConfigV1_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint16_t localNodeAddress, const char *descriptionFilter, uint16_t pollTime);
-
-/**
- * \brief Stops the background service
- *
- * \note This function will block until the background thread has been terminated
- */
-void MldConfigV1_Stop();
-
-/**
- * \brief Get the full path of control character devices
- * \note Buffers for pControlCdevTx and pControlCdevRx must be allocated by the integrator.
- *
- * \param pControlCdevTx - Zero terminated string containing path to control TX CDEV or NULL if not found
- * \param pControlCdevRx - Zero terminated string containing path to control RX CDEV or NULL if not found
- * \return true if both devices are available. false, otherwise, then pControlCdevTx and pControlCdevRx are invalid.
- */
-bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx);
-
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-/*                        CALLBACK SECTION                              */
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-
-/**
- * \brief Callback whenever a human readable message was formed.
- * \note This function must be implemented by the integrator.
- *
- * \param isError - true if error, false is only an information for debugging purpose
- * \param format - Zero terminated format string (following printf rules)
- * \param vargsCnt - Amount of parameters stored in "..."
- */
-extern void MldConfigV1_CB_OnMessage(bool isError, const char format[], uint16_t vargsCnt, ...);
     
+typedef struct
+{
+    const char *cfgFileName;
+    uint16_t drv1LocalNodeAddr;
+    const char *drv1Filter;
+    char *controlRxCdev;
+    char *controlTxCdev;
+} TaskUnicens_t;
+
+bool TaskUnicens_Init(TaskUnicens_t *pVar);
+void TaskUnicens_Service(void);
+
 #ifdef __cplusplus
 }
 #endif
-    
-#endif /* MLD_CONFIGURATOR_V1_H */
+
+#endif /* TASK_UNICENS_H_ */

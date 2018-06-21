@@ -59,6 +59,7 @@ struct MldConfigLocal
 static struct MldConfigLocal m = { 0 };
 static const char *SYS_FS_PATH = ("/sys/class/most/mostcore/devices");
 static void *Worker(void *tag);
+static char *ExtendControlCdevName(char *out, char * in);
 static bool DoesFileExist(const char *pPathToFile);
 static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLen);
 static bool WriteCharactersToFile( const char *path, const char *pFileName, const char *pString );
@@ -103,44 +104,22 @@ void MldConfigV1_Stop()
     m.started = false;
 }
 
-static char * ExtendControlCdevName(char *out, char * in)
+bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx)
 {
-    if (NULL == out || NULL == in)
-        return NULL;
-    strcpy(out, "/dev/inic-control-");
-    if ('\0' != m.descriptionFilter[0])
-    {
-        strcat(out, m.descriptionFilter);
-        strcat(out, "-");
-    }
-    ReplaceCharsInString(out, " .:;|!", '_');
-    strcat(out, in);
-    return out;
-}
-
-bool MldConfigV1_GetControlCdevName(char **pControlCdevTx, char **pControlCdevRx)
-{
-    char tempName[VAL_LEN] = { 0 };
     if (NULL == pControlCdevTx || NULL == pControlCdevRx)
         return false;
-    *pControlCdevTx = NULL;
-    *pControlCdevRx = NULL;
-    if (!DoesFileExist(ExtendControlCdevName(tempName, "ep0f")) &&
-        !DoesFileExist(ExtendControlCdevName(tempName, "ep07")) &&
-        !DoesFileExist(ExtendControlCdevName(tempName, "ca4")))
+    if (!DoesFileExist(ExtendControlCdevName(pControlCdevTx, "ep0f")) &&
+        !DoesFileExist(ExtendControlCdevName(pControlCdevTx, "ep07")) &&
+        !DoesFileExist(ExtendControlCdevName(pControlCdevTx, "ca4")))
     {
         return false;
     }
-    strncpy(m.ctxName, tempName, sizeof(m.ctxName));
-    if (!DoesFileExist(ExtendControlCdevName(tempName, "ep8f")) &&
-        !DoesFileExist(ExtendControlCdevName(tempName, "ep87")) &&
-        !DoesFileExist(ExtendControlCdevName(tempName, "ca2")))
+    if (!DoesFileExist(ExtendControlCdevName(pControlCdevRx, "ep8f")) &&
+        !DoesFileExist(ExtendControlCdevName(pControlCdevRx, "ep87")) &&
+        !DoesFileExist(ExtendControlCdevName(pControlCdevRx, "ca2")))
     {
         return false;
     }
-    strncpy(m.crxName, tempName, sizeof(m.ctxName));
-    *pControlCdevTx = m.ctxName;
-    *pControlCdevRx = m.crxName;
     return true;
 }
 
@@ -156,6 +135,21 @@ static void *Worker(void *tag)
         usleep(1000 * m.pollTime);
     }
     return tag;
+}
+
+static char *ExtendControlCdevName(char *out, char * in)
+{
+    if (NULL == out || NULL == in)
+        return NULL;
+    strcpy(out, "/dev/inic-control-");
+    if ('\0' != m.descriptionFilter[0])
+    {
+        strcat(out, m.descriptionFilter);
+        strcat(out, "-");
+    }
+    ReplaceCharsInString(out, " .:;|!", '_');
+    strcat(out, in);
+    return out;
 }
 
 static bool DoesFileExist(const char *pPathToFile)
