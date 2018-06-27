@@ -183,73 +183,70 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
 
 void TaskUnicens_Service(void)
 {
-    while (m.allowRun)
+    /* UNICENS Service */
+    if (m.unicensTrigger)
     {
-        /* UNICENS Service */
-        if (m.unicensTrigger)
-        {
-            m.unicensTrigger = false;
-            UCSI_Service(&m.unicens);
-        }
-        if (m.unicensTimeout)
-        {
-            m.unicensTimeout = false;
-            UCSI_Timeout(&m.unicens);
-        }
-        if (m.unicensDataAvailable)
-        {
-            uint8_t *pData;
-            uint32_t len;
-            if (Cdev_GetRx(&m.ctrlRx, &pData, &len))
-            {
-                if (!m.unicensRunning)
-                {
-                    /* Discard data, UNICENS is not yet ready */
-                    m.unicensDataAvailable = false;
-                    Cdev_PopRx(&m.ctrlRx);
-                }
-                else if (UCSI_ProcessRxData(&m.unicens, pData, len))
-                {
-#ifdef LLD_TRACE
-                    uint32_t i;
-                    ConsolePrintfStart( PRIO_HIGH, YELLOW"%08d: MSG_RX: ", GetTicks());
-                    for ( i = 0; i < len; i++ )
-                    {
-                        ConsolePrintfContinue( "%02X ", pData[i] );
-                    }
-                    ConsolePrintfExit(RESETCOLOR"\n");
-#endif
-                    /*Remove flag only in case of successful enqueuing*/
-                    m.unicensDataAvailable = false;
-                    Cdev_PopRx(&m.ctrlRx);
-                }
-                else
-                {
-                    ConsolePrintf(PRIO_ERROR, "RX buffer overflow\r\n");
-                    /* UNICENS is busy. Try to reactive it, by calling service routine */
-                    m.unicensTrigger = true;
-                }
-            }
-            else assert(false); /*Must not happen*/
-        }
-        if (m.amsReceived)
-        {
-            uint16_t amsId = 0xFFFF;
-            uint16_t sourceAddress = 0xFFFF;
-            uint8_t *pBuf = NULL;
-            uint32_t len = 0;
-            m.amsReceived = false;
-            if (UCSI_GetAmsMessage(&m.unicens, &amsId, &sourceAddress, &pBuf, &len))
-            {
-#ifdef LLD_TRACE
-                ConsolePrintf(PRIO_HIGH, "Received AMS, id=0x%X, source=0x%X, len=%u\r\n", amsId, sourceAddress, len);
-#endif
-                UCSI_ReleaseAmsMessage(&m.unicens);
-            }
-            else assert(false);
-        }
-        SemWait();
+        m.unicensTrigger = false;
+        UCSI_Service(&m.unicens);
     }
+    if (m.unicensTimeout)
+    {
+        m.unicensTimeout = false;
+        UCSI_Timeout(&m.unicens);
+    }
+    if (m.unicensDataAvailable)
+    {
+        uint8_t *pData;
+        uint32_t len;
+        if (Cdev_GetRx(&m.ctrlRx, &pData, &len))
+        {
+            if (!m.unicensRunning)
+            {
+                /* Discard data, UNICENS is not yet ready */
+                m.unicensDataAvailable = false;
+                Cdev_PopRx(&m.ctrlRx);
+            }
+            else if (UCSI_ProcessRxData(&m.unicens, pData, len))
+            {
+#ifdef LLD_TRACE
+                uint32_t i;
+                ConsolePrintfStart( PRIO_HIGH, YELLOW"%08d: MSG_RX: ", GetTicks());
+                for ( i = 0; i < len; i++ )
+                {
+                    ConsolePrintfContinue( "%02X ", pData[i] );
+                }
+                ConsolePrintfExit(RESETCOLOR"\n");
+#endif
+                /*Remove flag only in case of successful enqueuing*/
+                m.unicensDataAvailable = false;
+                Cdev_PopRx(&m.ctrlRx);
+            }
+            else
+            {
+                ConsolePrintf(PRIO_ERROR, "RX buffer overflow\r\n");
+                /* UNICENS is busy. Try to reactive it, by calling service routine */
+                m.unicensTrigger = true;
+            }
+        }
+        else assert(false); /*Must not happen*/
+    }
+    if (m.amsReceived)
+    {
+        uint16_t amsId = 0xFFFF;
+        uint16_t sourceAddress = 0xFFFF;
+        uint8_t *pBuf = NULL;
+        uint32_t len = 0;
+        m.amsReceived = false;
+        if (UCSI_GetAmsMessage(&m.unicens, &amsId, &sourceAddress, &pBuf, &len))
+        {
+#ifdef LLD_TRACE
+            ConsolePrintf(PRIO_HIGH, "Received AMS, id=0x%X, source=0x%X, len=%u\r\n", amsId, sourceAddress, len);
+#endif
+            UCSI_ReleaseAmsMessage(&m.unicens);
+        }
+        else assert(false);
+    }
+    SemWait();
 }
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
