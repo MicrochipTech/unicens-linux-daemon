@@ -700,9 +700,53 @@ static void OnLldCtrlTxTransmitC( Ucs_Lld_TxMsg_t *msg_ptr, void *lld_user_ptr )
 
 static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_t route_infos, void *user_ptr)
 {
+    uint32_t i;
     uint16_t conLabel;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
+    if (NULL == route_ptr || NULL == route_ptr->source_endpoint_ptr || 
+        NULL == route_ptr->source_endpoint_ptr->node_obj_ptr ||
+        NULL == route_ptr->sink_endpoint_ptr ||
+        NULL == route_ptr->sink_endpoint_ptr->node_obj_ptr)
+        return;
+    /* Report pending available node signature */
+    for (i = 0; i < MAX_NODES; i++)
+    {
+        uint16_t addressCur;
+        Ucs_Signature_t *src;
+        Ucs_Signature_t *snk;
+        if (!my->nodeAvailable[i].valid)
+            continue;
+        addressCur = my->nodeAvailable[i].nodeAddress;
+        src = route_ptr->source_endpoint_ptr->node_obj_ptr->signature_ptr;
+        snk = route_ptr->sink_endpoint_ptr->node_obj_ptr->signature_ptr;
+        if (addressCur == src->node_address)
+        {
+            Ucs_Rm_Node_t *nodePtr = route_ptr->source_endpoint_ptr->node_obj_ptr;
+            /* Execute scripts, if there are any */
+            if (nodePtr->script_list_ptr && nodePtr->script_list_size)
+            {
+                UnicensCmdEntry_t e;
+                e.cmd = UnicensCmd_NsRun;
+                e.val.NsRun.node_ptr = nodePtr;
+                EnqueueCommand(my, &e);
+            }
+            my->nodeAvailable[i].valid = false;
+        }
+        else if (addressCur == snk->node_address)
+        {
+            Ucs_Rm_Node_t *nodePtr = route_ptr->sink_endpoint_ptr->node_obj_ptr;
+            /* Execute scripts, if there are any */
+            if (nodePtr->script_list_ptr && nodePtr->script_list_size)
+            {
+                UnicensCmdEntry_t e;
+                e.cmd = UnicensCmd_NsRun;
+                e.val.NsRun.node_ptr = nodePtr;
+                EnqueueCommand(my, &e);
+            }
+            my->nodeAvailable[i].valid = false;
+        }
+    }
     conLabel = Ucs_Rm_GetConnectionLabel(my->unicens, route_ptr);
     UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, UCS_RM_ROUTE_INFOS_BUILT == route_infos, conLabel);
 }
@@ -894,6 +938,7 @@ static void OnUcsGpioPortWrite(uint16_t node_address, uint16_t gpio_port_handle,
 
 static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_Node_t *node_ptr, void *user_ptr)
 {
+    uint32_t i;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
     switch (code)
@@ -906,14 +951,6 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
         break;
     case UCS_MGR_REP_AVAILABLE:
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Available", 1, node_address);
-        /* Execute scripts, if there are any */
-        if (node_ptr && node_ptr->script_list_ptr && node_ptr->script_list_size)
-        {
-            UnicensCmdEntry_t e;
-            e.cmd = UnicensCmd_NsRun;
-            e.val.NsRun.node_ptr = node_ptr;
-            EnqueueCommand(my, &e);
-        }
         break;
     case UCS_MGR_REP_NOT_AVAILABLE:
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Not available", 1, node_address);
@@ -921,6 +958,27 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
     default:
         UCSI_CB_OnUserMessage(my->tag, true, "Node=%X: unknown code", 1, node_address);
         break;
+    }
+    /* Remove all pending flags for that node address */
+    for (i = 0; i < MAX_NODES; i++)
+    {
+        if (my->nodeAvailable[i].nodeAddress == node_address)
+        {
+            my->nodeAvailable[i].valid = false;
+        }
+    }
+    if (UCS_MGR_REP_AVAILABLE == code)
+    {
+        for (i = 0; i < MAX_NODES; i++)
+        {
+            /* Store signature to send out UCSI_CB_OnMgrReport together with first Routing Result */
+            if (!my->nodeAvailable[i].valid)
+            {
+                my->nodeAvailable[i].nodeAddress = node_address;
+                my->nodeAvailable[i].valid = true;
+                break;
+            }
+        }
     }
 }
 

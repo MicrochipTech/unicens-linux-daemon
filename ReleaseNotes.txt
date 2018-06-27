@@ -14,6 +14,7 @@ V04.01.00
 =========
 - unicensd is able configure the MOST Linux Driver V1.x (use:-drv1)
 - new tool UNICENS client "unicensc" configures MOST Linux Driver V1.x (use:-drv1) on Smart Clients
+- fix race condition between scripting and routing engine
 
 V04.00.04
 =========

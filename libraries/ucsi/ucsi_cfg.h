@@ -44,6 +44,7 @@
 #define CMD_QUEUE_LEN           (40)
 #define I2C_WRITE_MAX_LEN       (32)
 #define AMS_MSG_MAX_LEN         (45)
+#define MAX_NODES               (32)
 
 #include <string.h>
 #include <stdarg.h>
@@ -200,6 +201,12 @@ typedef struct {
     volatile uint32_t txPos;
 } RB_t;
 
+typedef struct
+{
+    bool valid;
+    uint16_t nodeAddress;
+} NodeAvailable_t;
+
 /**
  * \brief Internal variables for one instance of UNICENS Integration
  * \note Allocate this structure for each instance (static or malloc)
@@ -219,6 +226,7 @@ typedef struct
     Ucs_Lld_Api_t *uniLld;
     void *uniLldHPtr;
     UnicensCmdEntry_t *currentCmd;
+    NodeAvailable_t nodeAvailable[MAX_NODES];
 } UCSI_Data_t;
 
 #endif /* UNICENSINTEGRATION_H_ */
