@@ -36,7 +36,14 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-    
+
+typedef enum
+{
+    DriverPhyUnknown,
+    DriverPhyUsb,
+    DriverPhyMlb
+} DriverPhysicalLayer_t;
+
 typedef enum
 {
     DriverCfgDirection_Tx,
@@ -55,7 +62,8 @@ typedef enum
 {
     Driver_LinuxCdev,
     Driver_LinuxAlsa,
-    Driver_LinuxV4l2
+    Driver_LinuxV4l2,
+    Driver_LinuxNetwork
 } DriverType_t;
 
 typedef struct
@@ -98,7 +106,18 @@ typedef struct
 
 typedef struct
 {
+    const char *channelName;
+    const char *aimName;
+    DriverCfgDataType_t dataType;
+    DriverCfgDirection_t direction;
+    uint16_t numBuffers;
+    uint16_t bufferSize;
+} LinuxDriverNetwork_t;
+
+typedef struct
+{
     const char *linkName;
+    DriverPhysicalLayer_t phy;
     uint16_t nodeAddress;
     DriverType_t driverType;
     union
@@ -106,6 +125,7 @@ typedef struct
         LinuxDriverCdev_t LinuxCdev;
         LinuxDriverV4l2_t LinuxV4l2;
         LinuxDriverAlsa_t LinuxAlsa;
+        LinuxDriverNetwork_t LinuxNetwork;
     } drv;
 } DriverInformation_t;
     

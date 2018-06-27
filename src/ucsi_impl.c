@@ -40,12 +40,14 @@ static char m_traceBuffer[TRACE_BUFFER_SZ];
 /* Private Definitions and variables                                    */
 /************************************************************************/
 #define MAGIC (0xA144BEAF)
+#define LOCAL_NODE_ADDR (0x1)
+#define UNKNOWN_NODE_ADDR (0xFFFF)
 
 /************************************************************************/
 /* Private Function Prototypes                                          */
 /************************************************************************/
 static bool EnqueueCommand(UCSI_Data_t *my, UnicensCmdEntry_t *cmd);
-static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd);
+static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd, bool success);
 static void RB_Init(RB_t *rb, uint16_t amountOfEntries, uint32_t sizeOfEntry, uint8_t *workingBuffer);
 static void *RB_GetReadPtr(RB_t *rb);
 static void RB_PopReadPtr(RB_t *rb);
@@ -78,6 +80,8 @@ static void OnUcsGpioTriggerEventStatus(uint16_t node_address, uint16_t gpio_por
     uint16_t rising_edges, uint16_t falling_edges, uint16_t levels, void * user_ptr);
 static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     uint8_t i2c_slave_address, uint8_t data_len, Ucs_I2c_Result_t result, void *user_ptr);
+static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle, 
+            uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr);
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
 
 /************************************************************************/
@@ -140,6 +144,7 @@ bool UCSI_NewConfig(UCSI_Data_t *my,
 {
     UnicensCmdEntry_t *e;
     assert(MAGIC == my->magic);
+    if (NULL == my) return false;
     if (my->initialized)
     {
         e = (UnicensCmdEntry_t *)RB_GetWritePtr(&my->rb);
@@ -160,6 +165,40 @@ bool UCSI_NewConfig(UCSI_Data_t *my,
     RB_PopWritePtr(&my->rb);
     UCSI_CB_OnServiceRequired(my->tag);
     return true;
+}
+
+bool UCSI_ExecuteScript(UCSI_Data_t *my, uint16_t targetAddress, Ucs_Ns_Script_t *pScriptList, uint8_t scriptListLength)
+{
+    uint8_t i = 0;
+    Ucs_Rm_Node_t *pNode = NULL;
+    UnicensCmdEntry_t e;
+    assert(MAGIC == my->magic);
+    if (NULL == my) return false;
+    if (!my->initialized || !my->uniInitData.mgr.enabled
+        || NULL == my->uniInitData.mgr.nodes_list_ptr || 0 == my->uniInitData.mgr.nodes_list_size
+        || NULL == pScriptList || 0 == scriptListLength)
+    {
+        return false;
+    }
+    for (i = 0; i < my->uniInitData.mgr.nodes_list_size; i++)
+    {
+        Ucs_Rm_Node_t *pTempNode = &my->uniInitData.mgr.nodes_list_ptr[i];
+        if (NULL == pTempNode)
+            break;
+        if (pTempNode->signature_ptr && targetAddress == pTempNode->signature_ptr->node_address)
+        {
+            /* Found correct node in List */
+            pNode = pTempNode;
+            break;
+        }
+    }
+    if (NULL == pNode)
+        return false;
+    pNode->script_list_ptr = pScriptList;
+    pNode->script_list_size = scriptListLength;
+    e.cmd = UnicensCmd_NsRun;
+    e.val.NsRun.node_ptr = pNode;
+    return EnqueueCommand(my, &e);
 }
 
 bool UCSI_ProcessRxData(UCSI_Data_t *my,
@@ -198,33 +237,51 @@ void UCSI_Service(UCSI_Data_t *my)
             if (UCS_RET_SUCCESS == Ucs_Init(my->unicens, e->val.Init.init_ptr, OnUcsInitResult))
                 popEntry = false;
             else
+            {
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Init failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_Init, false, LOCAL_NODE_ADDR);
+            }
             break;
         case UnicensCmd_Stop:
             if (UCS_RET_SUCCESS == Ucs_Stop(my->unicens, OnUcsStopResult))
                 popEntry = false;
             else
+            {
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Stop failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_Stop, false, LOCAL_NODE_ADDR);
+            }
             break;
         case UnicensCmd_RmSetRoute:
             if (UCS_RET_SUCCESS != Ucs_Rm_SetRouteActive(my->unicens, e->val.RmSetRoute.routePtr, e->val.RmSetRoute.isActive))
+            {
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Rm_SetRouteActive failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_RmSetRoute, false, LOCAL_NODE_ADDR);
+            }
             break;
         case UnicensCmd_NsRun:
             if (UCS_RET_SUCCESS != Ucs_Ns_Run(my->unicens, e->val.NsRun.node_ptr, OnUcsNsRun))
+            {
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Ns_Run failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_NsRun, false, e->val.NsRun.node_ptr->signature_ptr->node_address);
+            }
             break;
         case UnicensCmd_GpioCreatePort:
             if (UCS_RET_SUCCESS == Ucs_Gpio_CreatePort(my->unicens, e->val.GpioCreatePort.destination, 0, e->val.GpioCreatePort.debounceTime, OnUcsGpioPortCreate))
                 popEntry = false;
             else
+            {
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Gpio_CreatePort failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_GpioCreatePort, false, e->val.GpioCreatePort.destination);
+            }
             break;
         case UnicensCmd_GpioWritePort:
             if (UCS_RET_SUCCESS == Ucs_Gpio_WritePort(my->unicens, e->val.GpioWritePort.destination, 0x1D00, e->val.GpioWritePort.mask, e->val.GpioWritePort.data, OnUcsGpioPortWrite))
                 popEntry = false;
             else
-                UCSI_CB_OnUserMessage(my->tag, true, "UnicensCmd_GpioWritePort failed", 0);
+            {
+                UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Gpio_WritePort failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_GpioWritePort, false, e->val.GpioWritePort.destination);
+            }
             break;            
         case UnicensCmd_I2CWrite:
             if (UCS_RET_SUCCESS == Ucs_I2c_WritePort(my->unicens, e->val.I2CWrite.destination, 0x0F00, 
@@ -232,7 +289,20 @@ void UCSI_Service(UCSI_Data_t *my)
                 e->val.I2CWrite.slaveAddr, e->val.I2CWrite.timeout, e->val.I2CWrite.dataLen, e->val.I2CWrite.data, OnUcsI2CWrite))
                 popEntry = false;
             else
-                UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Gpio_CreatePort failed", 0);
+            {
+                UCSI_CB_OnUserMessage(my->tag, true, "Ucs_I2c_WritePort failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_I2CWrite, false, e->val.I2CWrite.destination);
+            }
+            break;
+        case UnicensCmd_I2CRead:
+            if (UCS_RET_SUCCESS == Ucs_I2c_ReadPort(my->unicens, e->val.I2CRead.destination, 0x0F00, 
+                e->val.I2CRead.slaveAddr, e->val.I2CRead.dataLen, e->val.I2CRead.timeout, OnUcsI2CRead))
+                popEntry = false;
+            else
+            {
+                UCSI_CB_OnUserMessage(my->tag, true, "Ucs_I2c_ReadPort failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_I2CRead, false, e->val.I2CRead.destination);
+            }
             break;
         case UnicensCmd_SendAmsMessage:
         {
@@ -262,6 +332,7 @@ void UCSI_Service(UCSI_Data_t *my)
             {
                 Ucs_AmsTx_FreeUnusedMsg(my->unicens, msg);
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_AmsTx_SendMsg failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_SendAmsMessage, false, e->val.SendAms.targetAddress);
             }
             break;
         }
@@ -342,7 +413,7 @@ bool UCSI_SetRouteActive(UCSI_Data_t *my, uint16_t routeId, bool isActive)
 }
 
 bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_t blockCount,
-    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, uint8_t *pData)
+    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData)
 {
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
@@ -360,6 +431,19 @@ bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_
     entry.val.I2CWrite.timeout = timeout;
     entry.val.I2CWrite.dataLen = dataLen;
     memcpy(entry.val.I2CWrite.data, pData, dataLen);
+    return EnqueueCommand(my, &entry);
+}
+
+bool UCSI_I2CRead(UCSI_Data_t *my, uint16_t targetAddress, uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen)
+{
+    UnicensCmdEntry_t entry;
+    assert(MAGIC == my->magic);
+    if (NULL == my || 0 == dataLen) return false;
+    entry.cmd = UnicensCmd_I2CRead;
+    entry.val.I2CRead.destination = targetAddress;
+    entry.val.I2CRead.slaveAddr = slaveAddr;
+    entry.val.I2CRead.timeout = timeout;
+    entry.val.I2CRead.dataLen = dataLen;
     return EnqueueCommand(my, &entry);
 }
 
@@ -401,26 +485,54 @@ static bool EnqueueCommand(UCSI_Data_t *my, UnicensCmdEntry_t *cmd)
     return true;
 }
 
-static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd)
+static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd, bool success)
 {
+    UnicensCmdEntry_t *e;
     if (NULL == my)
     {
         assert(false);
         return;
     }
-    if (NULL == my->currentCmd)
+    e = my->currentCmd;
+    if (NULL == e)
     {
         UCSI_CB_OnUserMessage(my->tag, true, "OnUniCommandExecuted was called, but no "\
             "command is in queue", 0);
         assert(false);
         return;
     }
-    if (my->currentCmd->cmd != cmd)
+    if (e->cmd != cmd)
     {
         UCSI_CB_OnUserMessage(my->tag, true, "OnUniCommandExecuted was called with "\
-            "wrong command (Expected=0x%X, Got=0x%X", 2, my->currentCmd->cmd, cmd);
+            "wrong command (Expected=0x%X, Got=0x%X", 2, e->cmd, cmd);
         assert(false);
         return;
+    }
+    switch (e->cmd) {
+        case UnicensCmd_Init:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, LOCAL_NODE_ADDR);
+            break;
+        case UnicensCmd_Stop:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, LOCAL_NODE_ADDR);
+            break;
+        case UnicensCmd_GpioCreatePort:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.GpioCreatePort.destination);
+            break;
+        case UnicensCmd_GpioWritePort:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.GpioWritePort.destination);
+            break;
+        case UnicensCmd_I2CWrite:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.I2CWrite.destination);
+            break;
+        case UnicensCmd_I2CRead:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.I2CRead.destination);
+            break;
+        case UnicensCmd_SendAmsMessage:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.SendAms.targetAddress);
+            break;
+        default:
+            UCSI_CB_OnCommandResult(my->tag, cmd, success, UNKNOWN_NODE_ADDR);
+            break;
     }
     my->currentCmd = NULL;
     RB_PopReadPtr(&my->rb);
@@ -588,9 +700,53 @@ static void OnLldCtrlTxTransmitC( Ucs_Lld_TxMsg_t *msg_ptr, void *lld_user_ptr )
 
 static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_t route_infos, void *user_ptr)
 {
+    uint32_t i;
     uint16_t conLabel;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
+    if (NULL == route_ptr || NULL == route_ptr->source_endpoint_ptr || 
+        NULL == route_ptr->source_endpoint_ptr->node_obj_ptr ||
+        NULL == route_ptr->sink_endpoint_ptr ||
+        NULL == route_ptr->sink_endpoint_ptr->node_obj_ptr)
+        return;
+    /* Report pending available node signature */
+    for (i = 0; i < MAX_NODES; i++)
+    {
+        uint16_t addressCur;
+        Ucs_Signature_t *src;
+        Ucs_Signature_t *snk;
+        if (!my->nodeAvailable[i].valid)
+            continue;
+        addressCur = my->nodeAvailable[i].nodeAddress;
+        src = route_ptr->source_endpoint_ptr->node_obj_ptr->signature_ptr;
+        snk = route_ptr->sink_endpoint_ptr->node_obj_ptr->signature_ptr;
+        if (addressCur == src->node_address)
+        {
+            Ucs_Rm_Node_t *nodePtr = route_ptr->source_endpoint_ptr->node_obj_ptr;
+            /* Execute scripts, if there are any */
+            if (nodePtr->script_list_ptr && nodePtr->script_list_size)
+            {
+                UnicensCmdEntry_t e;
+                e.cmd = UnicensCmd_NsRun;
+                e.val.NsRun.node_ptr = nodePtr;
+                EnqueueCommand(my, &e);
+            }
+            my->nodeAvailable[i].valid = false;
+        }
+        else if (addressCur == snk->node_address)
+        {
+            Ucs_Rm_Node_t *nodePtr = route_ptr->sink_endpoint_ptr->node_obj_ptr;
+            /* Execute scripts, if there are any */
+            if (nodePtr->script_list_ptr && nodePtr->script_list_size)
+            {
+                UnicensCmdEntry_t e;
+                e.cmd = UnicensCmd_NsRun;
+                e.val.NsRun.node_ptr = nodePtr;
+                EnqueueCommand(my, &e);
+            }
+            my->nodeAvailable[i].valid = false;
+        }
+    }
     conLabel = Ucs_Rm_GetConnectionLabel(my->unicens, route_ptr);
     UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, UCS_RM_ROUTE_INFOS_BUILT == route_infos, conLabel);
 }
@@ -746,7 +902,7 @@ static void OnUcsInitResult(Ucs_InitResult_t result, void *user_ptr)
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
     my->initialized = (UCS_INIT_RES_SUCCESS == result);
-    OnCommandExecuted(my, UnicensCmd_Init);
+    OnCommandExecuted(my, UnicensCmd_Init, (UCS_INIT_RES_SUCCESS == result));
     if (!my->initialized)
     {
         UCSI_CB_OnUserMessage(my->tag, true, "UcsInitResult reported error (0x%X), restarting...", 1, result);
@@ -762,7 +918,7 @@ static void OnUcsStopResult(Ucs_StdResult_t result, void *user_ptr)
     result = result; /*TODO: check error case*/
     assert(MAGIC == my->magic);
     my->initialized = false;
-    OnCommandExecuted(my, UnicensCmd_Stop);
+    OnCommandExecuted(my, UnicensCmd_Stop, (UCS_RES_SUCCESS == result.code));
     UCSI_CB_OnStop(my->tag);
 }
 
@@ -770,18 +926,19 @@ static void OnUcsGpioPortCreate(uint16_t node_address, uint16_t gpio_port_handle
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    OnCommandExecuted(my, UnicensCmd_GpioCreatePort);
+    OnCommandExecuted(my, UnicensCmd_GpioCreatePort, (UCS_GPIO_RES_SUCCESS == result.code));
 }
 
 static void OnUcsGpioPortWrite(uint16_t node_address, uint16_t gpio_port_handle, uint16_t current_state, uint16_t sticky_state, Ucs_Gpio_Result_t result, void *user_ptr)
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    OnCommandExecuted(my, UnicensCmd_GpioWritePort);
+    OnCommandExecuted(my, UnicensCmd_GpioWritePort, (UCS_GPIO_RES_SUCCESS == result.code));
 }
 
 static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_Node_t *node_ptr, void *user_ptr)
 {
+    uint32_t i;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
     switch (code)
@@ -794,14 +951,6 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
         break;
     case UCS_MGR_REP_AVAILABLE:
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Available", 1, node_address);
-        /* Execute scripts, if there are any */
-        if (node_ptr && node_ptr->script_list_ptr && node_ptr->script_list_size)
-        {
-            UnicensCmdEntry_t e;
-            e.cmd = UnicensCmd_NsRun;
-            e.val.NsRun.node_ptr = node_ptr;
-            EnqueueCommand(my, &e);
-        }
         break;
     case UCS_MGR_REP_NOT_AVAILABLE:
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Not available", 1, node_address);
@@ -810,18 +959,40 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
         UCSI_CB_OnUserMessage(my->tag, true, "Node=%X: unknown code", 1, node_address);
         break;
     }
+    /* Remove all pending flags for that node address */
+    for (i = 0; i < MAX_NODES; i++)
+    {
+        if (my->nodeAvailable[i].nodeAddress == node_address)
+        {
+            my->nodeAvailable[i].valid = false;
+        }
+    }
+    if (UCS_MGR_REP_AVAILABLE == code)
+    {
+        for (i = 0; i < MAX_NODES; i++)
+        {
+            /* Store signature to send out UCSI_CB_OnMgrReport together with first Routing Result */
+            if (!my->nodeAvailable[i].valid)
+            {
+                my->nodeAvailable[i].nodeAddress = node_address;
+                my->nodeAvailable[i].valid = true;
+                break;
+            }
+        }
+    }
 }
 
 static void OnUcsNsRun(Ucs_Rm_Node_t * node_ptr, Ucs_Ns_ResultCode_t result, void *ucs_user_ptr)
 {
-    UCSI_Data_t *my;
+    UCSI_Data_t *my = (UCSI_Data_t *)ucs_user_ptr;
+    assert(MAGIC == my->magic);
+    assert(NULL != node_ptr);
+    assert(NULL != node_ptr->signature_ptr);
+    UCSI_CB_OnCommandResult(my->tag, UnicensCmd_NsRun, (UCS_NS_RES_SUCCESS == result), node_ptr->signature_ptr->node_address);
 #ifndef DEBUG_XRM
     node_ptr = node_ptr;
-    result = result;
     ucs_user_ptr;
 #else
-    my = (UCSI_Data_t *)ucs_user_ptr;
-    assert(MAGIC == my->magic);
     UCSI_CB_OnUserMessage(my->tag, false, "OnUcsNsRun (%03X): script executed %s",
         2, node_ptr->signature_ptr->node_address,
         (UCS_NS_RES_SUCCESS == result ? "succeeded" : "false"));
@@ -855,16 +1026,25 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    OnCommandExecuted(my, UnicensCmd_I2CWrite);
+    OnCommandExecuted(my, UnicensCmd_I2CWrite, (UCS_I2C_RES_SUCCESS == result.code));
     if (UCS_I2C_RES_SUCCESS != result.code)
         UCSI_CB_OnUserMessage(my->tag, true, "Remote I2C Write to node=0x%X failed", 1, node_address);
+}
+
+static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle, 
+            uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr)
+{
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(MAGIC == my->magic);
+    OnCommandExecuted(my, UnicensCmd_I2CRead, (UCS_I2C_RES_SUCCESS == result.code));
+    UCSI_CB_OnI2CRead(my->tag, (UCS_I2C_RES_SUCCESS == result.code), node_address, i2c_slave_address, data_ptr, data_len);
 }
 
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr)
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    OnCommandExecuted(my, UnicensCmd_SendAmsMessage);
+    OnCommandExecuted(my, UnicensCmd_SendAmsMessage, (UCS_AMSTX_RES_SUCCESS == result));
     if (UCS_AMSTX_RES_SUCCESS != result)
         UCSI_CB_OnUserMessage(my->tag, true, "SendAms failed with result=0x%x, info=0x%X", 2, result, info);
 }
@@ -906,3 +1086,4 @@ void App_TraceInfo(void *ucs_user_ptr, const char module_str[], const char entry
     UCSI_CB_OnUserMessage(tag, false, "Info | %s | %s", 2, module_str, m_traceBuffer);
 }
 #endif
+

@@ -44,6 +44,7 @@
 #define CMD_QUEUE_LEN           (40)
 #define I2C_WRITE_MAX_LEN       (32)
 #define AMS_MSG_MAX_LEN         (45)
+#define MAX_NODES               (32)
 
 #include <string.h>
 #include <stdarg.h>
@@ -81,6 +82,7 @@ typedef enum
     UnicensCmd_GpioCreatePort,
     UnicensCmd_GpioWritePort,
     UnicensCmd_I2CWrite,
+    UnicensCmd_I2CRead,
     UnicensCmd_SendAmsMessage
 } UnicensCmd_t;
 
@@ -147,6 +149,17 @@ typedef struct
  */
 typedef struct
 {
+    uint16_t destination;
+    uint8_t slaveAddr;
+    uint16_t timeout;
+    uint8_t dataLen;
+} UnicensCmdI2CRead_t;
+
+/**
+ * \brief Internal struct for UNICENS Integration
+ */
+typedef struct
+{
     uint16_t msgId;
     uint16_t targetAddress;
     uint8_t pPayload[AMS_MSG_MAX_LEN];
@@ -167,7 +180,10 @@ typedef struct
         UnicensCmdGpioCreatePort_t GpioCreatePort;
         UnicensCmdGpioWritePort_t GpioWritePort;
         UnicensCmdI2CWrite_t I2CWrite;
+        UnicensCmdI2CRead_t I2CRead;
+#if (ENABLE_AMS_LIB)
         UnicensCmdSendAmsMessage_t SendAms;
+#endif
     } val;
 } UnicensCmdEntry_t;
 
@@ -184,6 +200,12 @@ typedef struct {
     volatile uint32_t rxPos;
     volatile uint32_t txPos;
 } RB_t;
+
+typedef struct
+{
+    bool valid;
+    uint16_t nodeAddress;
+} NodeAvailable_t;
 
 /**
  * \brief Internal variables for one instance of UNICENS Integration
@@ -204,6 +226,7 @@ typedef struct
     Ucs_Lld_Api_t *uniLld;
     void *uniLldHPtr;
     UnicensCmdEntry_t *currentCmd;
+    NodeAvailable_t nodeAvailable[MAX_NODES];
 } UCSI_Data_t;
 
 #endif /* UNICENSINTEGRATION_H_ */

@@ -10,6 +10,10 @@ UNICENS V2 Daemon (unicensd)
 !!! Control Channel should be mapped to CDEVs: /dev/inic-usb-crx and /dev/inic-usb-ctx !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+V04.00.05
+=========
+- fix race condition between scripting and routing engine
+
 V04.00.04
 =========
 - added support for QNX operating system
