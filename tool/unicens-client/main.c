@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
-/* UNICENS Daemon (unicensd) main-loop                                                            */
-/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
+/* UNICENS Client (unicensc) main-loop                                                            */
+/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -31,26 +31,45 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <unistd.h>
 #include <string.h>
+#include <assert.h>
 #include "Console.h"
-#include "task-unicens.h"
+#include "UcsXml.h"
+#include "mld-configurator-v1.h"
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                          USER ADJUSTABLE                             */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSD_VERSION    ("V4.1.0")
+#define UNICENSC_VERSION    ("V4.1.0")
 
-/* Character device to INIC control channel */
-#define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-usb-ctx")
-#define DEFAULT_CONTROL_CDEV_RX ("/dev/inic-usb-crx")
+#ifdef NO_RAW_CLOCK
+#define CLOCK_SRC CLOCK_MONOTONIC
+#else
+#define CLOCK_SRC CLOCK_MONOTONIC_RAW
+#endif
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+/*                      DEFINES AND LOCAL VARIABLES                     */
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+typedef struct
+{
+    bool allowRun;
+    bool enableDrv1;
+    uint16_t drvNodeAddr;
+    char *drvFilter;
+} LocalVar_t;
+
+static LocalVar_t m;
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                     PRIVTATE FUNCTION PROTOTYPES                     */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
-static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar);
 static void PrintHelp(void);
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
@@ -59,58 +78,33 @@ static void PrintHelp(void);
 
 int main(int argc, char *argv[])
 {
-    static TaskUnicens_t taskVars;
-    ConsolePrintf(PRIO_HIGH, YELLOW "------|UNICENS daemon %s (BUILD %s %s)|------" RESETCOLOR "\r\n", UNICENSD_VERSION, __DATE__, __TIME__);
-    if (!ParseCommandLine(argc, argv, &taskVars))
-    {
-        ConsolePrintf(PRIO_ERROR, RED"Parsing command line failed"RESETCOLOR"\r\n");
-        return -1;
-    }
-    if (!TaskUnicens_Init(&taskVars))
-    {
-        ConsolePrintf(PRIO_ERROR, RED"Initialization of UNICENS task failed"RESETCOLOR"\r\n");
-        return -1;
-    }
-    while(true)
-    {
-        /* TaskUnicens_Service may block very long. 
-         * You may call it in an own thread.
-         */
-        TaskUnicens_Service();
-    }
-    return 0;
-}
-
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-/*                  PRIVATE FUNCTION IMPLEMENTATIONS                    */
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-
-static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
-{
-    bool defaultSet = false;
+    bool fileNameSet = false;
     int32_t i;
-    if (argc < 1 || NULL == argv || NULL == pVar)
-        return false;
-    memset(pVar, 0, sizeof(TaskUnicens_t));
+    UcsXmlVal_t *cfg = NULL;
+    memset(&m, 0, sizeof(LocalVar_t));
+    ConsolePrintf(PRIO_HIGH, YELLOW "------|UNICENS client %s (BUILD %s %s)|------" RESETCOLOR "\r\n", UNICENSC_VERSION, __DATE__, __TIME__);
     for (i = 1; i < argc; i++)
     {
         if ('-' != argv[i][0])
         {
-            if (pVar->cfgFileName)
+            if (fileNameSet)
             {
                 ConsolePrintf(PRIO_ERROR, RED"Filename is already set. Wrong parameter='%s'"RESETCOLOR"\r\n", argv[i]);
-                return false;
+                return -1;
             }
-            pVar->cfgFileName = argv[i];
+            fileNameSet = true;
+
+            cfg = UcsXml_ParseFile(argv[i]);
+            if (NULL == cfg)
+            {
+                ConsolePrintf(PRIO_ERROR, RED"Could not parse UNICENS XML"RESETCOLOR"\r\n");
+                return -1;
+            }
         }
         else if (0 == strcmp("--help", argv[i]))
         {
             PrintHelp();
-            exit(0);
-        }
-        else if (0 == strcmp("-default", argv[i]))
-        {
-            defaultSet = true;
+            return 0;
         }
         else if (0 == strcmp("-drv1", argv[i]))
         {
@@ -120,15 +114,16 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
             if (argc <= (i+1))
             {
                 ConsolePrintf(PRIO_ERROR, RED"-drv1 parameter needs additional node address of the local network controller"RESETCOLOR"\r\n");
-                return false;
+                return -1;
             }
+            m.enableDrv1 = true;
             token = strtok_r( argv[i + 1], ":", &tkPtr );
             while( NULL != token )
             {
                 if (0 == j)
-                    pVar->drv1LocalNodeAddr = strtol( token, NULL, 0 );
+                    m.drvNodeAddr = strtol( token, NULL, 0 );
                 else if (1 == j)
-                    pVar->drv1Filter = token;
+                    m.drvFilter = token;
                 token = strtok_r( NULL, ":", &tkPtr );
                 ++j;
             }
@@ -137,61 +132,88 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         else if (0 == strcmp("-drv2", argv[i]))
         {
             ConsolePrintf(PRIO_ERROR, RED"-drv2 is currently reserved"RESETCOLOR"\r\n");
-            return false;
-        }
-        else if (0 == strcmp("-crx", argv[i]))
-        {
-            if (argc <= (i+1))
-            {
-                ConsolePrintf(PRIO_ERROR, RED"-crx parameter needs additional path to RX character device"RESETCOLOR"\r\n");
-                return false;
-            }
-            pVar->controlRxCdev = argv[i + 1];
-            ++i;
-        }
-        else if (0 == strcmp("-ctx", argv[i]))
-        {
-            if (argc <= (i+1))
-            {
-                ConsolePrintf(PRIO_ERROR, RED"-ctx parameter needs additional path to TX character device"RESETCOLOR"\r\n");
-                return false;
-            }
-            pVar->controlTxCdev = argv[i + 1];
-            ++i;
         }
         else
         {
             ConsolePrintf(PRIO_ERROR, RED"Invalid command line parameter='%s'"RESETCOLOR"\r\n", argv[i]);
-            return false;
+            return -1;
         }
     }
-    if (!pVar->cfgFileName && !defaultSet)
-        ConsolePrintf(PRIO_HIGH, YELLOW "No filename was provided, executing default configuration (default_config.c).\r\nUse \"--help\" for details. Use \"-default\" to suppress this waring." RESETCOLOR "\r\n");
-    if (0 == pVar->drv1LocalNodeAddr && (NULL == pVar->controlRxCdev || NULL == pVar->controlTxCdev))
+    if (!cfg)
     {
-        pVar->controlRxCdev = DEFAULT_CONTROL_CDEV_RX;
-        pVar->controlTxCdev = DEFAULT_CONTROL_CDEV_TX;
+        ConsolePrintf(PRIO_ERROR, RED"No valid UNICENS configuration found"RESETCOLOR"\r\n");
+        return -1;
     }
-    return true;
+    if (!m.enableDrv1)
+    {
+        ConsolePrintf(PRIO_ERROR, RED"Driver configuration was not enabled (-drv1)"RESETCOLOR"\r\n");
+        return -1;
+    }
+    if (NULL != cfg->ppDriver && 0 != cfg->driverSize)
+    {
+        if (!MldConfigV1_Start(cfg->ppDriver, cfg->driverSize, m.drvNodeAddr, m.drvFilter, 1000))
+        {
+            ConsolePrintf(PRIO_ERROR, RED"Could not start driver configuration service"RESETCOLOR"\r\n");
+            return -1;
+        }
+    } else {
+        ConsolePrintf(PRIO_ERROR, RED"MOST Linux Driver Configurator V1 is enabled, but the XML does not provide any information"RESETCOLOR"\r\n");
+    }
+    m.allowRun = true;
+    while (m.allowRun)
+    {
+	sleep(1);
+    }
+    UcsXml_FreeVal(cfg);
+    return 0;
 }
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+/*                  CALLBACK FUNCTION FROM XML PARSER                   */
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+void UcsXml_CB_OnError(const char format[], uint16_t vargsCnt, ...)
+{
+    va_list argptr;
+    char outbuf[300];
+    va_start(argptr, vargsCnt);
+    vsprintf(outbuf, format, argptr);
+    va_end(argptr);
+    ConsolePrintf(PRIO_ERROR, RED"XML-Parser error: '%s'"RESETCOLOR"\r\n", outbuf);
+}
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+/*                      Linux Driver Configurator                       */
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+void MldConfigV1_CB_OnMessage(bool isError, const char format[], uint16_t vargsCnt, ...)
+{
+    va_list argptr;
+    char outbuf[300];
+    va_start(argptr, vargsCnt);
+    vsprintf(outbuf, format, argptr);
+    va_end(argptr);
+    if (isError)
+        ConsolePrintf(PRIO_ERROR, RED"Driver config error: %s"RESETCOLOR"\r\n", outbuf);
+    else
+        ConsolePrintf(PRIO_MEDIUM, "Driver config: %s\r\n", outbuf);
+}
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+/*                  PRIVATE FUNCTION IMPLEMENTATIONS                    */
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 static void PrintHelp(void)
 {
-    ConsolePrintfStart(PRIO_HIGH, "Usage: unicensd [OPTION]... [FILE]\r\n");
-    ConsolePrintfContinue("Executes the UNICENS daemon to start and configure INICnet devices.\r\n\r\n");
-    ConsolePrintfContinue("  [File]                   Path to UNICENS XML configuration file, if not set, the compiled default config will be used\r\n");
-    ConsolePrintfContinue("  -default                 Uses default configuration (default_config.c) instead of parsing XML file\r\n");
-    ConsolePrintfContinue("  -crx [RX char device]    Path to the receiver character device\r\n");
-    ConsolePrintfContinue("  -ctx [TX char device]    Path to the sender character device\r\n");
+    ConsolePrintfStart(PRIO_HIGH, "Usage: unicensc [OPTION]... [FILE]\r\n");
+    ConsolePrintfContinue("Executes the UNICENS client configure the MOST Linux Driver according by the given XML file.\r\n\r\n");
+    ConsolePrintfContinue("  [File]                   Path to UNICENS XML configuration file, if not set, the program will fail\r\n");
     ConsolePrintfContinue("  -drv1 [Node Addr:Filter] Configures the Microchip MOST Linux Driver V1.X with the XML file and the local node address\r\n");
     ConsolePrintfContinue("                           An additional filter string can be passed with a colon as delimiter. This filter applies to\r\n");
     ConsolePrintfContinue("                           description file inside the sys fs from the MOST Linux Driver.\r\n");
     ConsolePrintfContinue("  -drv2                    Configures the Microchip MOST Linux Driver V2.X (reserved)\r\n");
     ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
     ConsolePrintfContinue("Examples:\r\n");
-    ConsolePrintfExit("  unicensd -default\r\n");
-    ConsolePrintfExit("  unicensd config.xml\r\n");
     ConsolePrintfExit("  unicensd config.xml -drv1 0x200\r\n");
-    ConsolePrintfExit("  unicensd config.xml -drv1 0x200:1-1.3:1\r\n");
-    ConsolePrintfExit("  unicensd -ctx /dev/inic-control-tx -crx /dev/inic-control-rx\r\n");
 }
+

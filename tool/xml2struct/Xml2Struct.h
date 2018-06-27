@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
-/* UNICENS XML Parser                                                                             */
-/* Copyright 2017, Microchip Technology Inc. and its subsidiaries.                                */
+/* UNICENS Stucture Printing module                                                               */
+/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -27,110 +27,33 @@
 /* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE                  */
 /* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                           */
 /*------------------------------------------------------------------------------------------------*/
-#ifndef UCSXMLDRIVERCONFIG_H_
-#define UCSXMLDRIVERCONFIG_H_
+#ifndef UCSXML2STRUCT_H_
+#define UCSXML2STRUCT_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdbool.h>
-#include <stdint.h>
-
-typedef enum
-{
-    DriverPhyUnknown,
-    DriverPhyUsb,
-    DriverPhyMlb
-} DriverPhysicalLayer_t;
-
-typedef enum
-{
-    DriverCfgDirection_Tx,
-    DriverCfgDirection_Rx
-} DriverCfgDirection_t;
-
-typedef enum
-{
-    DriverCfgDataType_Control,
-    DriverCfgDataType_Async,
-    DriverCfgDataType_Sync,
-    DriverCfgDataType_Isoc
-} DriverCfgDataType_t;
-
-typedef enum
-{
-    Driver_LinuxCdev,
-    Driver_LinuxAlsa,
-    Driver_LinuxV4l2,
-    Driver_LinuxNetwork
-} DriverType_t;
-
-typedef struct
-{
-    const char *channelName;
-    const char *aimName;
-    DriverCfgDataType_t dataType;
-    DriverCfgDirection_t direction;
-    uint16_t numBuffers;
-    uint16_t bufferSize;
-    uint16_t subBufferSize;
-    uint16_t packetsPerXact;
-} LinuxDriverCdev_t;
-
-typedef struct
-{
-    const char *channelName;
-    const char *aimName;
-    DriverCfgDataType_t dataType;
-    DriverCfgDirection_t direction;
-    uint16_t numBuffers;
-    uint16_t bufferSize;
-    uint16_t subBufferSize;
-    uint16_t packetsPerXact;
-} LinuxDriverV4l2_t;
-
-typedef struct
-{
-    const char *channelName;
-    const char *aimName;
-    DriverCfgDataType_t dataType;
-    DriverCfgDirection_t direction;
-    uint16_t numBuffers;
-    uint16_t bufferSize;
-    uint16_t subBufferSize;
-    uint16_t packetsPerXact;
-    uint8_t amountOfChannels;
-    uint8_t resolutionInBit;
-} LinuxDriverAlsa_t;
-
-typedef struct
-{
-    const char *channelName;
-    const char *aimName;
-    DriverCfgDataType_t dataType;
-    DriverCfgDirection_t direction;
-    uint16_t numBuffers;
-    uint16_t bufferSize;
-} LinuxDriverNetwork_t;
-
-typedef struct
-{
-    const char *linkName;
-    DriverPhysicalLayer_t phy;
-    uint16_t nodeAddress;
-    DriverType_t driverType;
-    union
-    {
-        LinuxDriverCdev_t LinuxCdev;
-        LinuxDriverV4l2_t LinuxV4l2;
-        LinuxDriverAlsa_t LinuxAlsa;
-        LinuxDriverNetwork_t LinuxNetwork;
-    } drv;
-} DriverInformation_t;
     
+#include <stdint.h>
+#include "ucs_api.h"
+    
+/*#define C99_STRUCTS*/
+#define TAB "    "
+
+const char *GetXml2StructVersion(void);
+
+void PrintUcsStructures(
+    uint16_t packetBw,
+    Ucs_Rm_Route_t *pRoutes,
+    uint16_t routesSize,
+    Ucs_Rm_Node_t *pNod,
+    uint16_t nodSize,
+    const char *variablePrefix);
+
+void PrintHeaderFile(const char *variablePrefix);
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* UCSXMLDRIVERCONFIG_H_ */
+    
+#endif

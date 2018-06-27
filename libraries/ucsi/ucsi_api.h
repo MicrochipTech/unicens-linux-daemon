@@ -51,7 +51,6 @@ extern "C" {
  */
 void UCSI_Init(UCSI_Data_t *pPriv, void *pTag);
 
-
 /**
  * \brief Executes the given configuration. If already started, all
  *        existing local and remote INIC resources will be destroyed
@@ -70,6 +69,21 @@ bool UCSI_NewConfig(UCSI_Data_t *pPriv,
     uint16_t packetBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
     Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize);
 
+
+/**
+ * \brief Executes the given script. If already started, all
+ *        existing local and remote INIC resources will be destroyed
+ * \note pScriptList pointer must stay valid until this callback is
+ *       raised: "UCSI_CB_OnStop"
+ * \note UCSI_NewConfig must called first, before calling the function
+ *
+ * \param pPriv - private data section of this instance
+ * \param targetAddress - targetAddress - The target node address
+ * \param pScriptList - Pointer to the array of scripts
+ * \param scriptListLength - Number of scripts in the array
+ * \return true, script successfully enqueued, false otherwise
+ */
+bool UCSI_ExecuteScript(UCSI_Data_t *pPriv, uint16_t targetAddress, Ucs_Ns_Script_t *pScriptList, uint8_t scriptListLength);
 
 /**
  * \brief Offer the received control data from LLD to UNICENS
@@ -163,7 +177,7 @@ void UCSI_ReleaseAmsMessage(UCSI_Data_t *my);
 bool UCSI_SetRouteActive(UCSI_Data_t *pPriv, uint16_t routeId, bool isActive);
 
 /**
- * \brief Enables or disables a route by the given routeId
+ * \brief Performs an remote I2C write command
  * \note Call this function only from single context (not from ISR)
  *
  * \param pPriv - private data section of this instance
@@ -178,7 +192,23 @@ bool UCSI_SetRouteActive(UCSI_Data_t *pPriv, uint16_t routeId, bool isActive);
  * \return true, if route command was enqueued to UNICENS.
  */
 bool UCSI_I2CWrite(UCSI_Data_t *pPriv, uint16_t targetAddress, bool isBurst, uint8_t blockCount,
-    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, uint8_t *pData);
+    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData);
+
+/**
+ * \brief Performs an remote I2C read command.
+ * \note UCSI_CB_OnI2CRead will be called after this command has been executed
+ * \note Call this function only from single context (not from ISR)
+ *
+ * \param pPriv - private data section of this instance
+ * \param targetAddress - targetAddress - The node / group target address
+ * \param slaveAddr - The I2C address.
+ * \param timeout - Timeout in milliseconds.
+ * \param dataLen - Amount of bytes to send via I2C
+ *
+ * \return true, if route command was enqueued to UNICENS.
+ */
+bool UCSI_I2CRead(UCSI_Data_t *pPriv, uint16_t targetAddress,
+    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen);
 
 /**
  * \brief Enables or disables a route by the given routeId
@@ -196,6 +226,16 @@ bool UCSI_SetGpioState(UCSI_Data_t *pPriv, uint16_t targetAddress, uint8_t gpioP
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                        CALLBACK SECTION                              */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+/**
+ * \brief Callback when ever a function above was tried to be executed.
+ * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param command - Enumeration value, identify the used command
+ * \param success - true, if given command was successfully executed. false, either the direct call of the command or its async callback signaled an error
+ * \param nodeAddress - the address of the node reporting this event. 0x1 in case of the local master node. 0xFFFF in case if the node address is unknown.
+ */
+extern void UCSI_CB_OnCommandResult(void *pTag, UnicensCmd_t command, bool success, uint16_t nodeAddress);
 
 /**
  * \brief Callback when ever a timestamp is needed
@@ -301,6 +341,18 @@ extern void UCSI_CB_OnRouteResult(void *pTag, uint16_t routeId, bool isActive, u
  * \param isHighState - true, high state = 3,3V. false, low state = 0V.
  */
 extern void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPinId, bool isHighState);
+
+/**
+ * \brief Callback when an I2C Read (triggered by UCSI_I2CRead) command has been executed
+ * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param success - true, if the data could be read. false, otherwise
+ * \param targetAddress - targetAddress - The node / group target address
+ * \param slaveAddr - The I2C address.
+ * \param pBuffer - If success is set to true, then the payload in this buffer is valid
+ * \param bufLen - Length of buffer
+ */
+extern void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, uint8_t slaveAddr, const uint8_t *pBuffer, uint32_t bufLen);
 
 #ifdef __cplusplus
 }
