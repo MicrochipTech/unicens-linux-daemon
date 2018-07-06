@@ -40,14 +40,14 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSD_VERSION    ("V4.1.0")
+#define UNICENSD_VERSION    ("V4.2.0")
 
 /* Character device to INIC control channel */
 #define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-usb-ctx")
 #define DEFAULT_CONTROL_CDEV_RX ("/dev/inic-usb-crx")
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-/*                     PRIVTATE FUNCTION PROTOTYPES                     */
+/*                      PRIVATE FUNCTION PROTOTYPES                     */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar);
@@ -60,6 +60,7 @@ static void PrintHelp(void);
 int main(int argc, char *argv[])
 {
     static TaskUnicens_t taskVars;
+    ConsoleSetPrio(PRIO_HIGH);
     ConsolePrintf(PRIO_HIGH, YELLOW "------|UNICENS daemon %s (BUILD %s %s)|------" RESETCOLOR "\r\n", UNICENSD_VERSION, __DATE__, __TIME__);
     if (!ParseCommandLine(argc, argv, &taskVars))
     {
@@ -103,6 +104,18 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
             }
             pVar->cfgFileName = argv[i];
         }
+        else if (0 == strcmp("-v", argv[i]))
+        {
+            ConsoleSetPrio(PRIO_MEDIUM);
+        }
+        else if (0 == strcmp("-vv", argv[i]))
+        {
+            ConsoleSetPrio(PRIO_LOW);
+        }
+        else if (0 == strcmp("-hide", argv[i]))
+        {
+            pVar->noRouteTable = true;
+        }
         else if (0 == strcmp("--help", argv[i]))
         {
             PrintHelp();
@@ -138,6 +151,10 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         {
             ConsolePrintf(PRIO_ERROR, RED"-drv2 is currently reserved"RESETCOLOR"\r\n");
             return false;
+        }
+        else if (0 == strcmp("-lld", argv[i]))
+        {
+            pVar->lldTrace = true;
         }
         else if (0 == strcmp("-crx", argv[i]))
         {
@@ -180,6 +197,9 @@ static void PrintHelp(void)
     ConsolePrintfStart(PRIO_HIGH, "Usage: unicensd [OPTION]... [FILE]\r\n");
     ConsolePrintfContinue("Executes the UNICENS daemon to start and configure INICnet devices.\r\n\r\n");
     ConsolePrintfContinue("  [File]                   Path to UNICENS XML configuration file, if not set, the compiled default config will be used\r\n");
+    ConsolePrintfContinue("  -v                       Verbose mode, prints debug informations\r\n");
+    ConsolePrintfContinue("  -vv                      Very Verbose mode, prints even more debug informations\r\n");
+    ConsolePrintfContinue("  -hide                    Disable node and route table printing\r\n");
     ConsolePrintfContinue("  -default                 Uses default configuration (default_config.c) instead of parsing XML file\r\n");
     ConsolePrintfContinue("  -crx [RX char device]    Path to the receiver character device\r\n");
     ConsolePrintfContinue("  -ctx [TX char device]    Path to the sender character device\r\n");
@@ -187,6 +207,7 @@ static void PrintHelp(void)
     ConsolePrintfContinue("                           An additional filter string can be passed with a colon as delimiter. This filter applies to\r\n");
     ConsolePrintfContinue("                           description file inside the sys fs from the MOST Linux Driver.\r\n");
     ConsolePrintfContinue("  -drv2                    Configures the Microchip MOST Linux Driver V2.X (reserved)\r\n");
+    ConsolePrintfContinue("  -lld                     Prints out the byte arrays send and received via Low Level Driver\r\n");
     ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
     ConsolePrintfContinue("Examples:\r\n");
     ConsolePrintfExit("  unicensd -default\r\n");

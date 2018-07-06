@@ -50,9 +50,6 @@
 /*                          USER ADJUSTABLE                             */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
-/* Debug feature */
-/*#define LLD_TRACE*/
-
 #ifdef NO_RAW_CLOCK
 #define CLOCK_SRC CLOCK_MONOTONIC
 #else
@@ -60,6 +57,7 @@
 #endif
 
 #define CDEV_PATH_LEN (64)
+#define DEBUG_TABLE_PRINT_TIME_MS  (250)
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                      DEFINES AND LOCAL VARIABLES                     */
@@ -68,15 +66,20 @@
 typedef struct
 {
     bool allowRun;
+    bool lldTrace;
+    bool noRouteTable;
     UcsXmlVal_t *cfg;
     UCSI_Data_t unicens;
     bool unicensRunning;
     bool unicensTimeout;
     bool unicensTrigger;
+    bool debugTimerStarted;
+    bool debugTriggerExpired;
     bool amsReceived;
     bool unicensDataAvailable;
     bool txErrorState;
     timer_t ucsTimer;
+    timer_t dbgTimer;
     sem_t serviceSem;
     CdevData_t ctrlTx;
     CdevData_t ctrlRx;
@@ -87,12 +90,14 @@ typedef struct
 static LocalVar_t m;
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
-/*                     PRIVTATE FUNCTION PROTOTYPES                     */
+/*                     PRIVATE FUNCTION PROTOTYPES                      */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 static bool TimerInitialize(void);
 static void TimerSetTimeOut(uint16_t timeout, timer_t timer);
 static void UcsTimerOnTimeout(union sigval sv);
+static void DbgTimerOnTimeout(union sigval sv);
+static void DbgSetTimer(bool enfore);
 static bool SemInitialize(void);
 static void SemWait(void);
 static void SemPost(void);
@@ -113,6 +118,8 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
         strncpy(m.controlRxCdev, pVar->controlRxCdev, sizeof(m.controlRxCdev));
         strncpy(m.controlTxCdev, pVar->controlTxCdev, sizeof(m.controlTxCdev));
     }
+    m.noRouteTable = pVar->noRouteTable;
+    m.lldTrace = pVar->lldTrace;
     if (!TimerInitialize() || !SemInitialize())
     {
         ConsolePrintf(PRIO_ERROR, RED"Failed to initialize timer/threading resources"RESETCOLOR"\r\n");
@@ -172,6 +179,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
             return false;
         }
     }
+    DbgSetTimer(true);
     if (!InitializeCdevs())
     {
         ConsolePrintf(PRIO_ERROR, RED"Failed to initialize Control CDEVs"RESETCOLOR"\r\n");
@@ -194,6 +202,12 @@ void TaskUnicens_Service(void)
         m.unicensTimeout = false;
         UCSI_Timeout(&m.unicens);
     }
+        if (m.debugTriggerExpired)
+        {
+            m.debugTriggerExpired = false;
+            m.debugTimerStarted = false;
+            UCSI_PrintRouteTable();
+        }
     if (m.unicensDataAvailable)
     {
         uint8_t *pData;
@@ -208,15 +222,16 @@ void TaskUnicens_Service(void)
             }
             else if (UCSI_ProcessRxData(&m.unicens, pData, len))
             {
-#ifdef LLD_TRACE
-                uint32_t i;
-                ConsolePrintfStart( PRIO_HIGH, YELLOW"%08d: MSG_RX: ", GetTicks());
-                for ( i = 0; i < len; i++ )
+                if (m.lldTrace)
                 {
-                    ConsolePrintfContinue( "%02X ", pData[i] );
+                    uint32_t i;
+                    ConsolePrintfStart( PRIO_HIGH, YELLOW"%08d: MSG_RX: ", GetTicks());
+                    for ( i = 0; i < len; i++ )
+                    {
+                        ConsolePrintfContinue( "%02X ", pData[i] );
+                    }
+                    ConsolePrintfExit(RESETCOLOR"\n");
                 }
-                ConsolePrintfExit(RESETCOLOR"\n");
-#endif
                 /*Remove flag only in case of successful enqueuing*/
                 m.unicensDataAvailable = false;
                 Cdev_PopRx(&m.ctrlRx);
@@ -239,9 +254,10 @@ void TaskUnicens_Service(void)
         m.amsReceived = false;
         if (UCSI_GetAmsMessage(&m.unicens, &amsId, &sourceAddress, &pBuf, &len))
         {
-#ifdef LLD_TRACE
-            ConsolePrintf(PRIO_HIGH, "Received AMS, id=0x%X, source=0x%X, len=%u\r\n", amsId, sourceAddress, len);
-#endif
+            if (m.lldTrace)
+            {
+                ConsolePrintf(PRIO_HIGH, "Received AMS, id=0x%X, source=0x%X, len=%u\r\n", amsId, sourceAddress, len);
+            }
             UCSI_ReleaseAmsMessage(&m.unicens);
         }
         else assert(false);
@@ -283,6 +299,7 @@ void UCSI_CB_OnCommandResult(void *pTag, UnicensCmd_t command, bool success, uin
     command = command;
     success = success;
     nodeAddress = nodeAddress;
+    DbgSetTimer(false);
 }
 
 uint16_t UCSI_CB_OnGetTime(void *pTag)
@@ -301,6 +318,7 @@ void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout)
 void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwidth, uint8_t amountOfNodes)
 {
     pTag = pTag;
+    DbgSetTimer(true);
     ConsolePrintf(PRIO_HIGH, YELLOW"Network isAvailable=%s, packetBW=%d, nodeCount=%d"RESETCOLOR"\r\n",
                   isAvailable ? "yes" : "no",
                   packetBandwidth,
@@ -313,13 +331,19 @@ void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16
     va_list argptr;
     char outbuf[300];
     pTag = pTag;
+    DbgSetTimer(false);
     va_start(argptr, vargsCnt);
     vsnprintf(outbuf, sizeof(outbuf), format, argptr);
     va_end(argptr);
     if (isError)
         ConsolePrintf(PRIO_ERROR, RED"%s"RESETCOLOR"\r\n", outbuf);
     else
-        ConsolePrintf(PRIO_HIGH, "%s\r\n", outbuf);
+        ConsolePrintf(PRIO_LOW, "%s\r\n", outbuf);
+}
+
+void UCSI_CB_OnPrintRouteTable(void *pTag, const char pString[])
+{
+    ConsolePrintf(PRIO_HIGH, "%s\r\n", pString);
 }
 
 /* Callback from UNICENS Integration component */
@@ -334,7 +358,7 @@ void UCSI_CB_OnTxRequest(void *pTag,
     const uint8_t *pPayload, uint32_t payloadLen)
 {
     pTag = pTag;
-#ifdef LLD_TRACE
+    if (m.lldTrace)
     {
         uint32_t i;
         ConsolePrintfStart( PRIO_HIGH, BLUE"%08d: MSG_TX: ", GetTicks());
@@ -344,7 +368,6 @@ void UCSI_CB_OnTxRequest(void *pTag,
         }
         ConsolePrintfExit(RESETCOLOR"\n");
     }
-#endif
     if(Cdev_Write(&m.ctrlTx, pPayload, payloadLen))
     {
         if (m.txErrorState)
@@ -385,8 +408,11 @@ void UCSI_CB_OnAmsMessageReceived(void *pTag)
 void UCSI_CB_OnRouteResult(void *pTag, uint16_t routeId, bool isActive, uint16_t connectionLabel)
 {
     pTag = pTag;
-    ConsolePrintf(PRIO_HIGH, "Route id=0x%X isActive=%s ConLabel=0x%X\r\n", routeId,
-        (isActive ? "true" : "false"), connectionLabel);
+    DbgSetTimer(true);
+    if (isActive)
+        ConsolePrintf(PRIO_MEDIUM, "Route id=0x%X isActive=true ConLabel=0x%X\r\n", routeId, connectionLabel);
+    else
+        ConsolePrintf(PRIO_MEDIUM, "Route id=0x%X isActive=" YELLOW "false" RESETCOLOR " ConLabel=0x%X\r\n", routeId, connectionLabel);
 }
 
 void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPinId, bool isHighState)
@@ -416,7 +442,7 @@ void MldConfigV1_CB_OnMessage(bool isError, const char format[], uint16_t vargsC
     if (isError)
         ConsolePrintf(PRIO_ERROR, RED"Driver config error: %s"RESETCOLOR"\r\n", outbuf);
     else
-        ConsolePrintf(PRIO_MEDIUM, "Driver config: %s\r\n", outbuf);
+        ConsolePrintf(PRIO_LOW, "Driver config: %s\r\n", outbuf);
 }
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
@@ -431,6 +457,9 @@ static bool TimerInitialize(void)
     t_sev.sigev_notify_function = &UcsTimerOnTimeout;
     t_sev.sigev_value.sival_ptr = NULL;
     if (0 != timer_create(CLOCK_MONOTONIC, &t_sev, &m.ucsTimer))
+        return false;
+    t_sev.sigev_notify_function = &DbgTimerOnTimeout;
+    if (0 != timer_create(CLOCK_MONOTONIC, &t_sev, &m.dbgTimer))
         return false;
     return true;
 }
@@ -448,6 +477,23 @@ static void UcsTimerOnTimeout(union sigval sv)
 {
     m.unicensTimeout = true;
     SemPost();
+}
+
+static void DbgTimerOnTimeout(union sigval sv)
+{
+    m.debugTriggerExpired = true;
+    SemPost();
+}
+
+static void DbgSetTimer(bool enforce)
+{
+    if (m.noRouteTable)
+        return;
+    if (enforce || m.debugTimerStarted)
+    {
+        m.debugTimerStarted = true;
+        TimerSetTimeOut(DEBUG_TABLE_PRINT_TIME_MS, m.dbgTimer);
+    }
 }
 
 static bool SemInitialize(void)
@@ -469,7 +515,7 @@ static void SemPost(void)
 
 static bool InitializeCdevs(void)
 {
-    ConsolePrintf(PRIO_HIGH, "RX-CDEV='%s', TX-CDEV='%s'\r\n", m.controlRxCdev, m.controlTxCdev);
+    ConsolePrintf(PRIO_LOW, "RX-CDEV='%s', TX-CDEV='%s'\r\n", m.controlRxCdev, m.controlTxCdev);
     if(!Cdev_Init(&m.ctrlTx, m.controlTxCdev, false, true))
         return false;
     if(!Cdev_Init(&m.ctrlRx, m.controlRxCdev, true, false))

@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include "ucsi_api.h"
+#include "ucsi_print.h"
 /************************************************************************/
 /* Private Definitions and variables                                    */
 /************************************************************************/
@@ -164,7 +165,13 @@ bool UCSI_NewConfig(UCSI_Data_t *my,
     e->val.Init.init_ptr = &my->uniInitData;
     RB_PopWritePtr(&my->rb);
     UCSI_CB_OnServiceRequired(my->tag);
+    UCSIPrint_Init(pRoutesList, routesListSize, my);
     return true;
+}
+
+void UCSI_PrintRouteTable(void)
+{
+    UCSIPrint_ShowTable();
 }
 
 bool UCSI_ExecuteScript(UCSI_Data_t *my, uint16_t targetAddress, Ucs_Ns_Script_t *pScriptList, uint8_t scriptListLength)
@@ -785,15 +792,22 @@ static void OnUnicensDebugXrmResources(Ucs_Xrm_ResourceType_t resource_type,
     {
         case UCS_XRM_INFOS_BUILT:
         msg = (char *)"has been built";
+        UCSIPrint_SetObjectState(resource_ptr, ObjState_Build);
         break;
         case UCS_XRM_INFOS_DESTROYED:
         msg = (char *)"has been destroyed";
+        UCSIPrint_SetObjectState(resource_ptr, ObjState_Unused);
         break;
         case UCS_XRM_INFOS_ERR_BUILT:
         msg = (char *)"cannot be built";
+        UCSIPrint_SetObjectState(resource_ptr, ObjState_Failed);
+        break;
+    case UCS_XRM_INFOS_ERR_DESTROYED:
+        msg = (char *)"cannot be destroyed";
+        UCSIPrint_SetObjectState(resource_ptr, ObjState_Failed);
         break;
         default:
-        msg = (char *)"cannot be destroyed";
+        msg = (char *)"has unknown state";
         break;
     }
     switch(resource_type)
@@ -941,6 +955,7 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_N
     uint32_t i;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
+    UCSIPrint_SetNodeAvailable(node_address, UCS_MGR_REP_AVAILABLE == code);
     switch (code)
     {
     case UCS_MGR_REP_IGNORED_UNKNOWN:
@@ -1047,6 +1062,22 @@ static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, U
     OnCommandExecuted(my, UnicensCmd_SendAmsMessage, (UCS_AMSTX_RES_SUCCESS == result));
     if (UCS_AMSTX_RES_SUCCESS != result)
         UCSI_CB_OnUserMessage(my->tag, true, "SendAms failed with result=0x%x, info=0x%X", 2, result, info);
+}
+
+/************************************************************************/
+/* Callback from UCSI Print component:                                  */
+/************************************************************************/
+
+void UCSIPrint_CB_OnUserMessage(void *usr, const char pMsg[])
+{
+    void *tag = NULL;
+    UCSI_Data_t *my = (UCSI_Data_t *)usr;
+    if (my)
+    {
+        assert(MAGIC == my->magic);
+        tag = my->tag;
+    }
+    UCSI_CB_OnPrintRouteTable(tag, pMsg);
 }
 
 /************************************************************************/

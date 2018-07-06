@@ -1,11 +1,6 @@
 cmake_minimum_required (VERSION 2.8.11)
 project (unicensd)
 
-OPTION(LLD_TRACE "Low Level Trace" OFF)
-IF(LLD_TRACE)
-    ADD_DEFINITIONS(-DLLD_TRACE)
-ENDIF(LLD_TRACE)
-
 OPTION(NO_RAW_CLOCK "Do not use raw clock" OFF)
 IF(NO_RAW_CLOCK)
     ADD_DEFINITIONS(-DNO_RAW_CLOCK)

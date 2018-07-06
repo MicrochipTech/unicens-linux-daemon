@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* UNICENS Daemon Task Implementation                                                             */
+/* UNICENS Stucture Printing module                                                               */
 /* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -27,30 +27,43 @@
 /* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE                  */
 /* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                           */
 /*------------------------------------------------------------------------------------------------*/
-
-#ifndef TASK_UNICENS_H_
-#define TASK_UNICENS_H_
+#ifndef UCSI_PRINT_H_
+#define UCSI_PRINT_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
     
-typedef struct
-{
-    bool noRouteTable;
-    bool lldTrace;
-    const char *cfgFileName;
-    uint16_t drv1LocalNodeAddr;
-    const char *drv1Filter;
-    char *controlRxCdev;
-    char *controlTxCdev;
-} TaskUnicens_t;
+#include <stdint.h>
+#include <stdarg.h>
+#include "ucs_api.h"
+#include "ucs_cfg.h"
+#include "ucs_xrm_cfg.h"
 
-bool TaskUnicens_Init(TaskUnicens_t *pVar);
-void TaskUnicens_Service(void);
+#define UCSI_PRINT_MAX_NODES (UCS_NUM_REMOTE_DEVICES + 1)
+#define UCSI_PRINT_MAX_RESOURCES (UCS_XRM_NUM_RESOURCES)
+    
+typedef enum
+{
+    ObjState_Unused,
+    ObjState_Build,
+    ObjState_Failed
+} UCSIPrint_ObjectState_t;
+
+void UCSIPrint_Init(Ucs_Rm_Route_t *pRoutes, uint16_t routesSize, void *tag);
+void UCSIPrint_ShowTable(void);
+void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, bool isAvailable);
+void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectState_t state);
+
+/**
+ * \brief Callback when ever UNICENS_PRINT forms a human readable message.
+ * \param tag - user pointer given along with UCSIPrint_Init
+ * \param pMsg - zero terminated human readable string
+ */
+extern void UCSIPrint_CB_OnUserMessage(void *tag, const char pMsg[]);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* TASK_UNICENS_H_ */
+    
+#endif
