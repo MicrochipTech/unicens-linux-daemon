@@ -53,6 +53,7 @@ typedef enum
 void UCSIPrint_Init(Ucs_Rm_Route_t *pRoutes, uint16_t routesSize, void *tag);
 void UCSIPrint_ShowTable(void);
 void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, bool isAvailable);
+void UCSIPrint_SetConnectionLabel(uint16_t routeId, uint16_t connectionLabel);
 void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectState_t state);
 
 /**

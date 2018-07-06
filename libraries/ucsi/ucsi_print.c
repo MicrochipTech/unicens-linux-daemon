@@ -55,6 +55,13 @@ struct ResourceList
     UCSIPrint_ObjectState_t state;
 };
 
+struct ConnectionList
+{
+    bool isValid;
+    uint16_t routeId;
+    uint16_t connectionLabel;
+};
+
 struct NodeList
 {
     bool isValid;
@@ -69,6 +76,7 @@ struct LocalVar
     Ucs_Rm_Route_t *pRoutes;
     uint16_t routesSize;
     struct ResourceList rList[UCSI_PRINT_MAX_RESOURCES];
+    struct ConnectionList cList[UCSI_PRINT_MAX_RESOURCES];
     struct NodeList nList[UCSI_PRINT_MAX_NODES];
 };
 
@@ -77,6 +85,7 @@ static char strBuf[STR_BUF_LEN];
 
 static void ParseResources(Ucs_Xrm_ResObject_t **ppJobList, char *pBuf, uint32_t bufLen);
 static bool IsNodeAvailable(uint16_t nodeAddress);
+static uint16_t GetConnetionLabel(uint16_t routeId);
 
 void UCSIPrint_Init(Ucs_Rm_Route_t *pRoutes, uint16_t routesSize, void *tag)
 {
@@ -96,8 +105,8 @@ void UCSIPrint_ShowTable(void)
     char outRes[STR_RES_LEN];
     if (!m.initialized)
         return;
-    UCSIPrint_CB_OnUserMessage(m.tag, "-----------------------------------------------------------------------");
-    UCSIPrint_CB_OnUserMessage(m.tag, "Source | Sink  | Act | ID     | Resources");
+    UCSIPrint_CB_OnUserMessage(m.tag, "---------------------------------------------------------------------------------");
+    UCSIPrint_CB_OnUserMessage(m.tag, "Source | Sink  | Act | ID     | Label  | Resources");
     for (i = 0; i < m.routesSize; i++)
     {
         const char *sourceAvail = "";
@@ -107,6 +116,7 @@ void UCSIPrint_ShowTable(void)
         uint16_t snkAddr = m.pRoutes[i].sink_endpoint_ptr->node_obj_ptr->signature_ptr->node_address;
         uint8_t active = m.pRoutes[i].active;
         uint16_t id = m.pRoutes[i].route_id;
+        uint16_t label = GetConnetionLabel(id);
         ParseResources(m.pRoutes[i].source_endpoint_ptr->jobs_list_ptr, inRes, sizeof(inRes));
         ParseResources(m.pRoutes[i].sink_endpoint_ptr->jobs_list_ptr, outRes, sizeof(outRes));
         if (IsNodeAvailable(srcAddr))
@@ -119,11 +129,11 @@ void UCSIPrint_ShowTable(void)
             sinkAvail = GREEN;
             resetCol = RESETCOLOR;
         }
-        snprintf(strBuf, STR_BUF_LEN, "%s0x%03X%s  | %s0x%03X%s |  %d  | 0x%04X | Src:%s  Snk:%s",
-            sourceAvail, srcAddr, resetCol, sinkAvail, snkAddr, resetCol, active, id, inRes, outRes);
+        snprintf(strBuf, STR_BUF_LEN, "%s0x%03X%s  | %s0x%03X%s |  %d  | 0x%04X | 0x%04X | Src:%s  Snk:%s",
+            sourceAvail, srcAddr, resetCol, sinkAvail, snkAddr, resetCol, active, id, label, inRes, outRes);
         UCSIPrint_CB_OnUserMessage(m.tag, strBuf);
     }
-    UCSIPrint_CB_OnUserMessage(m.tag, "-----------------------------------------------------------------------");
+    UCSIPrint_CB_OnUserMessage(m.tag, "---------------------------------------------------------------------------------");
 }
 
 void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, bool isAvailable)
@@ -151,7 +161,35 @@ void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, bool isAvailable)
             return;
         }
     }
-    UCSIPrint_CB_OnUserMessage(m.tag, RED "Not enough resources for UCSIPrint component, increase UCSI_PRINT_MAX_NODES" RESETCOLOR "\r\n");
+    UCSIPrint_CB_OnUserMessage(m.tag, RED "Could not store node availability, increase UCSI_PRINT_MAX_NODES" RESETCOLOR "\r\n");
+}
+
+void UCSIPrint_SetConnectionLabel(uint16_t routeId, uint16_t connectionLabel)
+{
+    uint16_t i;
+    if (!m.initialized)
+        return;
+    /* Find existing entry */
+    for (i = 0; i < UCSI_PRINT_MAX_RESOURCES; i++)
+    {
+        if (m.cList[i].isValid && routeId == m.cList[i].routeId)
+        {
+            m.cList[i].connectionLabel = connectionLabel;
+            return;
+        }
+    }
+    /* Find empty entry and store it there */
+    for (i = 0; i < UCSI_PRINT_MAX_RESOURCES; i++)
+    {
+        if (!m.cList[i].isValid)
+        {
+            m.cList[i].routeId = routeId;
+            m.cList[i].connectionLabel = connectionLabel;
+            m.cList[i].isValid = true;
+            return;
+        }
+    }
+    UCSIPrint_CB_OnUserMessage(m.tag, RED "Could not store connection label, increase UCSI_PRINT_MAX_RESOURCES" RESETCOLOR "\r\n");
 }
 
 void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectState_t state)
@@ -178,7 +216,7 @@ void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectStat
             return;
         }
     }
-    UCSIPrint_CB_OnUserMessage(m.tag, RED "Not enough resources for UCSIPrint component, increase UCSI_PRINT_MAX_RESOURCES" RESETCOLOR "\r\n");
+    UCSIPrint_CB_OnUserMessage(m.tag, RED "Could not store object state, increase UCSI_PRINT_MAX_RESOURCES" RESETCOLOR "\r\n");
 }
 
 static void ParseResources(Ucs_Xrm_ResObject_t **ppJobList, char *pBuf, uint32_t bufLen)
@@ -276,6 +314,20 @@ static bool IsNodeAvailable(uint16_t nodeAddress)
         }
     }
     return false;
+}
+
+static uint16_t GetConnetionLabel(uint16_t routeId)
+{
+    uint16_t i;
+    /* Find existing entry */
+    for (i = 0; i < UCSI_PRINT_MAX_NODES; i++)
+    {
+        if (m.nList[i].isValid && routeId == m.cList[i].routeId)
+        {
+            return m.cList[i].connectionLabel;
+        }
+    }
+    return 0;
 }
 
 #else /* ENABLE_RESOURCE_PRINT */

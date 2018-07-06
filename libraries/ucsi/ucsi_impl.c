@@ -81,7 +81,7 @@ static void OnUcsGpioTriggerEventStatus(uint16_t node_address, uint16_t gpio_por
     uint16_t rising_edges, uint16_t falling_edges, uint16_t levels, void * user_ptr);
 static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     uint8_t i2c_slave_address, uint8_t data_len, Ucs_I2c_Result_t result, void *user_ptr);
-static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle, 
+static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
             uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr);
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
 
@@ -290,9 +290,9 @@ void UCSI_Service(UCSI_Data_t *my)
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Gpio_WritePort failed", 0);
                 UCSI_CB_OnCommandResult(my->tag, UnicensCmd_GpioWritePort, false, e->val.GpioWritePort.destination);
             }
-            break;            
+            break;
         case UnicensCmd_I2CWrite:
-            if (UCS_RET_SUCCESS == Ucs_I2c_WritePort(my->unicens, e->val.I2CWrite.destination, 0x0F00, 
+            if (UCS_RET_SUCCESS == Ucs_I2c_WritePort(my->unicens, e->val.I2CWrite.destination, 0x0F00,
                 (e->val.I2CWrite.isBurst ? UCS_I2C_BURST_MODE : UCS_I2C_DEFAULT_MODE), e->val.I2CWrite.blockCount,
                 e->val.I2CWrite.slaveAddr, e->val.I2CWrite.timeout, e->val.I2CWrite.dataLen, e->val.I2CWrite.data, OnUcsI2CWrite))
                 popEntry = false;
@@ -303,7 +303,7 @@ void UCSI_Service(UCSI_Data_t *my)
             }
             break;
         case UnicensCmd_I2CRead:
-            if (UCS_RET_SUCCESS == Ucs_I2c_ReadPort(my->unicens, e->val.I2CRead.destination, 0x0F00, 
+            if (UCS_RET_SUCCESS == Ucs_I2c_ReadPort(my->unicens, e->val.I2CRead.destination, 0x0F00,
                 e->val.I2CRead.slaveAddr, e->val.I2CRead.dataLen, e->val.I2CRead.timeout, OnUcsI2CRead))
                 popEntry = false;
             else
@@ -712,7 +712,7 @@ static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_
     uint16_t conLabel;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    if (NULL == route_ptr || NULL == route_ptr->source_endpoint_ptr || 
+    if (NULL == route_ptr || NULL == route_ptr->source_endpoint_ptr ||
         NULL == route_ptr->source_endpoint_ptr->node_obj_ptr ||
         NULL == route_ptr->sink_endpoint_ptr ||
         NULL == route_ptr->sink_endpoint_ptr->node_obj_ptr)
@@ -756,6 +756,7 @@ static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_
         }
     }
     conLabel = Ucs_Rm_GetConnectionLabel(my->unicens, route_ptr);
+    UCSIPrint_SetConnectionLabel(route_ptr->route_id, conLabel);
     UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, UCS_RM_ROUTE_INFOS_BUILT == route_infos, conLabel);
 }
 
@@ -1047,7 +1048,7 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
         UCSI_CB_OnUserMessage(my->tag, true, "Remote I2C Write to node=0x%X failed", 1, node_address);
 }
 
-static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle, 
+static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
             uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr)
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
