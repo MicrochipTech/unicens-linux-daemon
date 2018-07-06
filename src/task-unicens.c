@@ -206,7 +206,7 @@ void TaskUnicens_Service(void)
         {
             m.debugTriggerExpired = false;
             m.debugTimerStarted = false;
-            UCSI_PrintRouteTable();
+            UCSI_PrintRouteTable(&m.unicens);
         }
     if (m.unicensDataAvailable)
     {
