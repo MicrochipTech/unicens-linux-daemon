@@ -71,9 +71,10 @@ bool UCSI_NewConfig(UCSI_Data_t *pPriv,
 
 /**
  * \brief Prints human readable table showing all resources and giving feedback if they have been build successful.
+ * \param pPriv - private data section of this instance
  * \note The table will be printed via the UCSI_CB_OnPrintRouteTable callback.
  */
-void UCSI_PrintRouteTable(void);
+void UCSI_PrintRouteTable(UCSI_Data_t *pPriv);
 
 /**
  * \brief Executes the given script. If already started, all

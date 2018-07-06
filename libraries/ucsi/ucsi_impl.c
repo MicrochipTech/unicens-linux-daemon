@@ -169,8 +169,9 @@ bool UCSI_NewConfig(UCSI_Data_t *my,
     return true;
 }
 
-void UCSI_PrintRouteTable(void)
+void UCSI_PrintRouteTable(UCSI_Data_t *pPriv)
 {
+    pPriv = pPriv;
     UCSIPrint_ShowTable();
 }
 

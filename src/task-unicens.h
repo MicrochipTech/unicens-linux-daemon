@@ -34,6 +34,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+/*                            Public API                                */
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
     
 typedef struct
 {
@@ -46,7 +50,17 @@ typedef struct
     char *controlTxCdev;
 } TaskUnicens_t;
 
+/**
+ * \brief Initializes the UNICENS Task
+ * \note Must be called before any other function of this component
+ * \param pVar - Structure holding initialization parameters
+ * \return true, if initialization was successful. false, otherwise, do not call any other function in that case
+ */
 bool TaskUnicens_Init(TaskUnicens_t *pVar);
+
+/**
+ * \brief Gives the UNICENS Task time to maintain it's service routines
+ */
 void TaskUnicens_Service(void);
 
 #ifdef __cplusplus
