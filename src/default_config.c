@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
 /* UNICENS Generated Network Configuration                                                        */
-/* Generator: xml2struct for Linux V4.0.4                                                         */
+/* Generator: xml2struct for Linux V4.2.0                                                         */
 /*------------------------------------------------------------------------------------------------*/
 #include "ucs_api.h"
 
@@ -714,30 +714,30 @@ Ucs_Rm_Route_t AllRoutes[] = { {
         &SourceEndpointForRoute1,
         &SinkEndpointForRoute1,
         1,
-        0x8004
+        0x8000
     }, {
         &SourceEndpointForRoute1,
         &SinkEndpointForRoute2,
         1,
-        0x8007
+        0x8001
     }, {
         &SourceEndpointForRoute3,
         &SinkEndpointForRoute3,
         1,
-        0x8005
+        0x8002
     }, {
         &SourceEndpointForRoute3,
         &SinkEndpointForRoute4,
         1,
-        0x8008
+        0x8003
     }, {
         &SourceEndpointForRoute5,
         &SinkEndpointForRoute5,
         1,
-        0x8006
+        0x8004
     }, {
         &SourceEndpointForRoute5,
         &SinkEndpointForRoute6,
         1,
-        0x8009
+        0x8005
     } };

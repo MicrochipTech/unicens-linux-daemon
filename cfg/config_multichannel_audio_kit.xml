@@ -85,7 +85,5 @@
                       Payload="00 0f 02 01 00 00 02 a5 df 03 3f 3f 04 02 02 10 30 30 11 00 00 12 00 00 13 00 00 14 00 00"/>
         <I2CPortWrite Mode="BurstMode" BlockCount="4" Address="0x18" Length="3" Timeout="100"
                       Payload="20 00 00 21 00 00 22 00 00 23 00 00"/>
-        <GPIOPortCreate DebounceTime="100"/>
-        <GPIOPortPinMode PinConfiguration="03 35 04 35 05 35 06 35 07 41 08 40"/>
     </Script>
 </Unicens>

@@ -40,6 +40,7 @@
 #endif
 #define ENABLE_AMS_LIB          (true)
 #define DEBUG_XRM
+#define ENABLE_RESOURCE_PRINT
 #define BOARD_PMS_TX_SIZE       (72)
 #define CMD_QUEUE_LEN           (40)
 #define I2C_WRITE_MAX_LEN       (32)
@@ -227,6 +228,7 @@ typedef struct
     void *uniLldHPtr;
     UnicensCmdEntry_t *currentCmd;
     NodeAvailable_t nodeAvailable[MAX_NODES];
+    bool printTrigger;
 } UCSI_Data_t;
 
 #endif /* UNICENSINTEGRATION_H_ */

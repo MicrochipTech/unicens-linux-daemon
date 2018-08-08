@@ -69,7 +69,6 @@ bool UCSI_NewConfig(UCSI_Data_t *pPriv,
     uint16_t packetBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
     Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize);
 
-
 /**
  * \brief Executes the given script. If already started, all
  *        existing local and remote INIC resources will be destroyed
@@ -277,6 +276,14 @@ extern void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packet
  */
 extern void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[],
     uint16_t vargsCnt, ...);
+
+/**
+ * \brief Callback when the overview with all nodes and routes is getting printed
+ * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param pString - Zero terminated format string forming a table with informations
+ */
+extern void UCSI_CB_OnPrintRouteTable(void *pTag, const char pString[]);
 
 /**
  * \brief Callback when ever this instance needs to be serviced.

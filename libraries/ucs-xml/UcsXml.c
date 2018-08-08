@@ -47,6 +47,7 @@
 #define MISC_HB(value)      ((uint8_t)((uint16_t)(value) >> 8))
 #define MISC_LB(value)      ((uint8_t)((uint16_t)(value) & (uint16_t)0xFF))
 #define ROUTE_AUTO_ID_START (0x8000)
+#define ROUTE_INVALID_ID    (0xFFFF)
 
 struct UcsXmlRoute
 {
@@ -311,7 +312,6 @@ static ParseResult_t ParseDriver(mxml_node_t *soc, UcsXmlVal_t *ucs, PrivateData
 static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink);
 static uint16_t GetDrvInfCount(struct UcsXmlDriverInfoList *drvInfLst);
 static void FillDriverArray(struct UcsXmlDriverInfoList *drvInfLst, DriverInformation_t **ppDriveInfo);
-static bool IsAutoRouteId(uint16_t id, PrivateData_t *priv);
 
 /************************************************************************/
 /* Public Functions                                                     */
@@ -322,7 +322,11 @@ UcsXmlVal_t *UcsXml_Parse(const char *xmlString)
     UcsXmlVal_t *val = NULL;
     ParseResult_t result = Parse_MemoryError;
     mxml_node_t *tree;
-    if (!(tree = mxmlLoadString(NULL, xmlString, MXML_NO_CALLBACK))) goto ERROR;
+    if (!(tree = mxmlLoadString(NULL, xmlString, MXML_NO_CALLBACK)))
+    {
+        UcsXml_CB_OnError("XML is not parsable, double check that is well formed!", 0);
+        goto ERROR;
+    }
     if (!GetElement(tree, UNICENS, true, &tree, true)) goto ERROR;
     /*Do not use MCalloc for the root element*/
     val = calloc(1, sizeof(UcsXmlVal_t));
@@ -1118,7 +1122,7 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
             priv->conData.isDeactivated = false;
         }
         if (!GetUInt16(soc, ROUTE_ID, &priv->conData.routeId, false))
-            priv->conData.routeId = ++priv->autoRouteId;
+            priv->conData.routeId = ROUTE_INVALID_ID;
         if (priv->conData.syncOffsetNeeded)
         {
             if (!GetUInt16(soc, OFFSET, &priv->conData.syncOffset, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
@@ -1473,7 +1477,7 @@ static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, 
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0xFF; /* Using Wildcard */
+    res->DataLen = 0x00; /* Using Wildcard */
 #else
     if (!GetPayload(act, PAYLOAD_RES_HEX, &res->DataPtr, &res->DataLen, 0, objList, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
@@ -1503,7 +1507,7 @@ static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t
     req->DataPtr[1] = MISC_HB(debounce);
     req->DataPtr[2] = MISC_LB(debounce);
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0xFF; /* Using Wildcard */
+    res->DataLen = 0x00; /* Using Wildcard */
 #else
     res->DataLen = 2;
     res->DataPtr = MCalloc(objList, res->DataLen, 1);
@@ -1537,7 +1541,7 @@ static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *s
     req->DataPtr = payload;
     req->DataLen = payloadLen + PORT_HANDLE_OFFSET;
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0xFF; /* Using Wildcard */
+    res->DataLen = 0x00; /* Using Wildcard */
 #else
     res->DataPtr = payload;
     res->DataLen = payloadLen + PORT_HANDLE_OFFSET;
@@ -1572,7 +1576,7 @@ static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *
     req->DataPtr[4] = MISC_HB(data);
     req->DataPtr[5] = MISC_LB(data);
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0xFF; /* Using Wildcard */
+    res->DataLen = 0x00; /* Using Wildcard */
 #else
     res->DataLen = 8;
     res->DataPtr = MCalloc(objList, res->DataLen, 1);
@@ -1617,7 +1621,7 @@ static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *sc
     req->DataPtr[2] = 0x01; /* We are Master */
     req->DataPtr[3] = speed;
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0xFF; /* Using Wildcard */
+    res->DataLen = 0x00; /* Using Wildcard */
 #else
     res->DataLen = 2;
     res->DataPtr = MCalloc(objList, res->DataLen, 1);
@@ -1685,7 +1689,7 @@ static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr
     req->DataPtr[6] = MISC_HB(timeout);
     req->DataPtr[7] = MISC_LB(timeout);
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0xFF; /* Using Wildcard */
+    res->DataLen = 0x00; /* Using Wildcard */
 #else
     res->DataLen = 4;
     res->DataPtr = MCalloc(objList, res->DataLen, 1);
@@ -1732,7 +1736,7 @@ static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr,
     req->DataPtr[4] = MISC_HB(timeout);
     req->DataPtr[5] = MISC_LB(timeout);
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0xFF; /* Using Wildcard */
+    res->DataLen = 0x00; /* Using Wildcard */
 #else
     res->DataLen = 4;
     res->DataPtr = MCalloc(objList, res->DataLen, 1);
@@ -1804,16 +1808,13 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
                     route = &ucs->pRoutes[ucs->routesSize++];
                     route->source_endpoint_ptr = sourceRoute->ep;
                     route->sink_endpoint_ptr = sinkRoute->ep;
-                    if (!IsAutoRouteId(sinkRoute->routeId, priv))
-                    {
-                        route->active = sinkRoute->isActive;
+                    route->active = sinkRoute->isActive && sourceRoute->isActive;
+                    if (ROUTE_INVALID_ID != sinkRoute->routeId)
                         route->route_id = sinkRoute->routeId;
-                    }
-                    else
-                    {
-                        route->active = sourceRoute->isActive;
+                    else if (ROUTE_INVALID_ID != sourceRoute->routeId)
                         route->route_id = sourceRoute->routeId;
-                    }
+                    else
+                        route->route_id = priv->autoRouteId++;
                 }
                 sinkRoute = sinkRoute->next;
             }
@@ -2193,10 +2194,4 @@ static void FillDriverArray(struct UcsXmlDriverInfoList *drvInfLst, DriverInform
         head = head->next;
     }
     while(NULL != head);
-}
-
-static bool IsAutoRouteId(uint16_t id, PrivateData_t *priv)
-{
-    assert(NULL != priv);
-    return (id >= ROUTE_AUTO_ID_START && id <= priv->autoRouteId);
 }
