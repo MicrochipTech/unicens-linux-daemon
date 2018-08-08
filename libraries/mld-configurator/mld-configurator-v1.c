@@ -368,16 +368,20 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     switch(drv->driverType)
     {
     case Driver_LinuxCdev:
-        ConfigureCdev(fullPath, drv) && LinkCdev(channelName, deviceName, drv);
+        if (ConfigureCdev(fullPath, drv))
+            LinkCdev(channelName, deviceName, drv);
         break;
     case Driver_LinuxAlsa:
-        ConfigureAlsa(fullPath, drv) && LinkAlsa(channelName, deviceName, drv);
+        if (ConfigureAlsa(fullPath, drv))
+            LinkAlsa(channelName, deviceName, drv);
         break;
     case Driver_LinuxV4l2:
-        ConfigureV4L2(fullPath, drv) && LinkV4L2(channelName, deviceName, drv);
+        if (ConfigureV4L2(fullPath, drv))
+            LinkV4L2(channelName, deviceName, drv);
         break;
     case Driver_LinuxNetwork:
-        ConfigureNetwork(fullPath, drv) && LinkNetwork(channelName, deviceName, drv);
+        if (ConfigureNetwork(fullPath, drv))
+            LinkNetwork(channelName, deviceName, drv);
         break;
     }
 }
