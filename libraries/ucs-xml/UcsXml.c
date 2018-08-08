@@ -47,6 +47,7 @@
 #define MISC_HB(value)      ((uint8_t)((uint16_t)(value) >> 8))
 #define MISC_LB(value)      ((uint8_t)((uint16_t)(value) & (uint16_t)0xFF))
 #define ROUTE_AUTO_ID_START (0x8000)
+#define ROUTE_INVALID_ID    (0xFFFF)
 
 struct UcsXmlRoute
 {
@@ -311,7 +312,6 @@ static ParseResult_t ParseDriver(mxml_node_t *soc, UcsXmlVal_t *ucs, PrivateData
 static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink);
 static uint16_t GetDrvInfCount(struct UcsXmlDriverInfoList *drvInfLst);
 static void FillDriverArray(struct UcsXmlDriverInfoList *drvInfLst, DriverInformation_t **ppDriveInfo);
-static bool IsAutoRouteId(uint16_t id, PrivateData_t *priv);
 
 /************************************************************************/
 /* Public Functions                                                     */
@@ -1122,7 +1122,7 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
             priv->conData.isDeactivated = false;
         }
         if (!GetUInt16(soc, ROUTE_ID, &priv->conData.routeId, false))
-            priv->conData.routeId = ++priv->autoRouteId;
+            priv->conData.routeId = ROUTE_INVALID_ID;
         if (priv->conData.syncOffsetNeeded)
         {
             if (!GetUInt16(soc, OFFSET, &priv->conData.syncOffset, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
@@ -1808,16 +1808,13 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
                     route = &ucs->pRoutes[ucs->routesSize++];
                     route->source_endpoint_ptr = sourceRoute->ep;
                     route->sink_endpoint_ptr = sinkRoute->ep;
-                    if (!IsAutoRouteId(sinkRoute->routeId, priv))
-                    {
-                        route->active = sinkRoute->isActive;
+                    route->active = sinkRoute->isActive && sourceRoute->isActive;
+                    if (ROUTE_INVALID_ID != sinkRoute->routeId)
                         route->route_id = sinkRoute->routeId;
-                    }
-                    else
-                    {
-                        route->active = sourceRoute->isActive;
+                    else if (ROUTE_INVALID_ID != sourceRoute->routeId)
                         route->route_id = sourceRoute->routeId;
-                    }
+                    else
+                        route->route_id = priv->autoRouteId++;
                 }
                 sinkRoute = sinkRoute->next;
             }
@@ -2197,10 +2194,4 @@ static void FillDriverArray(struct UcsXmlDriverInfoList *drvInfLst, DriverInform
         head = head->next;
     }
     while(NULL != head);
-}
-
-static bool IsAutoRouteId(uint16_t id, PrivateData_t *priv)
-{
-    assert(NULL != priv);
-    return (id >= ROUTE_AUTO_ID_START && id <= priv->autoRouteId);
 }
