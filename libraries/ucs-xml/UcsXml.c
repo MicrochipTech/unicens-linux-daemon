@@ -322,7 +322,11 @@ UcsXmlVal_t *UcsXml_Parse(const char *xmlString)
     UcsXmlVal_t *val = NULL;
     ParseResult_t result = Parse_MemoryError;
     mxml_node_t *tree;
-    if (!(tree = mxmlLoadString(NULL, xmlString, MXML_NO_CALLBACK))) goto ERROR;
+    if (!(tree = mxmlLoadString(NULL, xmlString, MXML_NO_CALLBACK)))
+    {
+        UcsXml_CB_OnError("XML is not parsable, double check that is well formed!", 0);
+        goto ERROR;
+    }
     if (!GetElement(tree, UNICENS, true, &tree, true)) goto ERROR;
     /*Do not use MCalloc for the root element*/
     val = calloc(1, sizeof(UcsXmlVal_t));
