@@ -73,13 +73,10 @@ typedef struct
     bool unicensRunning;
     bool unicensTimeout;
     bool unicensTrigger;
-    bool debugTimerStarted;
-    bool debugTriggerExpired;
     bool amsReceived;
     bool unicensDataAvailable;
     bool txErrorState;
     timer_t ucsTimer;
-    timer_t dbgTimer;
     sem_t serviceSem;
     CdevData_t ctrlTx;
     CdevData_t ctrlRx;
@@ -96,8 +93,6 @@ static LocalVar_t m;
 static bool TimerInitialize(void);
 static void TimerSetTimeOut(uint16_t timeout, timer_t timer);
 static void UcsTimerOnTimeout(union sigval sv);
-static void DbgTimerOnTimeout(union sigval sv);
-static void DbgSetTimer(bool enfore);
 static bool SemInitialize(void);
 static void SemWait(void);
 static void SemPost(void);
@@ -179,7 +174,6 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
             return false;
         }
     }
-    DbgSetTimer(true);
     if (!InitializeCdevs())
     {
         ConsolePrintf(PRIO_ERROR, RED"Failed to initialize Control CDEVs"RESETCOLOR"\r\n");
@@ -202,12 +196,6 @@ void TaskUnicens_Service(void)
         m.unicensTimeout = false;
         UCSI_Timeout(&m.unicens);
     }
-        if (m.debugTriggerExpired)
-        {
-            m.debugTriggerExpired = false;
-            m.debugTimerStarted = false;
-            UCSI_PrintRouteTable(&m.unicens);
-        }
     if (m.unicensDataAvailable)
     {
         uint8_t *pData;
@@ -299,7 +287,6 @@ void UCSI_CB_OnCommandResult(void *pTag, UnicensCmd_t command, bool success, uin
     command = command;
     success = success;
     nodeAddress = nodeAddress;
-    DbgSetTimer(false);
 }
 
 uint16_t UCSI_CB_OnGetTime(void *pTag)
@@ -318,7 +305,6 @@ void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout)
 void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwidth, uint8_t amountOfNodes)
 {
     pTag = pTag;
-    DbgSetTimer(true);
     ConsolePrintf(PRIO_HIGH, YELLOW"Network isAvailable=%s, packetBW=%d, nodeCount=%d"RESETCOLOR"\r\n",
                   isAvailable ? "yes" : "no",
                   packetBandwidth,
@@ -331,7 +317,6 @@ void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16
     va_list argptr;
     char outbuf[300];
     pTag = pTag;
-    DbgSetTimer(false);
     va_start(argptr, vargsCnt);
     vsnprintf(outbuf, sizeof(outbuf), format, argptr);
     va_end(argptr);
@@ -408,7 +393,6 @@ void UCSI_CB_OnAmsMessageReceived(void *pTag)
 void UCSI_CB_OnRouteResult(void *pTag, uint16_t routeId, bool isActive, uint16_t connectionLabel)
 {
     pTag = pTag;
-    DbgSetTimer(true);
     if (isActive)
         ConsolePrintf(PRIO_MEDIUM, "Route id=0x%X isActive=true ConLabel=0x%X\r\n", routeId, connectionLabel);
     else
@@ -458,9 +442,6 @@ static bool TimerInitialize(void)
     t_sev.sigev_value.sival_ptr = NULL;
     if (0 != timer_create(CLOCK_MONOTONIC, &t_sev, &m.ucsTimer))
         return false;
-    t_sev.sigev_notify_function = &DbgTimerOnTimeout;
-    if (0 != timer_create(CLOCK_MONOTONIC, &t_sev, &m.dbgTimer))
-        return false;
     return true;
 }
 
@@ -477,23 +458,6 @@ static void UcsTimerOnTimeout(union sigval sv)
 {
     m.unicensTimeout = true;
     SemPost();
-}
-
-static void DbgTimerOnTimeout(union sigval sv)
-{
-    m.debugTriggerExpired = true;
-    SemPost();
-}
-
-static void DbgSetTimer(bool enforce)
-{
-    if (m.noRouteTable)
-        return;
-    if (enforce || m.debugTimerStarted)
-    {
-        m.debugTimerStarted = true;
-        TimerSetTimeOut(DEBUG_TABLE_PRINT_TIME_MS, m.dbgTimer);
-    }
 }
 
 static bool SemInitialize(void)

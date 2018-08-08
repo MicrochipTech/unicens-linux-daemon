@@ -70,13 +70,6 @@ bool UCSI_NewConfig(UCSI_Data_t *pPriv,
     Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize);
 
 /**
- * \brief Prints human readable table showing all resources and giving feedback if they have been build successful.
- * \param pPriv - private data section of this instance
- * \note The table will be printed via the UCSI_CB_OnPrintRouteTable callback.
- */
-void UCSI_PrintRouteTable(UCSI_Data_t *pPriv);
-
-/**
  * \brief Executes the given script. If already started, all
  *        existing local and remote INIC resources will be destroyed
  * \note pScriptList pointer must stay valid until this callback is

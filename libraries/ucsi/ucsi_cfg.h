@@ -228,6 +228,7 @@ typedef struct
     void *uniLldHPtr;
     UnicensCmdEntry_t *currentCmd;
     NodeAvailable_t nodeAvailable[MAX_NODES];
+    bool printTrigger;
 } UCSI_Data_t;
 
 #endif /* UNICENSINTEGRATION_H_ */

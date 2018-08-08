@@ -34,11 +34,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include "Console.h"
 #include "ucsi_cfg.h"
 #include "ucsi_print.h"
 
 #ifdef ENABLE_RESOURCE_PRINT
+
+#define SERVICE_TIME (500)
+#define MAX_TIMEOUT  (30000)
+#define MPR_RETRIES  (5)
+#define INVALID_CON_LABEL (0xDEAD)
 
 #define RESETCOLOR "\033[0m"
 #define GREEN      "\033[0;32m"
@@ -58,6 +62,7 @@ struct ResourceList
 struct ConnectionList
 {
     bool isValid;
+    bool isActive;
     uint16_t routeId;
     uint16_t connectionLabel;
 };
@@ -65,16 +70,22 @@ struct ConnectionList
 struct NodeList
 {
     bool isValid;
-    bool isAvailable;
+    UCSIPrint_NodeState_t nodeState;
     uint16_t node;
 };
 
 struct LocalVar
 {
     bool initialized;
+    bool triggerService;
+    uint32_t nextService;
+    uint32_t timeOut;
     void *tag;
     Ucs_Rm_Route_t *pRoutes;
     uint16_t routesSize;
+    bool networkAvailable;
+    uint8_t mpr;
+    uint8_t waitForMprRetries;
     struct ResourceList rList[UCSI_PRINT_MAX_RESOURCES];
     struct ConnectionList cList[UCSI_PRINT_MAX_RESOURCES];
     struct NodeList nList[UCSI_PRINT_MAX_NODES];
@@ -82,10 +93,13 @@ struct LocalVar
 
 static struct LocalVar m = { 0 };
 static char strBuf[STR_BUF_LEN];
-
+static void PrintTable(void);
 static void ParseResources(Ucs_Xrm_ResObject_t **ppJobList, char *pBuf, uint32_t bufLen);
-static bool IsNodeAvailable(uint16_t nodeAddress);
-static uint16_t GetConnetionLabel(uint16_t routeId);
+static bool GetIgnoredNodeString(char *pBuf, uint32_t bufLen);
+static UCSIPrint_NodeState_t GetNodeState(uint16_t nodeAddress);
+static uint8_t GetNodeCount(void);
+static bool GetRouteState(uint16_t routeId, bool *pIsActive, uint16_t *pConLabel);
+static void RequestTrigger(void);
 
 void UCSIPrint_Init(Ucs_Rm_Route_t *pRoutes, uint16_t routesSize, void *tag)
 {
@@ -98,45 +112,63 @@ void UCSIPrint_Init(Ucs_Rm_Route_t *pRoutes, uint16_t routesSize, void *tag)
     m.initialized = true;
 }
 
-void UCSIPrint_ShowTable(void)
+void UCSIPrint_Service(uint32_t timestamp)
 {
-    uint16_t i;
-    char inRes[STR_RES_LEN];
-    char outRes[STR_RES_LEN];
-    if (!m.initialized)
+    bool exec = false;
+    if (!m.networkAvailable)
         return;
-    UCSIPrint_CB_OnUserMessage(m.tag, "---------------------------------------------------------------------------------");
-    UCSIPrint_CB_OnUserMessage(m.tag, "Source | Sink  | Act | ID     | Label  | Resources");
-    for (i = 0; i < m.routesSize; i++)
+    if (m.triggerService)
     {
-        const char *sourceAvail = "";
-        const char *sinkAvail = "";
-        const char *resetCol = "";
-        uint16_t srcAddr = m.pRoutes[i].source_endpoint_ptr->node_obj_ptr->signature_ptr->node_address;
-        uint16_t snkAddr = m.pRoutes[i].sink_endpoint_ptr->node_obj_ptr->signature_ptr->node_address;
-        uint8_t active = m.pRoutes[i].active;
-        uint16_t id = m.pRoutes[i].route_id;
-        uint16_t label = GetConnetionLabel(id);
-        ParseResources(m.pRoutes[i].source_endpoint_ptr->jobs_list_ptr, inRes, sizeof(inRes));
-        ParseResources(m.pRoutes[i].sink_endpoint_ptr->jobs_list_ptr, outRes, sizeof(outRes));
-        if (IsNodeAvailable(srcAddr))
-        {
-            sourceAvail = GREEN;
-            resetCol = RESETCOLOR;
-        }
-        if (IsNodeAvailable(snkAddr))
-        {
-            sinkAvail = GREEN;
-            resetCol = RESETCOLOR;
-        }
-        snprintf(strBuf, STR_BUF_LEN, "%s0x%03X%s  | %s0x%03X%s |  %d  | 0x%04X | 0x%04X | Src:%s  Snk:%s",
-            sourceAvail, srcAddr, resetCol, sinkAvail, snkAddr, resetCol, active, id, label, inRes, outRes);
-        UCSIPrint_CB_OnUserMessage(m.tag, strBuf);
+        m.triggerService = false;
+        m.nextService = timestamp + SERVICE_TIME;
+        if (0 == m.timeOut)
+            m.timeOut = timestamp + MAX_TIMEOUT;
+        UCSIPrint_CB_NeedService(m.tag);
+        return;
     }
-    UCSIPrint_CB_OnUserMessage(m.tag, "---------------------------------------------------------------------------------");
+    if (0 == m.nextService || 0 == m.timeOut)
+        return;
+    if (timestamp >= m.timeOut)
+    {
+        UCSIPrint_CB_OnUserMessage(m.tag, RED "UCSI-Watchdog:Max timeout reached" RESETCOLOR);
+        exec = true;
+    }
+    else if (timestamp >= m.nextService)
+    {
+        if (m.mpr != GetNodeCount() && ++m.waitForMprRetries <= MPR_RETRIES)
+        {
+            m.nextService = timestamp + SERVICE_TIME;
+            return;
+        }
+        exec = true;
+    }
+    if (exec)
+    {
+        m.nextService = 0;
+        m.timeOut = 0;
+        PrintTable();
+    }
+    else
+    {
+        UCSIPrint_CB_NeedService(m.tag);
+    }
 }
 
-void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, bool isAvailable)
+void UCSIPrint_SetNetworkAvailable(bool available, uint8_t maxPos)
+{
+    m.networkAvailable = available;
+    m.mpr = maxPos;
+    m.waitForMprRetries = 0;
+    if (available)
+    {
+        RequestTrigger();
+    } else {
+       m.triggerService = false;
+       m.nextService = 0;
+    }
+}
+
+void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, UCSIPrint_NodeState_t nodeState)
 {
     uint16_t i;
     if (!m.initialized)
@@ -146,7 +178,11 @@ void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, bool isAvailable)
     {
         if (m.nList[i].isValid && nodeAddress == m.nList[i].node)
         {
-            m.nList[i].isAvailable = isAvailable;
+            if (m.nList[i].nodeState != nodeState)
+            {
+                m.nList[i].nodeState = nodeState;
+                RequestTrigger();
+            }
             return;
         }
     }
@@ -156,25 +192,28 @@ void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, bool isAvailable)
         if (!m.nList[i].isValid)
         {
             m.nList[i].node = nodeAddress;
-            m.nList[i].isAvailable = isAvailable;
+            m.nList[i].nodeState = nodeState;
             m.nList[i].isValid = true;
+            RequestTrigger();
             return;
         }
     }
-    UCSIPrint_CB_OnUserMessage(m.tag, RED "Could not store node availability, increase UCSI_PRINT_MAX_NODES" RESETCOLOR "\r\n");
+    UCSIPrint_CB_OnUserMessage(m.tag, RED "UCSI-Watchdog:Could not store node availability, increase UCSI_PRINT_MAX_NODES" RESETCOLOR);
 }
 
-void UCSIPrint_SetConnectionLabel(uint16_t routeId, uint16_t connectionLabel)
+void UCSIPrint_SetRouteState(uint16_t routeId, bool isActive, uint16_t connectionLabel)
 {
     uint16_t i;
     if (!m.initialized)
         return;
+    RequestTrigger();
     /* Find existing entry */
     for (i = 0; i < UCSI_PRINT_MAX_RESOURCES; i++)
     {
         if (m.cList[i].isValid && routeId == m.cList[i].routeId)
         {
             m.cList[i].connectionLabel = connectionLabel;
+            m.cList[i].isActive = isActive;
             return;
         }
     }
@@ -184,12 +223,13 @@ void UCSIPrint_SetConnectionLabel(uint16_t routeId, uint16_t connectionLabel)
         if (!m.cList[i].isValid)
         {
             m.cList[i].routeId = routeId;
+            m.cList[i].isActive = isActive;
             m.cList[i].connectionLabel = connectionLabel;
             m.cList[i].isValid = true;
             return;
         }
     }
-    UCSIPrint_CB_OnUserMessage(m.tag, RED "Could not store connection label, increase UCSI_PRINT_MAX_RESOURCES" RESETCOLOR "\r\n");
+    UCSIPrint_CB_OnUserMessage(m.tag, RED "UCSI-Watchdog:Could not store connection label, increase UCSI_PRINT_MAX_RESOURCES" RESETCOLOR);
 }
 
 void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectState_t state)
@@ -202,7 +242,11 @@ void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectStat
     {
         if (element == m.rList[i].element)
         {
-            m.rList[i].state = state;
+            if (m.rList[i].state != state)
+            {
+                m.rList[i].state = state;
+                RequestTrigger();
+            }
             return;
         }
     }
@@ -213,10 +257,91 @@ void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectStat
         {
             m.rList[i].element = element;
             m.rList[i].state = state;
+            RequestTrigger();
             return;
         }
     }
-    UCSIPrint_CB_OnUserMessage(m.tag, RED "Could not store object state, increase UCSI_PRINT_MAX_RESOURCES" RESETCOLOR "\r\n");
+    UCSIPrint_CB_OnUserMessage(m.tag, RED "UCSI-Watchdog:Could not store object state, increase UCSI_PRINT_MAX_RESOURCES" RESETCOLOR);
+}
+
+void UCSIPrint_UnicensActivity(void)
+{
+    if (0 != m.nextService)
+        RequestTrigger();
+    else
+        UCSIPrint_CB_NeedService(m.tag);
+}
+
+static void PrintTable(void)
+{
+    uint16_t i;
+    static char inRes[STR_RES_LEN];
+    static char outRes[STR_RES_LEN];
+    if (!m.initialized)
+        return;
+    if (!m.networkAvailable)
+        return;
+    UCSIPrint_CB_OnUserMessage(m.tag, "---------------------------------------------------------------------------------------");
+    UCSIPrint_CB_OnUserMessage(m.tag, " Source | Sink   | Active   | ID     | Label  | Resources");
+    for (i = 0; i < m.routesSize; i++)
+    {
+        const char *sourceAvail = " ";
+        const char *sourceReset = "";
+        const char *sinkAvail = " ";
+        const char *sinkReset = "";
+        const char *routeAvail = " ";
+        const char *routeReset = "";
+        uint16_t srcAddr = m.pRoutes[i].source_endpoint_ptr->node_obj_ptr->signature_ptr->node_address;
+        uint16_t snkAddr = m.pRoutes[i].sink_endpoint_ptr->node_obj_ptr->signature_ptr->node_address;
+        uint8_t shallActive = m.pRoutes[i].active;
+        uint16_t id = m.pRoutes[i].route_id;
+        bool isActive = false;
+        uint16_t label = INVALID_CON_LABEL;
+        UCSIPrint_NodeState_t srcState = GetNodeState(srcAddr);
+        UCSIPrint_NodeState_t snkState = GetNodeState(snkAddr);
+        GetRouteState(id, &isActive, &label);
+        ParseResources(m.pRoutes[i].source_endpoint_ptr->jobs_list_ptr, inRes, sizeof(inRes));
+        ParseResources(m.pRoutes[i].sink_endpoint_ptr->jobs_list_ptr, outRes, sizeof(outRes));
+        if (NodeState_Available == srcState)
+        {
+            sourceAvail = GREEN "^";
+            sourceReset = RESETCOLOR;
+        }
+        else if (NodeState_Ignored == srcState)
+        {
+            sourceAvail = RED "^";
+            sourceReset = RESETCOLOR;
+        }
+        if (NodeState_Available == snkState)
+        {
+            sinkAvail = GREEN "^";
+            sinkReset = RESETCOLOR;
+        }
+        else if (NodeState_Ignored == snkState)
+        {
+            sinkAvail = RED "!";
+            sinkReset = RESETCOLOR;
+        }
+        if (NodeState_Available == srcState && NodeState_Available == snkState)
+        {
+            if (shallActive == isActive)
+                routeAvail = GREEN "^";
+            else
+                routeAvail = RED "!";
+            routeReset = RESETCOLOR;
+        }
+        snprintf(strBuf, STR_BUF_LEN, "%s0x%03X%s  | %s0x%03X%s | S:%d I:%s%d%s | 0x%04X | 0x%04X | Src:%s  Snk:%s",
+            sourceAvail, srcAddr, sourceReset, sinkAvail, snkAddr, sinkReset, 
+            shallActive, routeAvail, isActive, routeReset, id, label, inRes, outRes);
+        UCSIPrint_CB_OnUserMessage(m.tag, strBuf);
+    }
+    UCSIPrint_CB_OnUserMessage(m.tag, "---------------------------------------------------------------------------------------");
+    if (GetIgnoredNodeString(inRes, sizeof(inRes)))
+    {
+        snprintf(strBuf, STR_BUF_LEN, RED "Ignored nodes = { %s }" RESETCOLOR, inRes);
+        UCSIPrint_CB_OnUserMessage(m.tag, strBuf);
+        UCSIPrint_CB_OnUserMessage(m.tag, "---------------------------------------------------------------------------------------");
+    }
 }
 
 static void ParseResources(Ucs_Xrm_ResObject_t **ppJobList, char *pBuf, uint32_t bufLen)
@@ -252,48 +377,54 @@ static void ParseResources(Ucs_Xrm_ResObject_t **ppJobList, char *pBuf, uint32_t
             oldState = newState;
             if (ObjState_Build == newState)
                 strcat(pBuf, GREEN);
-            else if (ObjState_Build == newState)
+            else if (ObjState_Failed == newState)
                 strcat(pBuf, RED);
             else
                 strcat(pBuf, RESETCOLOR);
         }
+        if (ObjState_Build == newState)
+            strcat(pBuf, "^");
+        else if (ObjState_Failed == newState)
+            strcat(pBuf, "!");
+        else
+            strcat(pBuf, " ");
         switch(typ)
         {
         case UCS_XRM_RC_TYPE_MOST_SOCKET:
-            strcat(pBuf, "NS ");
+            strcat(pBuf, "NS");
             break;
         case UCS_XRM_RC_TYPE_MLB_PORT:
-            strcat(pBuf, "MP ");
+            strcat(pBuf, "MP");
             break;
         case UCS_XRM_RC_TYPE_MLB_SOCKET:
-            strcat(pBuf, "MS ");
+            strcat(pBuf, "MS");
             break;
         case UCS_XRM_RC_TYPE_USB_PORT:
-            strcat(pBuf, "UP ");
+            strcat(pBuf, "UP");
             break;
         case UCS_XRM_RC_TYPE_USB_SOCKET:
-            strcat(pBuf, "US ");
+            strcat(pBuf, "US");
             break;
         case UCS_XRM_RC_TYPE_STRM_PORT:
-            strcat(pBuf, "SP ");
+            strcat(pBuf, "SP");
             break;
         case UCS_XRM_RC_TYPE_STRM_SOCKET:
-            strcat(pBuf, "SS ");
+            strcat(pBuf, "SS");
             break;
         case UCS_XRM_RC_TYPE_SYNC_CON:
-            strcat(pBuf, "SC ");
+            strcat(pBuf, "SC");
             break;
         case UCS_XRM_RC_TYPE_COMBINER:
-            strcat(pBuf, "C ");
+            strcat(pBuf, "C");
             break;
         case UCS_XRM_RC_TYPE_SPLITTER:
-            strcat(pBuf, "S ");
+            strcat(pBuf, "S");
             break;
         case UCS_XRM_RC_TYPE_AVP_CON:
-            strcat(pBuf, "AC ");
+            strcat(pBuf, "AC");
             break;
         default:
-            strcat(pBuf, "E ");
+            strcat(pBuf, "E");
             break;
         }
     }
@@ -302,7 +433,28 @@ static void ParseResources(Ucs_Xrm_ResObject_t **ppJobList, char *pBuf, uint32_t
     assert(strlen(pBuf) < bufLen);
 }
 
-static bool IsNodeAvailable(uint16_t nodeAddress)
+static bool GetIgnoredNodeString(char *pBuf, uint32_t bufLen)
+{
+    uint16_t i;
+    char pTmp[8];
+    bool foundNodes = false;
+    assert(NULL != pBuf && 0 != bufLen);
+    pBuf[0] = '\0';
+    /* Find existing entry */
+    for (i = 0; i < UCSI_PRINT_MAX_NODES; i++)
+    {
+        if (m.nList[i].isValid && NodeState_Ignored == m.nList[i].nodeState)
+        {
+            foundNodes = true;
+            snprintf(pTmp, sizeof(pTmp), "0x%X ", m.nList[i].node);
+            strcat(pBuf, pTmp);
+        }
+    }
+    assert(strlen(pBuf) < bufLen);
+    return foundNodes;
+}
+
+static UCSIPrint_NodeState_t GetNodeState(uint16_t nodeAddress)
 {
     uint16_t i;
     /* Find existing entry */
@@ -310,29 +462,53 @@ static bool IsNodeAvailable(uint16_t nodeAddress)
     {
         if (m.nList[i].isValid && nodeAddress == m.nList[i].node)
         {
-            return m.nList[i].isAvailable;
+            return m.nList[i].nodeState;
+        }
+    }
+    return NodeState_NotAvailable;
+}
+
+static uint8_t GetNodeCount(void)
+{
+    uint16_t i;
+    uint8_t cnt = 0;
+    for (i = 0; i < UCSI_PRINT_MAX_NODES; i++)
+    {
+        if (m.nList[i].isValid && NodeState_NotAvailable != m.nList[i].nodeState)
+            ++cnt;
+    }
+    return cnt;
+}
+
+static bool GetRouteState(uint16_t routeId, bool *pIsActive, uint16_t *pConLabel)
+{
+    uint16_t i;
+    assert(NULL != pIsActive);
+    assert(NULL != pConLabel);
+    /* Find existing entry */
+    for (i = 0; i < UCSI_PRINT_MAX_NODES; i++)
+    {
+        if (m.cList[i].isValid && routeId == m.cList[i].routeId)
+        {
+            *pIsActive = m.cList[i].isActive;
+            *pConLabel = m.cList[i].connectionLabel;
+            return true;
         }
     }
     return false;
 }
 
-static uint16_t GetConnetionLabel(uint16_t routeId)
+static void RequestTrigger(void)
 {
-    uint16_t i;
-    /* Find existing entry */
-    for (i = 0; i < UCSI_PRINT_MAX_NODES; i++)
-    {
-        if (m.nList[i].isValid && routeId == m.cList[i].routeId)
-        {
-            return m.cList[i].connectionLabel;
-        }
-    }
-    return 0;
+    m.triggerService = true;
+    UCSIPrint_CB_NeedService(m.tag);
 }
-
 #else /* ENABLE_RESOURCE_PRINT */
 void UCSIPrint_Init(Ucs_Rm_Route_t *pRoutes, uint16_t routesSize, void *tag) {}
-void UCSIPrint_ShowTable(void) {}
-void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, bool isAvailable) {}
+void UCSIPrint_Service(uint32_t timestamp) {}
+void UCSIPrint_SetNetworkAvailable(bool available, uint8_t maxPos) {}
+void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, UCSIPrint_NodeState_t nodeState) {}
+void UCSIPrint_SetRouteState(uint16_t routeId, bool isActive, uint16_t connectionLabel) {}
 void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectState_t state) {}
-#endif /* ENABLE_RESOURCE_PRINT */
+void UCSIPrint_UnicensActivity(void) {}
+#endif
