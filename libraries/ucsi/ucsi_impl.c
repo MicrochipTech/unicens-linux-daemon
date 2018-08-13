@@ -83,7 +83,9 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     uint8_t i2c_slave_address, uint8_t data_len, Ucs_I2c_Result_t result, void *user_ptr);
 static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
             uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr);
+#if ENABLE_AMS_LIB
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
+#endif
 
 /************************************************************************/
 /* Public Function Implementations                                      */
@@ -311,6 +313,7 @@ void UCSI_Service(UCSI_Data_t *my)
                 UCSI_CB_OnCommandResult(my->tag, UnicensCmd_I2CRead, false, e->val.I2CRead.destination);
             }
             break;
+#if ENABLE_AMS_LIB
         case UnicensCmd_SendAmsMessage:
         {
             Ucs_AmsTx_Msg_t *msg;
@@ -343,6 +346,7 @@ void UCSI_Service(UCSI_Data_t *my)
             }
             break;
         }
+#endif
         default:
             assert(false);
             break;
@@ -368,6 +372,7 @@ void UCSI_Timeout(UCSI_Data_t *my)
 
 bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen)
 {
+#if ENABLE_AMS_LIB
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
     if (NULL == my) return false;
@@ -382,6 +387,9 @@ bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress
     entry.val.SendAms.payloadLen = payloadLen;
     memcpy(entry.val.SendAms.pPayload, pPayload, payloadLen);
     return EnqueueCommand(my, &entry);
+#else
+    return false;
+#endif
 }
 
 bool UCSI_GetAmsMessage(UCSI_Data_t *my, uint16_t *pMsgId, uint16_t *pSourceAddress, uint8_t **pPayload, uint32_t *pPayloadLen)
@@ -541,9 +549,11 @@ static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd, bool success)
         case UnicensCmd_I2CRead:
                 UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.I2CRead.destination);
             break;
+#if ENABLE_AMS_LIB
         case UnicensCmd_SendAmsMessage:
                 UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.SendAms.targetAddress);
             break;
+#endif
         default:
             UCSI_CB_OnCommandResult(my->tag, cmd, success, UNKNOWN_NODE_ADDR);
             break;
@@ -1067,6 +1077,7 @@ static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
     UCSI_CB_OnI2CRead(my->tag, (UCS_I2C_RES_SUCCESS == result.code), node_address, i2c_slave_address, data_ptr, data_len);
 }
 
+#if ENABLE_AMS_LIB
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr)
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
@@ -1075,6 +1086,7 @@ static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, U
     if (UCS_AMSTX_RES_SUCCESS != result)
         UCSI_CB_OnUserMessage(my->tag, true, "SendAms failed with result=0x%x, info=0x%X", 2, result, info);
 }
+#endif
 
 /************************************************************************/
 /* Callback from UCSI Print component:                                  */
