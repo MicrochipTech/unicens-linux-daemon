@@ -219,6 +219,7 @@ typedef struct
     uint32_t magic;
     void *tag;
     bool initialized;
+    Ucs_Rm_Route_t *pendingRoutePtr;
     RB_t rb;
     uint8_t rbBuf[(CMD_QUEUE_LEN * sizeof(UnicensCmdEntry_t))];
     Ucs_Inst_t *unicens;
