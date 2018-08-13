@@ -15,6 +15,7 @@ V04.02.00
 - printing table with all nodes and resources (disable with -hide parameter)
 - new command line parameters: -v and -vv to enable some / all debug informations
 - new command line parameters: -lld to enable low level driver traces
+- SwitchingRoute command is exectuded sequential
 
 V04.01.00
 =========

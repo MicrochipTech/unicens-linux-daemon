@@ -261,10 +261,13 @@ void UCSI_Service(UCSI_Data_t *my)
             }
             break;
         case UnicensCmd_RmSetRoute:
-            if (UCS_RET_SUCCESS != Ucs_Rm_SetRouteActive(my->unicens, e->val.RmSetRoute.routePtr, e->val.RmSetRoute.isActive))
+            if (UCS_RET_SUCCESS == Ucs_Rm_SetRouteActive(my->unicens, e->val.RmSetRoute.routePtr, e->val.RmSetRoute.isActive))
             {
+                my->pendingRoutePtr = e->val.RmSetRoute.routePtr;
+                popEntry = false;
+            } else  {
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Rm_SetRouteActive failed", 0);
-                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_RmSetRoute, false, LOCAL_NODE_ADDR);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_RmSetRoute, false, e->val.RmSetRoute.routePtr->sink_endpoint_ptr->node_obj_ptr->signature_ptr->node_address);
             }
             break;
         case UnicensCmd_NsRun:
@@ -728,6 +731,11 @@ static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_
     uint16_t conLabel;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
+    if (route_ptr == my->pendingRoutePtr)
+    {
+        OnCommandExecuted(my, UnicensCmd_RmSetRoute, (UCS_RM_ROUTE_INFOS_BUILT == route_infos));
+        my->pendingRoutePtr = NULL;
+    }
     if (NULL == route_ptr || NULL == route_ptr->source_endpoint_ptr ||
         NULL == route_ptr->source_endpoint_ptr->node_obj_ptr ||
         NULL == route_ptr->sink_endpoint_ptr ||
