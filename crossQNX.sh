@@ -25,3 +25,5 @@ popd
 
 # make the binaries, libs, etc.
 make -C "$G/build"
+cp $P/generated/build/unicensd $P
+cp $P/generated/build/unicensc $P

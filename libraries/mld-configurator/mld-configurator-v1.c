@@ -233,13 +233,10 @@ static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, cha
     /* First parse files */
     if(NULL == (d = opendir(path)))
     {
-        MldConfigV1_CB_OnMessage(true, "Can not open dir '%s'", 1, path);
         return;
     }
     while( NULL != (dir = readdir(d)))
     {
-        if (DT_REG != dir->d_type)
-            continue;
         if (0 == strcmp("interface", dir->d_name))
         {
             snprintf(combined, sizeof(combined), "%s/%s", path, dir->d_name);
@@ -262,7 +259,7 @@ static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, cha
         return;
     while( NULL != (dir = readdir(d)))
     {
-        if (DT_DIR != dir->d_type || '.' == dir->d_name[0])
+        if ('.' == dir->d_name[0])
             continue;
         snprintf(combined, sizeof(combined), "%s/%s", path, dir->d_name);
         IterateDirectory(combined, intf, intfLen, descr, descrLen, dir->d_name, parent);
@@ -430,7 +427,7 @@ static bool LinkCdev(const char* channelName, const char* deviceName, DriverInfo
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
-    return WriteCharactersToFile("/sys/devices/virtual/most/mostcore/aims/cdev", "add_link", val);
+    return WriteCharactersToFile("/sys/class/most/mostcore/aims/cdev", "add_link", val);
 }
 
 static bool ConfigureAlsa(const char *fullPath, DriverInformation_t *driver)
@@ -478,7 +475,7 @@ static bool LinkAlsa(const char* channelName, const char* deviceName, DriverInfo
         drv->amountOfChannels,
         drv->resolutionInBit
         );
-    return WriteCharactersToFile("/sys/devices/virtual/most/mostcore/aims/sound", "add_link", val);
+    return WriteCharactersToFile("/sys/class/most/mostcore/aims/sound", "add_link", val);
 }
 
 static bool ConfigureV4L2(const char *fullPath, DriverInformation_t *driver)
@@ -521,7 +518,7 @@ static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInfo
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
-    return WriteCharactersToFile("/sys/devices/virtual/most/mostcore/aims/v4l", "add_link", val);
+    return WriteCharactersToFile("/sys/class/most/mostcore/aims/v4l", "add_link", val);
 }
 
 static bool ConfigureNetwork(const char *fullPath, DriverInformation_t *driver)
@@ -555,5 +552,5 @@ static bool LinkNetwork(const char* channelName, const char* deviceName, DriverI
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
-    return WriteCharactersToFile("/sys/devices/virtual/most/mostcore/aims/networking", "add_link", val);
+    return WriteCharactersToFile("/sys/class/most/mostcore/aims/networking", "add_link", val);
 }
