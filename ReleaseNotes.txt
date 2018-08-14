@@ -14,6 +14,7 @@ V04.02.01
 =========
 - repaired compatability to QNX
 - Generated driver names are now the same for static and dynamic configuration
+- Preventing to run dynamic configuration without specified XML file
 
 V04.02.00
 =========
