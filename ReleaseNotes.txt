@@ -13,6 +13,7 @@ UNICENS V2 Daemon (unicensd)
 V04.02.01
 =========
 - repaired compatability to QNX
+- Generated driver names are now the same for static and dynamic configuration
 
 V04.02.00
 =========

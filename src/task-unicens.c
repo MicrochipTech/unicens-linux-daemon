@@ -139,7 +139,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
             {
                 struct timespec t;
                 t.tv_sec = 0;
-                t.tv_nsec = 10000000l;
+                t.tv_nsec = 300000000l;
                 if (!MldConfigV1_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drv1LocalNodeAddr, pVar->drv1Filter, 1000))
                 {
                     ConsolePrintf(PRIO_ERROR, RED"Could not start driver configuration service"RESETCOLOR"\r\n");

@@ -28,14 +28,16 @@ Now the binaries `unicensd` and `xml2struct` shall be available in the current f
 In order to run unicensd, first make sure [MOST Linux Driver](https://github.com/microchip-ais/linux/blob/mchp-dev/mld/README.md) is loaded.
 The daemon searches by default for these control enabled character devices (CDEVs):
 
- - /dev/inic-usb-crx
- - /dev/inic-usb-ctx
+ - /dev/inic-control-rx
+ - /dev/inic-control-tx
 
 If you configured the driver in a different way, you can pass your CDEV names to unicensd by command line parameter:
 ```bash
 -crx <CDEV name of RX channel>
 -ctx <CDEV name of TX channel>
 ```
+
+Or you let UNICENS let configure and create the needed CDEVs.
 
 Make sure you have the rights to access these CDEVs (using `$ sudo unicensd` or using udev rules).
 
@@ -44,9 +46,19 @@ Launch daemon with the correct XML file, for example:
 $ ./unicensd cfg/config_multichannel_audio_kit.xml &
 ```
 
+If the XML file contains driver specific informations, you can let UNICENS configure the driver:
+```bash
+$ ./unicensd cfg/config_multichannel_audio_kit.xml -drv1 0x200 &
+```
+
+This also works on an UNICENS enabled slave nodes, use unicensc therfor:
+```bash
+$ ./unicensc cfg/config_multichannel_audio_kit.xml -drv1 0x2B0 &
+```
+
 To get a static network configuration, which does not need a XML file, enter:
 ```bash
 $ ./xml2struct cfg/config_multichannel_audio_kit.xml > src/default_config.c
 $ ./build.sh
-$ ./unicensd &
+$ ./unicensd -default &
 ```

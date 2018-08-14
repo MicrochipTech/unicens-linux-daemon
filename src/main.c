@@ -40,11 +40,11 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSD_VERSION    ("V4.2.0")
+#define UNICENSD_VERSION    ("V4.2.1")
 
 /* Character device to INIC control channel */
-#define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-usb-ctx")
-#define DEFAULT_CONTROL_CDEV_RX ("/dev/inic-usb-crx")
+#define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-control-tx")
+#define DEFAULT_CONTROL_CDEV_RX ("/dev/inic-control-rx")
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                      PRIVATE FUNCTION PROTOTYPES                     */

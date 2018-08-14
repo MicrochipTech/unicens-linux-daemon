@@ -65,49 +65,49 @@ typedef struct
 
 static const DrvInfo_t controlRx118 =
 {
-    "OS81118 Control RX", NULL, STRING_MOST_CH_CDEV, "inic-usb-crx", "ep8f",
+    "OS81118 Control RX", NULL, STRING_MOST_CH_CDEV, "control-rx", "ep8f",
     STRING_MOST_CH_RX, STRING_MOST_CH_CONTROL, 16, 72, 0, 0, 0, 0
 };
 
 static const DrvInfo_t controlTx118 =
 {
-    "OS81118 Control TX", NULL, STRING_MOST_CH_CDEV, "inic-usb-ctx", "ep0f",
+    "OS81118 Control TX", NULL, STRING_MOST_CH_CDEV, "control-tx", "ep0f",
     STRING_MOST_CH_TX, STRING_MOST_CH_CONTROL, 16, 72, 0, 0, 0, 0
 };
 
 static const DrvInfo_t asyncRx118 =
 {
-    "OS81118 Async (Ethernet) RX", NULL, STRING_MOST_CH_NETWORK, "inic-usb-arx", "ep8e",
+    "OS81118 Async (Ethernet) RX", NULL, STRING_MOST_CH_NETWORK, "network-rx", "ep8e",
     STRING_MOST_CH_RX, STRING_MOST_CH_ASYNC, 20, 1522, 0, 0, 0, 0
 };
 
 static const DrvInfo_t asyncTx118 =
 {
-    "OS81118 Async (Ethernet) TX", NULL, STRING_MOST_CH_NETWORK, "inic-usb-atx", "ep0e",
+    "OS81118 Async (Ethernet) TX", NULL, STRING_MOST_CH_NETWORK, "network-tx", "ep0e",
     STRING_MOST_CH_TX, STRING_MOST_CH_ASYNC, 20, 1522, 0, 0, 0, 0
 };
 
 static const DrvInfo_t controlRx210 =
 {
-    "OS81118 Control RX", NULL, STRING_MOST_CH_CDEV, "inic-usb-crx", "ep87",
+    "OS81118 Control RX", NULL, STRING_MOST_CH_CDEV, "control-rx", "ep87",
     STRING_MOST_CH_RX, STRING_MOST_CH_CONTROL, 16, 72, 0, 0, 0, 0
 };
 
 static const DrvInfo_t controlTx210 =
 {
-    "OS81118 Control TX", NULL, STRING_MOST_CH_CDEV, "inic-usb-ctx", "ep07",
+    "OS81118 Control TX", NULL, STRING_MOST_CH_CDEV, "control-tx", "ep07",
     STRING_MOST_CH_TX, STRING_MOST_CH_CONTROL, 16, 72, 0, 0
 };
 
 static const DrvInfo_t asyncRx210 =
 {
-    "OS81118 Async (Ethernet) RX", NULL, STRING_MOST_CH_NETWORK, "inic-usb-arx", "ep86",
+    "OS81118 Async (Ethernet) RX", NULL, STRING_MOST_CH_NETWORK, "network-rx", "ep86",
     STRING_MOST_CH_RX, STRING_MOST_CH_ASYNC, 20, 1522, 0, 0
 };
 
 static const DrvInfo_t asyncTx210 =
 {
-    "OS81118 Async (Ethernet) TX", NULL, STRING_MOST_CH_NETWORK, "inic-usb-atx", "ep06",
+    "OS81118 Async (Ethernet) TX", NULL, STRING_MOST_CH_NETWORK, "network-tx", "ep06",
     STRING_MOST_CH_TX, STRING_MOST_CH_ASYNC, 20, 1522, 0, 0
 };
 
@@ -214,9 +214,9 @@ static void PrintDriverStructure(const DrvInfo_t *inf)
     ConsolePrintfContinue("		},\n");
     ConsolePrintfContinue("		.aim_name = \"%s\",\n", inf->aimName);
     if (inf->amountOfChannels && inf->resolutionInBit)
-        ConsolePrintfContinue("		.aim_param = \"%s.%dx%d\",\n", inf->aimParam, inf->amountOfChannels, inf->resolutionInBit);
+        ConsolePrintfContinue("		.aim_param = \"inic-%s.%dx%d\",\n", inf->aimParam, inf->amountOfChannels, inf->resolutionInBit);
     else
-        ConsolePrintfContinue("		.aim_param = \"%s\",\n", inf->aimParam);
+        ConsolePrintfContinue("		.aim_param = \"inic-%s\",\n", inf->aimParam);
     ConsolePrintfExit("	},\n");
 }
 
