@@ -233,13 +233,10 @@ static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, cha
     /* First parse files */
     if(NULL == (d = opendir(path)))
     {
-        MldConfigV1_CB_OnMessage(true, "Can not open dir '%s'", 1, path);
         return;
     }
     while( NULL != (dir = readdir(d)))
     {
-        if (DT_REG != dir->d_type)
-            continue;
         if (0 == strcmp("interface", dir->d_name))
         {
             snprintf(combined, sizeof(combined), "%s/%s", path, dir->d_name);
@@ -262,7 +259,7 @@ static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, cha
         return;
     while( NULL != (dir = readdir(d)))
     {
-        if (DT_DIR != dir->d_type || '.' == dir->d_name[0])
+        if ('.' == dir->d_name[0])
             continue;
         snprintf(combined, sizeof(combined), "%s/%s", path, dir->d_name);
         IterateDirectory(combined, intf, intfLen, descr, descrLen, dir->d_name, parent);
