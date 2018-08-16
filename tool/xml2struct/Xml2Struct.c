@@ -121,7 +121,7 @@ static struct LocalVar m;
 
 const char *GetXml2StructVersion(void)
 {
-	return VERSION_STR;
+    return VERSION_STR;
 }
 
 void PrintUcsStructures(
