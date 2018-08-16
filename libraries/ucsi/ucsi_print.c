@@ -156,6 +156,8 @@ void UCSIPrint_Service(uint32_t timestamp)
 
 void UCSIPrint_SetNetworkAvailable(bool available, uint8_t maxPos)
 {
+    if (!m.initialized)
+        return;
     m.networkAvailable = available;
     m.mpr = maxPos;
     m.waitForMprRetries = 0;
@@ -266,6 +268,8 @@ void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectStat
 
 void UCSIPrint_UnicensActivity(void)
 {
+    if (!m.initialized)
+        return;
     if (0 != m.nextService)
         RequestTrigger();
     else

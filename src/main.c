@@ -40,7 +40,7 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSD_VERSION    ("V4.2.1")
+#define UNICENSD_VERSION    ("V4.3.0")
 
 /* Character device to INIC control channel */
 #define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-control-tx")
