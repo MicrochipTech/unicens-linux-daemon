@@ -10,6 +10,11 @@ UNICENS V2 Daemon (unicensd)
 !!! Control Channel should be mapped to CDEVs: /dev/inic-usb-crx and /dev/inic-usb-ctx !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+V04.02.01
+=========
+- repaired compatability to QNX
+- Preventing to run dynamic configuration without specified XML file
+
 V04.02.00
 =========
 - printing table with all nodes and resources (disable with -hide parameter)
