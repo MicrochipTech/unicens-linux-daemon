@@ -59,6 +59,11 @@
 #define CDEV_PATH_LEN (64)
 #define DEBUG_TABLE_PRINT_TIME_MS  (250)
 
+#define LIB_VERSION_MAJOR   (2)
+#define LIB_VERSION_MINOR   (2)
+#define LIB_VERSION_RELEASE (0)
+#define LIB_VERSION_BUILD   (4073)
+
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                      DEFINES AND LOCAL VARIABLES                     */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
@@ -85,6 +90,13 @@ typedef struct
 } LocalVar_t;
 
 static LocalVar_t m;
+
+#if !defined(UCS_VERSION_MAJOR) || !defined(UCS_VERSION_MINOR) || !defined(UCS_VERSION_RELEASE) || !defined(UCS_VERSION_BUILD)
+#error UNICENS library is missing. Perform command 'git submodule update --init --recursive'
+#endif
+#if (UCS_VERSION_MAJOR != LIB_VERSION_MAJOR) ||  (UCS_VERSION_MINOR != LIB_VERSION_MINOR) || (UCS_VERSION_RELEASE != LIB_VERSION_RELEASE) || (UCS_VERSION_BUILD != LIB_VERSION_BUILD)
+#error UNICENS library is outdated. Perform command 'git submodule update --init --recursive'
+#endif
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                     PRIVATE FUNCTION PROTOTYPES                      */
@@ -335,6 +347,12 @@ void UCSI_CB_OnServiceRequired(void *pTag)
     pTag = pTag;
     m.unicensTrigger = true;
     SemPost();
+}
+
+void UCSI_CB_OnResetInic(void *pTag)
+{
+    pTag = pTag;
+    /* TODO: implement */
 }
 
 void UCSI_CB_OnTxRequest(void *pTag,

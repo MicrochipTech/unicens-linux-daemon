@@ -293,6 +293,14 @@ extern void UCSI_CB_OnPrintRouteTable(void *pTag, const char pString[]);
  */
 extern void UCSI_CB_OnServiceRequired(void *pTag);
 
+
+/**
+ * \brief Callback when ever the INIC should be reseted by the integration code
+  * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ */
+extern void UCSI_CB_OnResetInic(void *pTag);
+
 /**
  * \brief Callback when ever this instance of UNICENS wants to send control data to the LLD.
  * \note This function must be implemented by the integrator

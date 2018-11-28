@@ -85,9 +85,15 @@ extern "C"
 #define UCS_AMS_SIZE_TX_MSG              UCS_AMS_SIZE_RX_MSG
 
 /*------------------------------------------------------------------------------------------------*/
+/* Define this macro to use ROM instead of RAM to store the predefined node scripts and           */
+/* thereby reduce footprint on RAM                                                                */
+/*------------------------------------------------------------------------------------------------*/
+#define UCS_NS_CONST const
+ 
+/*------------------------------------------------------------------------------------------------*/
 /* Memory Optimization                                                                            */
 /*------------------------------------------------------------------------------------------------*/
-/* Define the following macros to reduces the RAM and ROM size of the UNICENS software by disabling 
+/* Define the following macros to reduces the RAM and ROM size of the UNICENS software by disabling
  * certain features. If this macro is defined the following changes apply:
  * - Reduction of low-level buffers
  * - AMS does not support segmentation (payload > 45 bytes)

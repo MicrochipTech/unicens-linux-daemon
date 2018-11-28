@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
 /* UNICENS Generated Network Configuration                                                        */
-/* Generator: xml2struct for Linux V4.2.0                                                         */
+/* Generator: xml2struct for Linux V4.3.0                                                         */
 /*------------------------------------------------------------------------------------------------*/
 #include "ucs_api.h"
 
@@ -10,33 +10,33 @@ uint16_t NodeSize = 7;
 
 /* Route 1 from source-node=0x200 to sink-node=0x270 */
 Ucs_Xrm_DefaultCreatedPort_t SrcOfRoute1_DcPort = { 
-    UCS_XRM_RC_TYPE_DC_PORT,
-    UCS_XRM_PORT_TYPE_USB,
-    0 };
+    .resource_type = UCS_XRM_RC_TYPE_DC_PORT,
+    .port_type = UCS_XRM_PORT_TYPE_USB,
+    .index = 0 };
 Ucs_Xrm_UsbSocket_t SrcOfRoute1_UsbSocket = { 
-    UCS_XRM_RC_TYPE_USB_SOCKET,
-    &SrcOfRoute1_DcPort,
-    UCS_SOCKET_DIR_INPUT,
-    UCS_USB_SCKT_SYNC_DATA,
-    0x01,
-    42 };
+    .resource_type = UCS_XRM_RC_TYPE_USB_SOCKET,
+    .usb_port_obj_ptr = &SrcOfRoute1_DcPort,
+    .direction = UCS_SOCKET_DIR_INPUT,
+    .data_type = UCS_USB_SCKT_SYNC_DATA,
+    .end_point_addr = 0x01,
+    .frames_per_transfer = 42 };
 Ucs_Xrm_Splitter_t SrcOfRoute1_Splitter = { 
-    UCS_XRM_RC_TYPE_SPLITTER,
-    &SrcOfRoute1_UsbSocket,
-    0x0D00,
-    12 };
-Ucs_Xrm_MostSocket_t SrcOfRoute1_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+    .resource_type = UCS_XRM_RC_TYPE_SPLITTER,
+    .socket_in_obj_ptr = &SrcOfRoute1_UsbSocket,
+    .nw_port_handle = 0x0D00,
+    .bytes_per_frame = 12 };
+Ucs_Xrm_NetworkSocket_t SrcOfRoute1_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_SyncCon_t SrcOfRoute1_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SrcOfRoute1_Splitter,
-    &SrcOfRoute1_NetworkSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    0 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SrcOfRoute1_Splitter,
+    .socket_out_obj_ptr = &SrcOfRoute1_NetworkSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 0 };
 Ucs_Xrm_ResObject_t *SrcOfRoute1_JobList[] = {
     &SrcOfRoute1_DcPort,
     &SrcOfRoute1_UsbSocket,
@@ -44,35 +44,35 @@ Ucs_Xrm_ResObject_t *SrcOfRoute1_JobList[] = {
     &SrcOfRoute1_NetworkSocket,
     &SrcOfRoute1_SyncCon,
     NULL };
-Ucs_Xrm_MostSocket_t SnkOfRoute1_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_INPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+Ucs_Xrm_NetworkSocket_t SnkOfRoute1_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_INPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_StrmPort_t SnkOfRoute1_StrmPort0 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    0,
-    UCS_STREAM_PORT_CLK_CFG_64FS,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 0,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_64FS,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmPort_t SnkOfRoute1_StrmPort1 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    1,
-    UCS_STREAM_PORT_CLK_CFG_WILD,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 1,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_WILD,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmSocket_t SnkOfRoute1_StrmSocket = { 
-    UCS_XRM_RC_TYPE_STRM_SOCKET,
-    &SnkOfRoute1_StrmPort0,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_STREAM_PORT_SCKT_SYNC_DATA,
-    4,
-    UCS_STREAM_PORT_PIN_ID_SRXA0 };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_SOCKET,
+    .stream_port_obj_ptr = &SnkOfRoute1_StrmPort0,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_STREAM_PORT_SCKT_SYNC_DATA,
+    .bandwidth = 4,
+    .stream_pin_id = UCS_STREAM_PORT_PIN_ID_SRXA0 };
 Ucs_Xrm_SyncCon_t SnkOfRoute1_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute1_NetworkSocket,
-    &SnkOfRoute1_StrmSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    0 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SnkOfRoute1_NetworkSocket,
+    .socket_out_obj_ptr = &SnkOfRoute1_StrmSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute1_JobList[] = {
     &SnkOfRoute1_NetworkSocket,
     &SnkOfRoute1_StrmPort0,
@@ -81,35 +81,35 @@ Ucs_Xrm_ResObject_t *SnkOfRoute1_JobList[] = {
     &SnkOfRoute1_SyncCon,
     NULL };
 /* Route 2 from source-node=0x200 to sink-node=0x240 */
-Ucs_Xrm_MostSocket_t SnkOfRoute2_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_INPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+Ucs_Xrm_NetworkSocket_t SnkOfRoute2_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_INPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_StrmPort_t SnkOfRoute2_StrmPort0 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    0,
-    UCS_STREAM_PORT_CLK_CFG_64FS,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 0,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_64FS,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmPort_t SnkOfRoute2_StrmPort1 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    1,
-    UCS_STREAM_PORT_CLK_CFG_WILD,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 1,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_WILD,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmSocket_t SnkOfRoute2_StrmSocket = { 
-    UCS_XRM_RC_TYPE_STRM_SOCKET,
-    &SnkOfRoute2_StrmPort0,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_STREAM_PORT_SCKT_SYNC_DATA,
-    4,
-    UCS_STREAM_PORT_PIN_ID_SRXA1 };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_SOCKET,
+    .stream_port_obj_ptr = &SnkOfRoute2_StrmPort0,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_STREAM_PORT_SCKT_SYNC_DATA,
+    .bandwidth = 4,
+    .stream_pin_id = UCS_STREAM_PORT_PIN_ID_SRXA1 };
 Ucs_Xrm_SyncCon_t SnkOfRoute2_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute2_NetworkSocket,
-    &SnkOfRoute2_StrmSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    0 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SnkOfRoute2_NetworkSocket,
+    .socket_out_obj_ptr = &SnkOfRoute2_StrmSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute2_JobList[] = {
     &SnkOfRoute2_NetworkSocket,
     &SnkOfRoute2_StrmPort0,
@@ -118,18 +118,18 @@ Ucs_Xrm_ResObject_t *SnkOfRoute2_JobList[] = {
     &SnkOfRoute2_SyncCon,
     NULL };
 /* Route 3 from source-node=0x200 to sink-node=0x271 */
-Ucs_Xrm_MostSocket_t SrcOfRoute3_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+Ucs_Xrm_NetworkSocket_t SrcOfRoute3_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_SyncCon_t SrcOfRoute3_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SrcOfRoute1_Splitter,
-    &SrcOfRoute3_NetworkSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    4 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SrcOfRoute1_Splitter,
+    .socket_out_obj_ptr = &SrcOfRoute3_NetworkSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 4 };
 Ucs_Xrm_ResObject_t *SrcOfRoute3_JobList[] = {
     &SrcOfRoute1_DcPort,
     &SrcOfRoute1_UsbSocket,
@@ -137,35 +137,35 @@ Ucs_Xrm_ResObject_t *SrcOfRoute3_JobList[] = {
     &SrcOfRoute3_NetworkSocket,
     &SrcOfRoute3_SyncCon,
     NULL };
-Ucs_Xrm_MostSocket_t SnkOfRoute3_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_INPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+Ucs_Xrm_NetworkSocket_t SnkOfRoute3_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_INPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_StrmPort_t SnkOfRoute3_StrmPort0 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    0,
-    UCS_STREAM_PORT_CLK_CFG_64FS,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 0,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_64FS,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmPort_t SnkOfRoute3_StrmPort1 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    1,
-    UCS_STREAM_PORT_CLK_CFG_WILD,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 1,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_WILD,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmSocket_t SnkOfRoute3_StrmSocket = { 
-    UCS_XRM_RC_TYPE_STRM_SOCKET,
-    &SnkOfRoute3_StrmPort0,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_STREAM_PORT_SCKT_SYNC_DATA,
-    4,
-    UCS_STREAM_PORT_PIN_ID_SRXA0 };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_SOCKET,
+    .stream_port_obj_ptr = &SnkOfRoute3_StrmPort0,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_STREAM_PORT_SCKT_SYNC_DATA,
+    .bandwidth = 4,
+    .stream_pin_id = UCS_STREAM_PORT_PIN_ID_SRXA0 };
 Ucs_Xrm_SyncCon_t SnkOfRoute3_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute3_NetworkSocket,
-    &SnkOfRoute3_StrmSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    0 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SnkOfRoute3_NetworkSocket,
+    .socket_out_obj_ptr = &SnkOfRoute3_StrmSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute3_JobList[] = {
     &SnkOfRoute3_NetworkSocket,
     &SnkOfRoute3_StrmPort0,
@@ -174,35 +174,35 @@ Ucs_Xrm_ResObject_t *SnkOfRoute3_JobList[] = {
     &SnkOfRoute3_SyncCon,
     NULL };
 /* Route 4 from source-node=0x200 to sink-node=0x241 */
-Ucs_Xrm_MostSocket_t SnkOfRoute4_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_INPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+Ucs_Xrm_NetworkSocket_t SnkOfRoute4_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_INPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_StrmPort_t SnkOfRoute4_StrmPort0 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    0,
-    UCS_STREAM_PORT_CLK_CFG_64FS,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 0,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_64FS,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmPort_t SnkOfRoute4_StrmPort1 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    1,
-    UCS_STREAM_PORT_CLK_CFG_WILD,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 1,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_WILD,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmSocket_t SnkOfRoute4_StrmSocket = { 
-    UCS_XRM_RC_TYPE_STRM_SOCKET,
-    &SnkOfRoute4_StrmPort0,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_STREAM_PORT_SCKT_SYNC_DATA,
-    4,
-    UCS_STREAM_PORT_PIN_ID_SRXA1 };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_SOCKET,
+    .stream_port_obj_ptr = &SnkOfRoute4_StrmPort0,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_STREAM_PORT_SCKT_SYNC_DATA,
+    .bandwidth = 4,
+    .stream_pin_id = UCS_STREAM_PORT_PIN_ID_SRXA1 };
 Ucs_Xrm_SyncCon_t SnkOfRoute4_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute4_NetworkSocket,
-    &SnkOfRoute4_StrmSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    0 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SnkOfRoute4_NetworkSocket,
+    .socket_out_obj_ptr = &SnkOfRoute4_StrmSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute4_JobList[] = {
     &SnkOfRoute4_NetworkSocket,
     &SnkOfRoute4_StrmPort0,
@@ -211,18 +211,18 @@ Ucs_Xrm_ResObject_t *SnkOfRoute4_JobList[] = {
     &SnkOfRoute4_SyncCon,
     NULL };
 /* Route 5 from source-node=0x200 to sink-node=0x272 */
-Ucs_Xrm_MostSocket_t SrcOfRoute5_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+Ucs_Xrm_NetworkSocket_t SrcOfRoute5_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_SyncCon_t SrcOfRoute5_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SrcOfRoute1_Splitter,
-    &SrcOfRoute5_NetworkSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    8 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SrcOfRoute1_Splitter,
+    .socket_out_obj_ptr = &SrcOfRoute5_NetworkSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 8 };
 Ucs_Xrm_ResObject_t *SrcOfRoute5_JobList[] = {
     &SrcOfRoute1_DcPort,
     &SrcOfRoute1_UsbSocket,
@@ -230,35 +230,35 @@ Ucs_Xrm_ResObject_t *SrcOfRoute5_JobList[] = {
     &SrcOfRoute5_NetworkSocket,
     &SrcOfRoute5_SyncCon,
     NULL };
-Ucs_Xrm_MostSocket_t SnkOfRoute5_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_INPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+Ucs_Xrm_NetworkSocket_t SnkOfRoute5_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_INPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_StrmPort_t SnkOfRoute5_StrmPort0 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    0,
-    UCS_STREAM_PORT_CLK_CFG_64FS,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 0,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_64FS,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmPort_t SnkOfRoute5_StrmPort1 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    1,
-    UCS_STREAM_PORT_CLK_CFG_WILD,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 1,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_WILD,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmSocket_t SnkOfRoute5_StrmSocket = { 
-    UCS_XRM_RC_TYPE_STRM_SOCKET,
-    &SnkOfRoute5_StrmPort0,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_STREAM_PORT_SCKT_SYNC_DATA,
-    4,
-    UCS_STREAM_PORT_PIN_ID_SRXA0 };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_SOCKET,
+    .stream_port_obj_ptr = &SnkOfRoute5_StrmPort0,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_STREAM_PORT_SCKT_SYNC_DATA,
+    .bandwidth = 4,
+    .stream_pin_id = UCS_STREAM_PORT_PIN_ID_SRXA0 };
 Ucs_Xrm_SyncCon_t SnkOfRoute5_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute5_NetworkSocket,
-    &SnkOfRoute5_StrmSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    0 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SnkOfRoute5_NetworkSocket,
+    .socket_out_obj_ptr = &SnkOfRoute5_StrmSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute5_JobList[] = {
     &SnkOfRoute5_NetworkSocket,
     &SnkOfRoute5_StrmPort0,
@@ -267,35 +267,35 @@ Ucs_Xrm_ResObject_t *SnkOfRoute5_JobList[] = {
     &SnkOfRoute5_SyncCon,
     NULL };
 /* Route 6 from source-node=0x200 to sink-node=0x242 */
-Ucs_Xrm_MostSocket_t SnkOfRoute6_NetworkSocket = { 
-    UCS_XRM_RC_TYPE_MOST_SOCKET,
-    0x0D00,
-    UCS_SOCKET_DIR_INPUT,
-    UCS_MOST_SCKT_SYNC_DATA,
-    4 };
+Ucs_Xrm_NetworkSocket_t SnkOfRoute6_NetworkSocket = { 
+    .resource_type = UCS_XRM_RC_TYPE_NW_SOCKET,
+    .nw_port_handle = 0x0D00,
+    .direction = UCS_SOCKET_DIR_INPUT,
+    .data_type = UCS_NW_SCKT_SYNC_DATA,
+    .bandwidth = 4 };
 Ucs_Xrm_StrmPort_t SnkOfRoute6_StrmPort0 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    0,
-    UCS_STREAM_PORT_CLK_CFG_64FS,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 0,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_64FS,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmPort_t SnkOfRoute6_StrmPort1 = { 
-    UCS_XRM_RC_TYPE_STRM_PORT,
-    1,
-    UCS_STREAM_PORT_CLK_CFG_WILD,
-    UCS_STREAM_PORT_ALGN_LEFT16BIT };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_PORT,
+    .index = 1,
+    .clock_config = UCS_STREAM_PORT_CLK_CFG_WILD,
+    .data_alignment = UCS_STREAM_PORT_ALGN_LEFT16BIT };
 Ucs_Xrm_StrmSocket_t SnkOfRoute6_StrmSocket = { 
-    UCS_XRM_RC_TYPE_STRM_SOCKET,
-    &SnkOfRoute6_StrmPort0,
-    UCS_SOCKET_DIR_OUTPUT,
-    UCS_STREAM_PORT_SCKT_SYNC_DATA,
-    4,
-    UCS_STREAM_PORT_PIN_ID_SRXA1 };
+    .resource_type = UCS_XRM_RC_TYPE_STRM_SOCKET,
+    .stream_port_obj_ptr = &SnkOfRoute6_StrmPort0,
+    .direction = UCS_SOCKET_DIR_OUTPUT,
+    .data_type = UCS_STREAM_PORT_SCKT_SYNC_DATA,
+    .bandwidth = 4,
+    .stream_pin_id = UCS_STREAM_PORT_PIN_ID_SRXA1 };
 Ucs_Xrm_SyncCon_t SnkOfRoute6_SyncCon = { 
-    UCS_XRM_RC_TYPE_SYNC_CON,
-    &SnkOfRoute6_NetworkSocket,
-    &SnkOfRoute6_StrmSocket,
-    UCS_SYNC_MUTE_MODE_NO_MUTING,
-    0 };
+    .resource_type = UCS_XRM_RC_TYPE_SYNC_CON,
+    .socket_in_obj_ptr = &SnkOfRoute6_NetworkSocket,
+    .socket_out_obj_ptr = &SnkOfRoute6_StrmSocket,
+    .mute_mode = UCS_SYNC_MUTE_MODE_NO_MUTING,
+    .offset = 0 };
 Ucs_Xrm_ResObject_t *SnkOfRoute6_JobList[] = {
     &SnkOfRoute6_NetworkSocket,
     &SnkOfRoute6_StrmPort0,
@@ -303,397 +303,371 @@ Ucs_Xrm_ResObject_t *SnkOfRoute6_JobList[] = {
     &SnkOfRoute6_StrmSocket,
     &SnkOfRoute6_SyncCon,
     NULL };
-uint8_t PayloadRequest1ForNode270[] = {
+UCS_NS_CONST uint8_t PayloadRequest1ForNode270[] = {
     0x00, 0x00, 0x01, 0x01 };
-Ucs_Ns_ConfigMsg_t Request1ForNode270 = {
-    0x00,
-    0x01,
-    0x06C1,
-    0x02,
-    0x04,
-    PayloadRequest1ForNode270 };
-uint8_t PayloadResponse1ForNode270[] = {
-    0x0F, 0x00 };
-Ucs_Ns_ConfigMsg_t Response1ForNode270 = {
-    0x00,
-    0x01,
-    0x06C1,
-    0x0C,
-    0x02,
-    PayloadResponse1ForNode270 };
-uint8_t PayloadRequest2ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request1ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C1,
+    .op_type = 0x02,
+    .data_size = 0x04,
+    .data_ptr = PayloadRequest1ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response1ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C1,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest2ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x02, 0x00, 0x64, 0x1B, 0x80 };
-Ucs_Ns_ConfigMsg_t Request2ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0A,
-    PayloadRequest2ForNode270 };
-uint8_t PayloadResponse2ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x02 };
-Ucs_Ns_ConfigMsg_t Response2ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse2ForNode270 };
-uint8_t PayloadRequest3ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request2ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0A,
+    .data_ptr = PayloadRequest2ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response2ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest3ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x02, 0x00, 0x64, 0x11, 0xB8 };
-Ucs_Ns_ConfigMsg_t Request3ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0A,
-    PayloadRequest3ForNode270 };
-uint8_t PayloadResponse3ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x02 };
-Ucs_Ns_ConfigMsg_t Response3ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse3ForNode270 };
-uint8_t PayloadRequest4ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request3ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0A,
+    .data_ptr = PayloadRequest3ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response3ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest4ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x02, 0x00, 0x64, 0x12, 0x60 };
-Ucs_Ns_ConfigMsg_t Request4ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0A,
-    PayloadRequest4ForNode270 };
-uint8_t PayloadResponse4ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x02 };
-Ucs_Ns_ConfigMsg_t Response4ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse4ForNode270 };
-uint8_t PayloadRequest5ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request4ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0A,
+    .data_ptr = PayloadRequest4ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response4ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest5ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x02, 0x00, 0x64, 0x13, 0xA0 };
-Ucs_Ns_ConfigMsg_t Request5ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0A,
-    PayloadRequest5ForNode270 };
-uint8_t PayloadResponse5ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x02 };
-Ucs_Ns_ConfigMsg_t Response5ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse5ForNode270 };
-uint8_t PayloadRequest6ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request5ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0A,
+    .data_ptr = PayloadRequest5ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response5ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest6ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x02, 0x00, 0x64, 0x14, 0x48 };
-Ucs_Ns_ConfigMsg_t Request6ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0A,
-    PayloadRequest6ForNode270 };
-uint8_t PayloadResponse6ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x02 };
-Ucs_Ns_ConfigMsg_t Response6ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse6ForNode270 };
-uint8_t PayloadRequest7ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request6ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0A,
+    .data_ptr = PayloadRequest6ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response6ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest7ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x05, 0x00, 0x64, 0x20, 0x00, 0x89, 0x77, 0x72 };
-Ucs_Ns_ConfigMsg_t Request7ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0D,
-    PayloadRequest7ForNode270 };
-uint8_t PayloadResponse7ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x05 };
-Ucs_Ns_ConfigMsg_t Response7ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse7ForNode270 };
-uint8_t PayloadRequest8ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request7ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0D,
+    .data_ptr = PayloadRequest7ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response7ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest8ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x02, 0x00, 0x64, 0x06, 0x00 };
-Ucs_Ns_ConfigMsg_t Request8ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0A,
-    PayloadRequest8ForNode270 };
-uint8_t PayloadResponse8ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x02 };
-Ucs_Ns_ConfigMsg_t Response8ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse8ForNode270 };
-uint8_t PayloadRequest9ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request8ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0A,
+    .data_ptr = PayloadRequest8ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response8ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest9ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x02, 0x00, 0x64, 0x05, 0x00 };
-Ucs_Ns_ConfigMsg_t Request9ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0A,
-    PayloadRequest9ForNode270 };
-uint8_t PayloadResponse9ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x02 };
-Ucs_Ns_ConfigMsg_t Response9ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse9ForNode270 };
-uint8_t PayloadRequest10ForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request9ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0A,
+    .data_ptr = PayloadRequest9ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response9ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest10ForNode270[] = {
     0x0F, 0x00, 0x00, 0x00, 0x2A, 0x03, 0x00, 0x64, 0x07, 0x01, 0x50 };
-Ucs_Ns_ConfigMsg_t Request10ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x0B,
-    PayloadRequest10ForNode270 };
-uint8_t PayloadResponse10ForNode270[] = {
-    0x0F, 0x00, 0x2A, 0x03 };
-Ucs_Ns_ConfigMsg_t Response10ForNode270 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse10ForNode270 };
-Ucs_Ns_Script_t ScriptsForNode270[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request10ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x0B,
+    .data_ptr = PayloadRequest10ForNode270 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response10ForNode270 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST Ucs_Ns_Script_t ScriptsForNode270[] = {
     {
-        0,
-        &Request1ForNode270,
-        &Response1ForNode270
+        .pause = 0,
+        .send_cmd = &Request1ForNode270,
+        .exp_result = &Response1ForNode270
     }, {
-        0,
-        &Request2ForNode270,
-        &Response2ForNode270
+        .pause = 0,
+        .send_cmd = &Request2ForNode270,
+        .exp_result = &Response2ForNode270
     }, {
-        0,
-        &Request3ForNode270,
-        &Response3ForNode270
+        .pause = 0,
+        .send_cmd = &Request3ForNode270,
+        .exp_result = &Response3ForNode270
     }, {
-        0,
-        &Request4ForNode270,
-        &Response4ForNode270
+        .pause = 0,
+        .send_cmd = &Request4ForNode270,
+        .exp_result = &Response4ForNode270
     }, {
-        0,
-        &Request5ForNode270,
-        &Response5ForNode270
+        .pause = 0,
+        .send_cmd = &Request5ForNode270,
+        .exp_result = &Response5ForNode270
     }, {
-        0,
-        &Request6ForNode270,
-        &Response6ForNode270
+        .pause = 0,
+        .send_cmd = &Request6ForNode270,
+        .exp_result = &Response6ForNode270
     }, {
-        0,
-        &Request7ForNode270,
-        &Response7ForNode270
+        .pause = 0,
+        .send_cmd = &Request7ForNode270,
+        .exp_result = &Response7ForNode270
     }, {
-        0,
-        &Request8ForNode270,
-        &Response8ForNode270
+        .pause = 0,
+        .send_cmd = &Request8ForNode270,
+        .exp_result = &Response8ForNode270
     }, {
-        0,
-        &Request9ForNode270,
-        &Response9ForNode270
+        .pause = 0,
+        .send_cmd = &Request9ForNode270,
+        .exp_result = &Response9ForNode270
     }, {
-        0,
-        &Request10ForNode270,
-        &Response10ForNode270
+        .pause = 0,
+        .send_cmd = &Request10ForNode270,
+        .exp_result = &Response10ForNode270
     } };
-uint8_t PayloadRequest1ForNode240[] = {
+UCS_NS_CONST uint8_t PayloadRequest1ForNode240[] = {
     0x00, 0x00, 0x01, 0x01 };
-Ucs_Ns_ConfigMsg_t Request1ForNode240 = {
-    0x00,
-    0x01,
-    0x06C1,
-    0x02,
-    0x04,
-    PayloadRequest1ForNode240 };
-uint8_t PayloadResponse1ForNode240[] = {
-    0x0F, 0x00 };
-Ucs_Ns_ConfigMsg_t Response1ForNode240 = {
-    0x00,
-    0x01,
-    0x06C1,
-    0x0C,
-    0x02,
-    PayloadResponse1ForNode240 };
-uint8_t PayloadRequest2ForNode240[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request1ForNode240 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C1,
+    .op_type = 0x02,
+    .data_size = 0x04,
+    .data_ptr = PayloadRequest1ForNode240 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response1ForNode240 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C1,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest2ForNode240[] = {
     0x0F, 0x00, 0x02, 0x0A, 0x18, 0x03, 0x00, 0x64, 0x00, 0x0F, 0x02, 0x01, 0x00, 0x00, 0x02, 0xA5, 0xDF, 0x03, 0x3F, 0x3F, 0x04, 0x02, 0x02, 0x10, 0x30, 0x30, 0x11, 0x00, 0x00, 0x12, 0x00, 0x00, 0x13, 0x00, 0x00, 0x14, 0x00, 0x00 };
-Ucs_Ns_ConfigMsg_t Request2ForNode240 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x26,
-    PayloadRequest2ForNode240 };
-uint8_t PayloadResponse2ForNode240[] = {
-    0x0F, 0x00, 0x18, 0x1E };
-Ucs_Ns_ConfigMsg_t Response2ForNode240 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse2ForNode240 };
-uint8_t PayloadRequest3ForNode240[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request2ForNode240 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x26,
+    .data_ptr = PayloadRequest2ForNode240 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response2ForNode240 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST uint8_t PayloadRequest3ForNode240[] = {
     0x0F, 0x00, 0x02, 0x04, 0x18, 0x03, 0x00, 0x64, 0x20, 0x00, 0x00, 0x21, 0x00, 0x00, 0x22, 0x00, 0x00, 0x23, 0x00, 0x00 };
-Ucs_Ns_ConfigMsg_t Request3ForNode240 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x02,
-    0x14,
-    PayloadRequest3ForNode240 };
-uint8_t PayloadResponse3ForNode240[] = {
-    0x0F, 0x00, 0x18, 0x0C };
-Ucs_Ns_ConfigMsg_t Response3ForNode240 = {
-    0x00,
-    0x01,
-    0x06C4,
-    0x0C,
-    0x04,
-    PayloadResponse3ForNode240 };
-Ucs_Ns_Script_t ScriptsForNode240[] = {
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Request3ForNode240 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x02,
+    .data_size = 0x14,
+    .data_ptr = PayloadRequest3ForNode240 };
+UCS_NS_CONST Ucs_Ns_ConfigMsg_t Response3ForNode240 = {
+    .fblock_id = 0x00,
+    .inst_id = 0x01,
+    .funct_id = 0x06C4,
+    .op_type = 0x0C,
+    .data_size = 0x00,
+    .data_ptr = NULL };
+UCS_NS_CONST Ucs_Ns_Script_t ScriptsForNode240[] = {
     {
-        0,
-        &Request1ForNode240,
-        &Response1ForNode240
+        .pause = 0,
+        .send_cmd = &Request1ForNode240,
+        .exp_result = &Response1ForNode240
     }, {
-        0,
-        &Request2ForNode240,
-        &Response2ForNode240
+        .pause = 0,
+        .send_cmd = &Request2ForNode240,
+        .exp_result = &Response2ForNode240
     }, {
-        0,
-        &Request3ForNode240,
-        &Response3ForNode240
+        .pause = 0,
+        .send_cmd = &Request3ForNode240,
+        .exp_result = &Response3ForNode240
     } };
-Ucs_Signature_t SignatureForNode200 = { 0x200 };
-Ucs_Signature_t SignatureForNode270 = { 0x270 };
-Ucs_Signature_t SignatureForNode271 = { 0x271 };
-Ucs_Signature_t SignatureForNode272 = { 0x272 };
-Ucs_Signature_t SignatureForNode240 = { 0x240 };
-Ucs_Signature_t SignatureForNode241 = { 0x241 };
-Ucs_Signature_t SignatureForNode242 = { 0x242 };
+Ucs_Signature_t SignatureForNode200 = { .node_address = 0x200 };
+Ucs_Signature_t SignatureForNode270 = { .node_address = 0x270 };
+Ucs_Signature_t SignatureForNode271 = { .node_address = 0x271 };
+Ucs_Signature_t SignatureForNode272 = { .node_address = 0x272 };
+Ucs_Signature_t SignatureForNode240 = { .node_address = 0x240 };
+Ucs_Signature_t SignatureForNode241 = { .node_address = 0x241 };
+Ucs_Signature_t SignatureForNode242 = { .node_address = 0x242 };
 Ucs_Rm_Node_t AllNodes[] = {
     {
-        &SignatureForNode200,
-        NULL,
-        0
+        .signature_ptr = &SignatureForNode200,
+        .init_script_list_ptr = NULL,
+        .init_script_list_size = 0
     }, {
-        &SignatureForNode270,
-        ScriptsForNode270,
-        10
+        .signature_ptr = &SignatureForNode270,
+        .init_script_list_ptr = ScriptsForNode270,
+        .init_script_list_size = 10
     }, {
-        &SignatureForNode271,
-        ScriptsForNode270,
-        10
+        .signature_ptr = &SignatureForNode271,
+        .init_script_list_ptr = ScriptsForNode270,
+        .init_script_list_size = 10
     }, {
-        &SignatureForNode272,
-        ScriptsForNode270,
-        10
+        .signature_ptr = &SignatureForNode272,
+        .init_script_list_ptr = ScriptsForNode270,
+        .init_script_list_size = 10
     }, {
-        &SignatureForNode240,
-        ScriptsForNode240,
-        3
+        .signature_ptr = &SignatureForNode240,
+        .init_script_list_ptr = ScriptsForNode240,
+        .init_script_list_size = 3
     }, {
-        &SignatureForNode241,
-        ScriptsForNode240,
-        3
+        .signature_ptr = &SignatureForNode241,
+        .init_script_list_ptr = ScriptsForNode240,
+        .init_script_list_size = 3
     }, {
-        &SignatureForNode242,
-        ScriptsForNode240,
-        3
+        .signature_ptr = &SignatureForNode242,
+        .init_script_list_ptr = ScriptsForNode240,
+        .init_script_list_size = 3
     } };
 Ucs_Rm_EndPoint_t SourceEndpointForRoute1 = {
-    UCS_RM_EP_SOURCE,
-    SrcOfRoute1_JobList,
-    &AllNodes[0] };
+    .endpoint_type = UCS_RM_EP_SOURCE,
+    .jobs_list_ptr = SrcOfRoute1_JobList,
+    .node_obj_ptr = &AllNodes[0] };
 Ucs_Rm_EndPoint_t SinkEndpointForRoute1 = {
-    UCS_RM_EP_SINK,
-    SnkOfRoute1_JobList,
-    &AllNodes[1] };
+    .endpoint_type = UCS_RM_EP_SINK,
+    .jobs_list_ptr = SnkOfRoute1_JobList,
+    .node_obj_ptr = &AllNodes[1] };
 Ucs_Rm_EndPoint_t SinkEndpointForRoute2 = {
-    UCS_RM_EP_SINK,
-    SnkOfRoute2_JobList,
-    &AllNodes[4] };
+    .endpoint_type = UCS_RM_EP_SINK,
+    .jobs_list_ptr = SnkOfRoute2_JobList,
+    .node_obj_ptr = &AllNodes[4] };
 Ucs_Rm_EndPoint_t SourceEndpointForRoute3 = {
-    UCS_RM_EP_SOURCE,
-    SrcOfRoute3_JobList,
-    &AllNodes[0] };
+    .endpoint_type = UCS_RM_EP_SOURCE,
+    .jobs_list_ptr = SrcOfRoute3_JobList,
+    .node_obj_ptr = &AllNodes[0] };
 Ucs_Rm_EndPoint_t SinkEndpointForRoute3 = {
-    UCS_RM_EP_SINK,
-    SnkOfRoute3_JobList,
-    &AllNodes[2] };
+    .endpoint_type = UCS_RM_EP_SINK,
+    .jobs_list_ptr = SnkOfRoute3_JobList,
+    .node_obj_ptr = &AllNodes[2] };
 Ucs_Rm_EndPoint_t SinkEndpointForRoute4 = {
-    UCS_RM_EP_SINK,
-    SnkOfRoute4_JobList,
-    &AllNodes[5] };
+    .endpoint_type = UCS_RM_EP_SINK,
+    .jobs_list_ptr = SnkOfRoute4_JobList,
+    .node_obj_ptr = &AllNodes[5] };
 Ucs_Rm_EndPoint_t SourceEndpointForRoute5 = {
-    UCS_RM_EP_SOURCE,
-    SrcOfRoute5_JobList,
-    &AllNodes[0] };
+    .endpoint_type = UCS_RM_EP_SOURCE,
+    .jobs_list_ptr = SrcOfRoute5_JobList,
+    .node_obj_ptr = &AllNodes[0] };
 Ucs_Rm_EndPoint_t SinkEndpointForRoute5 = {
-    UCS_RM_EP_SINK,
-    SnkOfRoute5_JobList,
-    &AllNodes[3] };
+    .endpoint_type = UCS_RM_EP_SINK,
+    .jobs_list_ptr = SnkOfRoute5_JobList,
+    .node_obj_ptr = &AllNodes[3] };
 Ucs_Rm_EndPoint_t SinkEndpointForRoute6 = {
-    UCS_RM_EP_SINK,
-    SnkOfRoute6_JobList,
-    &AllNodes[6] };
+    .endpoint_type = UCS_RM_EP_SINK,
+    .jobs_list_ptr = SnkOfRoute6_JobList,
+    .node_obj_ptr = &AllNodes[6] };
 Ucs_Rm_Route_t AllRoutes[] = { {
-        &SourceEndpointForRoute1,
-        &SinkEndpointForRoute1,
-        1,
-        0x8000
+        .source_endpoint_ptr = &SourceEndpointForRoute1,
+        .sink_endpoint_ptr = &SinkEndpointForRoute1,
+        .active = 1,
+        .route_id = 0x8000
     }, {
-        &SourceEndpointForRoute1,
-        &SinkEndpointForRoute2,
-        1,
-        0x8001
+        .source_endpoint_ptr = &SourceEndpointForRoute1,
+        .sink_endpoint_ptr = &SinkEndpointForRoute2,
+        .active = 1,
+        .route_id = 0x8001
     }, {
-        &SourceEndpointForRoute3,
-        &SinkEndpointForRoute3,
-        1,
-        0x8002
+        .source_endpoint_ptr = &SourceEndpointForRoute3,
+        .sink_endpoint_ptr = &SinkEndpointForRoute3,
+        .active = 1,
+        .route_id = 0x8002
     }, {
-        &SourceEndpointForRoute3,
-        &SinkEndpointForRoute4,
-        1,
-        0x8003
+        .source_endpoint_ptr = &SourceEndpointForRoute3,
+        .sink_endpoint_ptr = &SinkEndpointForRoute4,
+        .active = 1,
+        .route_id = 0x8003
     }, {
-        &SourceEndpointForRoute5,
-        &SinkEndpointForRoute5,
-        1,
-        0x8004
+        .source_endpoint_ptr = &SourceEndpointForRoute5,
+        .sink_endpoint_ptr = &SinkEndpointForRoute5,
+        .active = 1,
+        .route_id = 0x8004
     }, {
-        &SourceEndpointForRoute5,
-        &SinkEndpointForRoute6,
-        1,
-        0x8005
+        .source_endpoint_ptr = &SourceEndpointForRoute5,
+        .sink_endpoint_ptr = &SinkEndpointForRoute6,
+        .active = 1,
+        .route_id = 0x8005
     } };

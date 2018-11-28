@@ -39,8 +39,8 @@
 
 #ifdef ENABLE_RESOURCE_PRINT
 
-#define SERVICE_TIME (500)
-#define MAX_TIMEOUT  (30000)
+#define SERVICE_TIME (200)
+#define MAX_TIMEOUT  (10000)
 #define MPR_RETRIES  (5)
 #define INVALID_CON_LABEL (0xDEAD)
 
@@ -72,6 +72,7 @@ struct NodeList
     bool isValid;
     UCSIPrint_NodeState_t nodeState;
     uint16_t node;
+    uint16_t pos;
 };
 
 struct LocalVar
@@ -170,7 +171,7 @@ void UCSIPrint_SetNetworkAvailable(bool available, uint8_t maxPos)
     }
 }
 
-void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, UCSIPrint_NodeState_t nodeState)
+void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, uint16_t nodePosAddr, UCSIPrint_NodeState_t nodeState)
 {
     uint16_t i;
     if (!m.initialized)
@@ -178,10 +179,11 @@ void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, UCSIPrint_NodeState_t node
     /* Find existing entry */
     for (i = 0; i < UCSI_PRINT_MAX_NODES; i++)
     {
-        if (m.nList[i].isValid && nodeAddress == m.nList[i].node)
+        if (m.nList[i].isValid && nodePosAddr == m.nList[i].pos)
         {
-            if (m.nList[i].nodeState != nodeState)
+            if (m.nList[i].nodeState != nodeState || m.nList[i].node != nodeAddress)
             {
+                m.nList[i].node = nodeAddress;
                 m.nList[i].nodeState = nodeState;
                 RequestTrigger();
             }
@@ -194,6 +196,7 @@ void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, UCSIPrint_NodeState_t node
         if (!m.nList[i].isValid)
         {
             m.nList[i].node = nodeAddress;
+            m.nList[i].pos = nodePosAddr;
             m.nList[i].nodeState = nodeState;
             m.nList[i].isValid = true;
             RequestTrigger();
@@ -394,7 +397,7 @@ static void ParseResources(Ucs_Xrm_ResObject_t **ppJobList, char *pBuf, uint32_t
             strcat(pBuf, " ");
         switch(typ)
         {
-        case UCS_XRM_RC_TYPE_MOST_SOCKET:
+        case UCS_XRM_RC_TYPE_NW_SOCKET:
             strcat(pBuf, "NS");
             break;
         case UCS_XRM_RC_TYPE_MLB_PORT:

@@ -109,7 +109,9 @@ typedef struct
  */
 typedef struct
 {
-    Ucs_Rm_Node_t * node_ptr;
+    uint16_t nodeAddress;
+    Ucs_Ns_Script_t *scriptPtr;
+    uint8_t scriptSize;
 } UnicensCmdNsRun_t;
 
 /**
@@ -202,12 +204,6 @@ typedef struct {
     volatile uint32_t txPos;
 } RB_t;
 
-typedef struct
-{
-    bool valid;
-    uint16_t nodeAddress;
-} NodeAvailable_t;
-
 /**
  * \brief Internal variables for one instance of UNICENS Integration
  * \note Allocate this structure for each instance (static or malloc)
@@ -228,7 +224,6 @@ typedef struct
     Ucs_Lld_Api_t *uniLld;
     void *uniLldHPtr;
     UnicensCmdEntry_t *currentCmd;
-    NodeAvailable_t nodeAvailable[MAX_NODES];
     bool printTrigger;
 } UCSI_Data_t;
 
