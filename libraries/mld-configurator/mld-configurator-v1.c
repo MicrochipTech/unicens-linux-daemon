@@ -567,3 +567,4 @@ static bool LinkNetwork(const char* channelName, const char* deviceName, DriverI
     snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
     return WriteCharactersToFile("/sys/class/most/mostcore/aims/networking", "add_link", val);
 }
+
