@@ -82,7 +82,7 @@ struct UcsXmlJobList
 
 typedef enum
 {
-    MSocket_MOST = 20,
+    MSocket_NETWORK = 20,
     MSocket_USB,
     MSocket_MLB,
     MSocket_STRM,
@@ -119,7 +119,7 @@ typedef struct
     Ucs_Xrm_ResObject_t *outSocket;
     struct UcsXmlJobList *jobList;
     Ucs_Xrm_Combiner_t *combiner;
-    mxml_node_t *pendingCombinerMostSockets;
+    mxml_node_t *pendingCombinerSockets;
     Ucs_Sync_MuteMode_t muteMode;
     Ucs_Avp_IsocPacketSize_t isocPacketSize;
 } ConnectionData_t;
@@ -178,14 +178,13 @@ static const char* AVP_PACKET_SIZE =        "IsocPacketSize";
 static const char* ALL_CONNECTIONS[] = { SYNC_CONNECTION, AVP_CONNECTION,
                         DFP_CONNECTION, QOS_CONNECTION, IPC_CONNECTION, NULL };
 
-#define MOST_SOCKET                         "MOSTSocket"
 #define NETWORK_SOCKET                      "NetworkSocket"
 #define USB_SOCKET                          "USBSocket"
 #define MLB_SOCKET                          "MediaLBSocket"
 #define STREAM_SOCKET                       "StreamSocket"
 #define SPLITTER                            "Splitter"
 #define COMBINER                            "Combiner"
-static const char* ALL_SOCKETS[] = { MOST_SOCKET, NETWORK_SOCKET, USB_SOCKET, MLB_SOCKET,
+static const char* ALL_SOCKETS[] = { NETWORK_SOCKET, USB_SOCKET, MLB_SOCKET,
                         STREAM_SOCKET, SPLITTER, COMBINER, NULL };
 
 #define MLB_PORT                            "MediaLBPort"
@@ -389,8 +388,8 @@ UcsXmlScript_t *UcsXml_ParseScript(const char *xmlString)
     if (!priv) goto ERROR;
     result = ParseScript(tree, &scriptLst, &priv->objList);
     if (Parse_Success != result) goto ERROR;
-    script->pScriptList = node.script_list_ptr;
-    script->scriptListLength = node.script_list_size;
+    script->pScriptList = (Ucs_Ns_Script_t *)node.init_script_list_ptr;
+    script->scriptListLength = node.init_script_list_size;
     return script;
 ERROR:
     if (Parse_MemoryError == result)
@@ -680,8 +679,8 @@ static bool GetDataType(const char *txt, MDataType_t *out)
 
 static bool GetSocketType(const char *txt, MSocketType_t *out)
 {
-    if (0 == strcmp(txt, MOST_SOCKET) || 0 == strcmp(txt, NETWORK_SOCKET)) {
-            *out = MSocket_MOST;
+    if (0 == strcmp(txt, NETWORK_SOCKET)) {
+            *out = MSocket_NETWORK;
     } else if (0 == strcmp(txt, USB_SOCKET)) {
         *out = MSocket_USB;
     } else if (0 == strcmp(txt, MLB_SOCKET)) {
@@ -1098,11 +1097,11 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
     targetSock = isSource ? &priv->conData.inSocket : &priv->conData.outSocket;
     switch(socketType)
     {
-    case MSocket_MOST:
+    case MSocket_NETWORK:
     {
         const char* txt;
-        struct MostSocketParameters p;
-        /* If there is an combiner stored, add it now into job list (right before MOST socket) */
+        struct NetworkSocketParameters p;
+        /* If there is an combiner stored, add it now into job list (right before Network socket) */
         if (priv->conData.combiner)
             if (!AddJob(jobList, priv->conData.combiner, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
 
@@ -1127,7 +1126,7 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         {
             if (!GetUInt16(soc, OFFSET, &priv->conData.syncOffset, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
         }
-        if (!GetMostSocket((Ucs_Xrm_MostSocket_t **)targetSock, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get Network Socket");
+        if (!GetNetworkSocket((Ucs_Xrm_NetworkSocket_t **)targetSock, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get Network Socket");
         if (!AddJob(jobList, *targetSock, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
         break;
     }
@@ -1196,7 +1195,7 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
     }
     case MSocket_SPLITTER:
     {
-        mxml_node_t *mostSoc;
+        mxml_node_t *networkSoc;
         struct SplitterParameters p;
         if (isSource)
         {
@@ -1210,18 +1209,16 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         if (!(p.inSoc = priv->conData.inSocket)) RETURN_ASSERT(Parse_XmlError, "Wrong usage of Splitter");
         if (!GetSplitter((Ucs_Xrm_Splitter_t **)&priv->conData.inSocket, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get Splitter");
         if (!AddJob(jobList, priv->conData.inSocket, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
-        if (!GetElement(soc->child, MOST_SOCKET, false, &mostSoc, false))
-            if (!GetElement(soc->child, NETWORK_SOCKET, false, &mostSoc, true))
-                RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+        if (!GetElement(soc->child, NETWORK_SOCKET, false, &networkSoc, true))
+            RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
         priv->conData.syncOffsetNeeded = true;
 
-        while(mostSoc)
+        while(networkSoc)
         {
             struct UcsXmlJobList *jobListCopy = DeepCopyJobList(*jobList, &priv->objList);
-            if (!ParseSocket(mostSoc, false, MSocket_MOST, &jobListCopy, priv)) RETURN_ASSERT(Parse_XmlError, "Failed to parse Network Socket");
-            if (!GetElement(mostSoc, MOST_SOCKET, false, &mostSoc, false))
-                if (!GetElement(mostSoc, NETWORK_SOCKET, false, &mostSoc, false))
-                    return Parse_Success; /* Do not break here, otherwise an additional invalid route will be created */
+            if (!ParseSocket(networkSoc, false, MSocket_NETWORK, &jobListCopy, priv)) RETURN_ASSERT(Parse_XmlError, "Failed to parse Network Socket");
+            if (!GetElement(networkSoc, NETWORK_SOCKET, false, &networkSoc, false))
+                return Parse_Success; /* Do not break here, otherwise an additional invalid route will be created */
         }
         break;
     }
@@ -1237,9 +1234,8 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         if (!GetUInt16(soc, BYTES_PER_FRAME, &p.bytesPerFrame, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
         if (!GetCombiner(&priv->conData.combiner, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get combiner");
         priv->conData.syncOffsetNeeded = true;
-        if (!GetElement(soc->child, MOST_SOCKET, false, &priv->conData.pendingCombinerMostSockets, false))
-            if (!GetElement(soc->child, NETWORK_SOCKET, false, &priv->conData.pendingCombinerMostSockets, true))
-                RETURN_ASSERT(Parse_XmlError, "No Network Socket inside Combiner");
+        if (!GetElement(soc->child, NETWORK_SOCKET, false, &priv->conData.pendingCombinerSockets, true))
+            RETURN_ASSERT(Parse_XmlError, "No Network Socket inside Combiner");
         break;
     }
     default:
@@ -1247,10 +1243,10 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
     }
     /*Handle Pending Combiner Tasks*/
     if (NULL != priv->conData.outSocket && NULL != priv->conData.combiner &&
-        NULL != priv->conData.pendingCombinerMostSockets)
+        NULL != priv->conData.pendingCombinerSockets)
     {
-        mxml_node_t *tmp = priv->conData.pendingCombinerMostSockets;
-        priv->conData.pendingCombinerMostSockets = NULL;
+        mxml_node_t *tmp = priv->conData.pendingCombinerSockets;
+        priv->conData.pendingCombinerSockets = NULL;
         /* Current output socket will be stored inside combiner
          * and combiner will become the new output socket */
         priv->conData.combiner->port_socket_obj_ptr = priv->conData.outSocket;
@@ -1258,17 +1254,16 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         while(tmp)
         {
             struct UcsXmlJobList *jobListCopy = DeepCopyJobList(*jobList, &priv->objList);
-            if (!ParseSocket(tmp, true, MSocket_MOST, &jobListCopy, priv)) RETURN_ASSERT(Parse_XmlError, "Failed to parse Network Socket in Combiner");
-            if (!GetElement(tmp, MOST_SOCKET, false, &tmp, false))
-                if (!GetElement(tmp, NETWORK_SOCKET, false, &tmp, false))
-                    return Parse_Success; /* Do not break here, otherwise an additional invalid route will be created */
+            if (!ParseSocket(tmp, true, MSocket_NETWORK, &jobListCopy, priv)) RETURN_ASSERT(Parse_XmlError, "Failed to parse Network Socket in Combiner");
+            if (!GetElement(tmp, NETWORK_SOCKET, false, &tmp, false))
+                return Parse_Success; /* Do not break here, otherwise an additional invalid route will be created */
         }
     }
     /*Connect in and out socket once they are created*/
     if (priv->conData.inSocket && priv->conData.outSocket)
     {
-        bool mostIsInput;
-        bool mostIsOutput;
+        bool networkIsInput;
+        bool networkIsOutput;
         Ucs_Rm_EndPoint_t *ep;
         struct UcsXmlRoute *route;
         switch(priv->conData.dataType)
@@ -1304,20 +1299,20 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         ep = MCalloc(&priv->objList, 1, sizeof(Ucs_Rm_EndPoint_t));
         if (NULL == ep) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
 
-        mostIsInput = (UCS_XRM_RC_TYPE_MOST_SOCKET == *((Ucs_Xrm_ResourceType_t *)priv->conData.inSocket));
-        mostIsOutput = (UCS_XRM_RC_TYPE_MOST_SOCKET == *((Ucs_Xrm_ResourceType_t *)priv->conData.outSocket));
-        if (!mostIsInput && !mostIsOutput)
+        networkIsInput = (UCS_XRM_RC_TYPE_NW_SOCKET == *((Ucs_Xrm_ResourceType_t *)priv->conData.inSocket));
+        networkIsOutput = (UCS_XRM_RC_TYPE_NW_SOCKET == *((Ucs_Xrm_ResourceType_t *)priv->conData.outSocket));
+        if (!networkIsInput && !networkIsOutput)
         {
-            UcsXml_CB_OnError("At least one MOST socket required per connection", 0);
+            UcsXml_CB_OnError("At least one Network socket required per connection", 0);
             RETURN_ASSERT(Parse_XmlError, "Wrong usage of connection");
         }
-        ep->endpoint_type = mostIsOutput ? UCS_RM_EP_SOURCE : UCS_RM_EP_SINK;
+        ep->endpoint_type = networkIsOutput ? UCS_RM_EP_SOURCE : UCS_RM_EP_SINK;
         ep->jobs_list_ptr = GetJobList(*jobList, &priv->objList);
         if(NULL == ep->jobs_list_ptr) RETURN_ASSERT(Parse_MemoryError, "Got empty job list");
         ep->node_obj_ptr = priv->nodeData.nod;
         route = MCalloc(&priv->objList, 1, sizeof(struct UcsXmlRoute));
         if (NULL == route) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-        route->isSource = mostIsOutput;
+        route->isSource = networkIsOutput;
         route->isActive = !priv->conData.isDeactivated;
         route->routeId = priv->conData.routeId;
         route->ep = ep;
@@ -1424,8 +1419,8 @@ static ParseResult_t ParseScript(mxml_node_t *scr, struct UcsXmlScript *scrlist,
             Ucs_Rm_Node_t *node = scrlist->node;
             if (NULL == node)
                 return Parse_MemoryError;
-            node->script_list_ptr = script;
-            node->script_list_size = actCnt;
+            node->init_script_list_ptr = script;
+            node->init_script_list_size = actCnt;
             scrlist->inUse = true;
             found = true;
         }
@@ -1455,31 +1450,31 @@ static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, 
     Ucs_Ns_ConfigMsg_t *req, *res;
     assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
     if (!FillScriptInitialValues(scr, objList, scriptData)) return Parse_MemoryError;
-    req = scr->send_cmd;
-    res = scr->exp_result;
-    req->InstId = res->InstId = 1;
-    if (!GetUInt8(act, FBLOCK_ID, &req->FBlockId, true))
+    req = (Ucs_Ns_ConfigMsg_t *)scr->send_cmd;
+    res = (Ucs_Ns_ConfigMsg_t *)scr->exp_result;
+    req->inst_id = res->inst_id = 1;
+    if (!GetUInt8(act, FBLOCK_ID, &req->fblock_id, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
 
-    if (!GetUInt16(act, FUNCTION_ID, &req->FunktId, true))
+    if (!GetUInt16(act, FUNCTION_ID, &req->funct_id, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
 
-    if (!GetUInt8(act, OP_TYPE_REQUEST, &req->OpCode, true))
+    if (!GetUInt8(act, OP_TYPE_REQUEST, &req->op_type, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
 
-    res->FBlockId = req->FBlockId;
-    res->FunktId = req->FunktId;
+    res->fblock_id = req->fblock_id;
+    res->funct_id = req->funct_id;
 
-    if (!GetUInt8(act, OP_TYPE_RESPONSE, &res->OpCode, false))
-        res->OpCode = 0xFF;
+    if (!GetUInt8(act, OP_TYPE_RESPONSE, &res->op_type, false))
+        res->op_type = 0xFF;
 
-    if (!GetPayload(act, PAYLOAD_REQ_HEX, &req->DataPtr, &req->DataLen, 0, objList, true))
+    if (!GetPayload(act, PAYLOAD_REQ_HEX, (uint8_t **)&req->data_ptr, &req->data_size, 0, objList, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0x00; /* Using Wildcard */
+    res->data_size = 0x0; /* Using Wildcard */
 #else
-    if (!GetPayload(act, PAYLOAD_RES_HEX, &res->DataPtr, &res->DataLen, 0, objList, true))
+    if (!GetPayload(act, PAYLOAD_RES_HEX, &res->data_ptr, &res->data_size, 0, objList, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
 #endif    
     return Parse_Success;
@@ -1494,26 +1489,26 @@ static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
     if (!GetUInt16(act, DEBOUNCE_TIME, &debounce, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-    req = scr->send_cmd;
-    res = scr->exp_result;
-    req->InstId = res->InstId = 1;
-    req->FunktId = res->FunktId = 0x701;
-    req->OpCode = 0x2;
-    res->OpCode = 0xC;
-    req->DataLen = 3;
-    req->DataPtr = MCalloc(objList, req->DataLen, 1);
-    if (NULL == req->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    req->DataPtr[0] = 0; /*GPIO Port instance, always 0*/
-    req->DataPtr[1] = MISC_HB(debounce);
-    req->DataPtr[2] = MISC_LB(debounce);
+    req = (Ucs_Ns_ConfigMsg_t *)scr->send_cmd;
+    res = (Ucs_Ns_ConfigMsg_t *)scr->exp_result;
+    req->inst_id = res->inst_id = 1;
+    req->funct_id = res->funct_id = 0x701;
+    req->op_type = 0x2;
+    res->op_type = 0xC;
+    req->data_size = 3;
+    req->data_ptr = MCalloc(objList, req->data_size, 1);
+    if (NULL == req->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    ((uint8_t *)req->data_ptr)[0] = 0; /*GPIO Port instance, always 0*/
+    ((uint8_t *)req->data_ptr)[1] = MISC_HB(debounce);
+    ((uint8_t *)req->data_ptr)[2] = MISC_LB(debounce);
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0x00; /* Using Wildcard */
+    res->data_size = 0x0; /* Using Wildcard */
 #else
-    res->DataLen = 2;
-    res->DataPtr = MCalloc(objList, res->DataLen, 1);
-    if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    res->DataPtr[0] = 0x1D;
-    res->DataPtr[1] = 0x00;
+    res->data_size = 2;
+    res->data_ptr = MCalloc(objList, res->data_size, 1);
+    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    ((uint8_t *)res->data_ptr)[0] = 0x1D;
+    ((uint8_t *)res->data_ptr)[1] = 0x00;
 #endif
     return Parse_Success;
 }
@@ -1527,24 +1522,24 @@ static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *s
     assert(NULL != act && NULL != scr && NULL != objList && NULL != scriptData);
     if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
-    req = scr->send_cmd;
-    res = scr->exp_result;
-    req->InstId = res->InstId = 1;
-    req->FunktId = res->FunktId = 0x703;
-    req->OpCode = 0x2;
-    res->OpCode = 0xC;
+    req = (Ucs_Ns_ConfigMsg_t *)scr->send_cmd;
+    res = (Ucs_Ns_ConfigMsg_t *)scr->exp_result;
+    req->inst_id = res->inst_id = 1;
+    req->funct_id = res->funct_id = 0x703;
+    req->op_type = 0x2;
+    res->op_type = 0xC;
     if (!GetPayload(act, PIN_CONFIG, &payload, &payloadLen,
         PORT_HANDLE_OFFSET, /* First two bytes are reserved for port handle */
         objList, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     payload[0] = 0x1D;
     payload[1] = 0x00;
-    req->DataPtr = payload;
-    req->DataLen = payloadLen + PORT_HANDLE_OFFSET;
+    req->data_ptr = payload;
+    req->data_size = payloadLen + PORT_HANDLE_OFFSET;
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0x00; /* Using Wildcard */
+    res->data_size = 0x0; /* Using Wildcard */
 #else
-    res->DataPtr = payload;
-    res->DataLen = payloadLen + PORT_HANDLE_OFFSET;
+    res->data_ptr = payload;
+    res->data_size = payloadLen + PORT_HANDLE_OFFSET;
 #endif
     return Parse_Success;
 }
@@ -1560,30 +1555,30 @@ static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     if (!GetUInt16(act, PIN_DATA, &data, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-    req = scr->send_cmd;
-    res = scr->exp_result;
-    req->InstId = res->InstId = 1;
-    req->FunktId = res->FunktId = 0x704;
-    req->OpCode = 0x2;
-    res->OpCode = 0xC;
-    req->DataLen = 6;
-    req->DataPtr = MCalloc(objList, req->DataLen, 1);
-    if (NULL == req->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    req->DataPtr[0] = 0x1D;
-    req->DataPtr[1] = 0x00;
-    req->DataPtr[2] = MISC_HB(mask);
-    req->DataPtr[3] = MISC_LB(mask);
-    req->DataPtr[4] = MISC_HB(data);
-    req->DataPtr[5] = MISC_LB(data);
+    req = (Ucs_Ns_ConfigMsg_t *)scr->send_cmd;
+    res = (Ucs_Ns_ConfigMsg_t *)scr->exp_result;
+    req->inst_id = res->inst_id = 1;
+    req->funct_id = res->funct_id = 0x704;
+    req->op_type = 0x2;
+    res->op_type = 0xC;
+    req->data_size = 6;
+    req->data_ptr = MCalloc(objList, req->data_size, 1);
+    if (NULL == req->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    ((uint8_t *)req->data_ptr)[0] = 0x1D;
+    ((uint8_t *)req->data_ptr)[1] = 0x00;
+    ((uint8_t *)req->data_ptr)[2] = MISC_HB(mask);
+    ((uint8_t *)req->data_ptr)[3] = MISC_LB(mask);
+    ((uint8_t *)req->data_ptr)[4] = MISC_HB(data);
+    ((uint8_t *)req->data_ptr)[5] = MISC_LB(data);
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0x00; /* Using Wildcard */
+    res->data_size = 0x0; /* Using Wildcard */
 #else
-    res->DataLen = 8;
-    res->DataPtr = MCalloc(objList, res->DataLen, 1);
-    if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    memcpy(res->DataPtr, req->DataPtr, req->DataLen);
-    res->DataPtr[6] = 0x00;
-    res->DataPtr[7] = 0x00;
+    res->data_size = 8;
+    res->data_ptr = MCalloc(objList, res->data_size, 1);
+    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    memcpy(res->data_ptr, req->data_ptr, req->data_size);
+    ((uint8_t *)res->data_ptr)[6] = 0x00;
+    ((uint8_t *)res->data_ptr)[7] = 0x00;
 #endif
     return Parse_Success;
 }
@@ -1607,27 +1602,27 @@ static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *sc
         UcsXml_CB_OnError("Invalid I2C speed:'%s'", 1, txt);
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     }
-    req = scr->send_cmd;
-    res = scr->exp_result;
-    req->InstId = res->InstId = 1;
-    req->FunktId = res->FunktId = 0x6C1;
-    req->OpCode = 0x2;
-    res->OpCode = 0xC;
-    req->DataLen = 4;
-    req->DataPtr = MCalloc(objList, req->DataLen, 1);
-    if (NULL == req->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    req->DataPtr[0] = 0x00; /* I2C Port Instance always 0 */
-    req->DataPtr[1] = 0x00; /* I2C slave address, always 0, because we are Master */
-    req->DataPtr[2] = 0x01; /* We are Master */
-    req->DataPtr[3] = speed;
+    req = (Ucs_Ns_ConfigMsg_t *)scr->send_cmd;
+    res = (Ucs_Ns_ConfigMsg_t *)scr->exp_result;
+    req->inst_id = res->inst_id = 1;
+    req->funct_id = res->funct_id = 0x6C1;
+    req->op_type = 0x2;
+    res->op_type = 0xC;
+    req->data_size = 4;
+    req->data_ptr = MCalloc(objList, req->data_size, 1);
+    if (NULL == req->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    ((uint8_t *)req->data_ptr)[0] = 0x00; /* I2C Port Instance always 0 */
+    ((uint8_t *)req->data_ptr)[1] = 0x00; /* I2C slave address, always 0, because we are Master */
+    ((uint8_t *)req->data_ptr)[2] = 0x01; /* We are Master */
+    ((uint8_t *)req->data_ptr)[3] = speed;
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0x00; /* Using Wildcard */
+    res->data_size = 0x0; /* Using Wildcard */
 #else
-    res->DataLen = 2;
-    res->DataPtr = MCalloc(objList, res->DataLen, 1);
-    if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    res->DataPtr[0] = 0x0F;
-    res->DataPtr[1] = 0x00;
+    res->data_size = 2;
+    res->data_ptr = MCalloc(objList, res->data_size, 1);
+    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    ((uint8_t *)res->data_ptr)[0] = 0x0F;
+    ((uint8_t *)res->data_ptr)[1] = 0x00;
 #endif
     return Parse_Success;
 }
@@ -1671,36 +1666,36 @@ static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr
         length = payloadLength;
     if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
-    req = scr->send_cmd;
-    res = scr->exp_result;
-    req->InstId = res->InstId = 1;
-    req->FunktId = res->FunktId = 0x6C4;
-    req->OpCode = 0x2;
-    res->OpCode = 0xC;
-    req->DataLen = payloadLength + HEADER_OFFSET;
-    req->DataPtr = payload;
+    req = (Ucs_Ns_ConfigMsg_t *)scr->send_cmd;
+    res = (Ucs_Ns_ConfigMsg_t *)scr->exp_result;
+    req->inst_id = res->inst_id = 1;
+    req->funct_id = res->funct_id = 0x6C4;
+    req->op_type = 0x2;
+    res->op_type = 0xC;
+    req->data_size = payloadLength + HEADER_OFFSET;
+    req->data_ptr = payload;
 
-    req->DataPtr[0] = 0x0F;
-    req->DataPtr[1] = 0x00;
-    req->DataPtr[2] = mode;
-    req->DataPtr[3] = blockCount;
-    req->DataPtr[4] = address;
-    req->DataPtr[5] = length;
-    req->DataPtr[6] = MISC_HB(timeout);
-    req->DataPtr[7] = MISC_LB(timeout);
+    ((uint8_t *)req->data_ptr)[0] = 0x0F;
+    ((uint8_t *)req->data_ptr)[1] = 0x00;
+    ((uint8_t *)req->data_ptr)[2] = mode;
+    ((uint8_t *)req->data_ptr)[3] = blockCount;
+    ((uint8_t *)req->data_ptr)[4] = address;
+    ((uint8_t *)req->data_ptr)[5] = length;
+    ((uint8_t *)req->data_ptr)[6] = MISC_HB(timeout);
+    ((uint8_t *)req->data_ptr)[7] = MISC_LB(timeout);
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0x00; /* Using Wildcard */
+    res->data_size = 0x0; /* Using Wildcard */
 #else
-    res->DataLen = 4;
-    res->DataPtr = MCalloc(objList, res->DataLen, 1);
-    if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    res->DataPtr[0] = 0x0F;
-    res->DataPtr[1] = 0x00;
-    res->DataPtr[2] = address;
+    res->data_size = 4;
+    res->data_ptr = MCalloc(objList, res->data_size, 1);
+    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    ((uint8_t *)res->data_ptr)[0] = 0x0F;
+    ((uint8_t *)res->data_ptr)[1] = 0x00;
+    ((uint8_t *)res->data_ptr)[2] = address;
     if (2 == mode)
-        res->DataPtr[3] = blockCount * length;
+        ((uint8_t *)res->data_ptr)[3] = blockCount * length;
     else
-        res->DataPtr[3] = length;
+        ((uint8_t *)res->data_ptr)[3] = length;
 #endif
     return Parse_Success;
 }
@@ -1719,32 +1714,32 @@ static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr,
         timeout = 100;
     if (!FillScriptInitialValues(scr, objList, scriptData))
         RETURN_ASSERT(Parse_MemoryError, "Script initialization failed");
-    req = scr->send_cmd;
-    res = scr->exp_result;
-    req->InstId = res->InstId = 1;
-    req->FunktId = res->FunktId = 0x6C3;
-    req->OpCode = 0x2;
-    res->OpCode = 0xC;
-    req->DataLen = 6;
-    req->DataPtr = MCalloc(objList, req->DataLen, 1);
-    if (NULL == req->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    req = (Ucs_Ns_ConfigMsg_t *)scr->send_cmd;
+    res = (Ucs_Ns_ConfigMsg_t *)scr->exp_result;
+    req->inst_id = res->inst_id = 1;
+    req->funct_id = res->funct_id = 0x6C3;
+    req->op_type = 0x2;
+    res->op_type = 0xC;
+    req->data_size = 6;
+    req->data_ptr = MCalloc(objList, req->data_size, 1);
+    if (NULL == req->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
 
-    req->DataPtr[0] = 0x0F;
-    req->DataPtr[1] = 0x00;
-    req->DataPtr[2] = address;
-    req->DataPtr[3] = length;
-    req->DataPtr[4] = MISC_HB(timeout);
-    req->DataPtr[5] = MISC_LB(timeout);
+    ((uint8_t *)req->data_ptr)[0] = 0x0F;
+    ((uint8_t *)req->data_ptr)[1] = 0x00;
+    ((uint8_t *)req->data_ptr)[2] = address;
+    ((uint8_t *)req->data_ptr)[3] = length;
+    ((uint8_t *)req->data_ptr)[4] = MISC_HB(timeout);
+    ((uint8_t *)req->data_ptr)[5] = MISC_LB(timeout);
 #ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->DataLen = 0x00; /* Using Wildcard */
+    res->data_size = 0x0; /* Using Wildcard */
 #else
-    res->DataLen = 4;
-    res->DataPtr = MCalloc(objList, res->DataLen, 1);
-    if (NULL == res->DataPtr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    res->DataPtr[0] = 0x0F;
-    res->DataPtr[1] = 0x00;
-    res->DataPtr[2] = address;
-    res->DataPtr[3] = length;
+    res->data_size = 4;
+    res->data_ptr = MCalloc(objList, res->data_size, 1);
+    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
+    ((uint8_t *)res->data_ptr)[0] = 0x0F;
+    ((uint8_t *)res->data_ptr)[1] = 0x00;
+    ((uint8_t *)res->data_ptr)[2] = address;
+    ((uint8_t *)res->data_ptr)[3] = length;
 #endif
     return Parse_Success;
 }
@@ -2012,10 +2007,10 @@ static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink
     }
     switch(GetResourceType(con->inSocket))
     {
-    case UCS_XRM_RC_TYPE_MOST_SOCKET:
+    case UCS_XRM_RC_TYPE_NW_SOCKET:
     {
-        Ucs_Xrm_MostSocket_t *mostSock = (Ucs_Xrm_MostSocket_t *)con->inSocket;
-        subBufferSize = mostSock->bandwidth;
+        Ucs_Xrm_NetworkSocket_t *networkSock = (Ucs_Xrm_NetworkSocket_t *)con->inSocket;
+        subBufferSize = networkSock->bandwidth;
         cfgDirection = DriverCfgDirection_Rx;
         break;
     }
@@ -2087,12 +2082,12 @@ static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink
     }
     switch(GetResourceType(con->outSocket))
     {
-    case UCS_XRM_RC_TYPE_MOST_SOCKET:
+    case UCS_XRM_RC_TYPE_NW_SOCKET:
     {
         if (0 == subBufferSize)
         {
-            Ucs_Xrm_MostSocket_t *mostSock = (Ucs_Xrm_MostSocket_t *)con->outSocket;
-            subBufferSize = mostSock->bandwidth;
+            Ucs_Xrm_NetworkSocket_t *networkSock = (Ucs_Xrm_NetworkSocket_t *)con->outSocket;
+            subBufferSize = networkSock->bandwidth;
         }
         break;
     }

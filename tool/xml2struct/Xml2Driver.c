@@ -33,18 +33,18 @@
 #include "Xml2Struct.h"
 #include "Xml2Driver.h"
 
-#define STRING_MOST_CH_RX       "MOST_CH_RX"
-#define STRING_MOST_CH_TX       "MOST_CH_TX"
+#define STRING_DRIVER_CH_RX       "MOST_CH_RX"
+#define STRING_DRIVER_CH_TX       "MOST_CH_TX"
 
-#define STRING_MOST_CH_CONTROL  "MOST_CH_CONTROL"
-#define STRING_MOST_CH_ASYNC    "MOST_CH_ASYNC"
-#define STRING_MOST_CH_SYNC     "MOST_CH_SYNC"
-#define STRING_MOST_CH_ISOC     "MOST_CH_ISOC"
+#define STRING_DRIVER_CH_CONTROL  "MOST_CH_CONTROL"
+#define STRING_DRIVER_CH_ASYNC    "MOST_CH_ASYNC"
+#define STRING_DRIVER_CH_SYNC     "MOST_CH_SYNC"
+#define STRING_DRIVER_CH_ISOC     "MOST_CH_ISOC"
 
-#define STRING_MOST_CH_CDEV     "cdev"
-#define STRING_MOST_CH_V4L2     "v4l"
-#define STRING_MOST_CH_ALSA     "sound"
-#define STRING_MOST_CH_NETWORK  "networking"
+#define STRING_DRIVER_CH_CDEV     "cdev"
+#define STRING_DRIVER_CH_V4L2     "v4l"
+#define STRING_DRIVER_CH_ALSA     "sound"
+#define STRING_DRIVER_CH_NETWORK  "networking"
 
 typedef struct
 {
@@ -65,50 +65,50 @@ typedef struct
 
 static const DrvInfo_t controlRx118 =
 {
-    "OS81118 Control RX", NULL, STRING_MOST_CH_CDEV, "control-rx", "ep8f",
-    STRING_MOST_CH_RX, STRING_MOST_CH_CONTROL, 16, 72, 0, 0, 0, 0
+    "OS81118 Control RX", NULL, STRING_DRIVER_CH_CDEV, "control-rx", "ep8f",
+    STRING_DRIVER_CH_RX, STRING_DRIVER_CH_CONTROL, 16, 72, 0, 0, 0, 0
 };
 
 static const DrvInfo_t controlTx118 =
 {
-    "OS81118 Control TX", NULL, STRING_MOST_CH_CDEV, "control-tx", "ep0f",
-    STRING_MOST_CH_TX, STRING_MOST_CH_CONTROL, 16, 72, 0, 0, 0, 0
+    "OS81118 Control TX", NULL, STRING_DRIVER_CH_CDEV, "control-tx", "ep0f",
+    STRING_DRIVER_CH_TX, STRING_DRIVER_CH_CONTROL, 16, 72, 0, 0, 0, 0
 };
 
 static const DrvInfo_t asyncRx118 =
 {
-    "OS81118 Async (Ethernet) RX", NULL, STRING_MOST_CH_NETWORK, "network-rx", "ep8e",
-    STRING_MOST_CH_RX, STRING_MOST_CH_ASYNC, 20, 1522, 0, 0, 0, 0
+    "OS81118 Async (Ethernet) RX", NULL, STRING_DRIVER_CH_NETWORK, "network-rx", "ep8e",
+    STRING_DRIVER_CH_RX, STRING_DRIVER_CH_ASYNC, 20, 1522, 0, 0, 0, 0
 };
 
 static const DrvInfo_t asyncTx118 =
 {
-    "OS81118 Async (Ethernet) TX", NULL, STRING_MOST_CH_NETWORK, "network-tx", "ep0e",
-    STRING_MOST_CH_TX, STRING_MOST_CH_ASYNC, 20, 1522, 0, 0, 0, 0
+    "OS81118 Async (Ethernet) TX", NULL, STRING_DRIVER_CH_NETWORK, "network-tx", "ep0e",
+    STRING_DRIVER_CH_TX, STRING_DRIVER_CH_ASYNC, 20, 1522, 0, 0, 0, 0
 };
 
 static const DrvInfo_t controlRx210 =
 {
-    "OS81118 Control RX", NULL, STRING_MOST_CH_CDEV, "control-rx", "ep87",
-    STRING_MOST_CH_RX, STRING_MOST_CH_CONTROL, 16, 72, 0, 0, 0, 0
+    "OS81118 Control RX", NULL, STRING_DRIVER_CH_CDEV, "control-rx", "ep87",
+    STRING_DRIVER_CH_RX, STRING_DRIVER_CH_CONTROL, 16, 72, 0, 0, 0, 0
 };
 
 static const DrvInfo_t controlTx210 =
 {
-    "OS81118 Control TX", NULL, STRING_MOST_CH_CDEV, "control-tx", "ep07",
-    STRING_MOST_CH_TX, STRING_MOST_CH_CONTROL, 16, 72, 0, 0
+    "OS81118 Control TX", NULL, STRING_DRIVER_CH_CDEV, "control-tx", "ep07",
+    STRING_DRIVER_CH_TX, STRING_DRIVER_CH_CONTROL, 16, 72, 0, 0
 };
 
 static const DrvInfo_t asyncRx210 =
 {
-    "OS81118 Async (Ethernet) RX", NULL, STRING_MOST_CH_NETWORK, "network-rx", "ep86",
-    STRING_MOST_CH_RX, STRING_MOST_CH_ASYNC, 20, 1522, 0, 0
+    "OS81118 Async (Ethernet) RX", NULL, STRING_DRIVER_CH_NETWORK, "network-rx", "ep86",
+    STRING_DRIVER_CH_RX, STRING_DRIVER_CH_ASYNC, 20, 1522, 0, 0
 };
 
 static const DrvInfo_t asyncTx210 =
 {
-    "OS81118 Async (Ethernet) TX", NULL, STRING_MOST_CH_NETWORK, "network-tx", "ep06",
-    STRING_MOST_CH_TX, STRING_MOST_CH_ASYNC, 20, 1522, 0, 0
+    "OS81118 Async (Ethernet) TX", NULL, STRING_DRIVER_CH_NETWORK, "network-tx", "ep06",
+    STRING_DRIVER_CH_TX, STRING_DRIVER_CH_ASYNC, 20, 1522, 0, 0
 };
 
 static void PrintDriverInfo(DriverInformation_t *pDriver);
@@ -149,7 +149,7 @@ static void PrintDriverInfo(DriverInformation_t *pDriver)
     switch(pDriver->driverType)
     {
     case Driver_LinuxCdev:
-        inf.aimName = STRING_MOST_CH_CDEV;
+        inf.aimName = STRING_DRIVER_CH_CDEV;
         inf.linkName = pDriver->linkName;
         inf.aimParam = pDriver->drv.LinuxCdev.aimName;
         inf.channelName = pDriver->drv.LinuxCdev.channelName;
@@ -162,7 +162,7 @@ static void PrintDriverInfo(DriverInformation_t *pDriver)
         PrintDriverStructure(&inf);
         break;
     case Driver_LinuxV4l2:
-        inf.aimName = STRING_MOST_CH_V4L2;
+        inf.aimName = STRING_DRIVER_CH_V4L2;
         inf.linkName = pDriver->linkName;
         inf.aimParam = pDriver->drv.LinuxV4l2.aimName;
         inf.channelName = pDriver->drv.LinuxV4l2.channelName;
@@ -175,7 +175,7 @@ static void PrintDriverInfo(DriverInformation_t *pDriver)
         PrintDriverStructure(&inf);
         break;
     case Driver_LinuxAlsa:
-        inf.aimName = STRING_MOST_CH_ALSA;
+        inf.aimName = STRING_DRIVER_CH_ALSA;
         inf.linkName = pDriver->linkName;
         inf.aimParam = pDriver->drv.LinuxAlsa.aimName;
         inf.channelName = pDriver->drv.LinuxAlsa.channelName;
@@ -268,9 +268,9 @@ static const char *GetDirection(DriverCfgDirection_t dir)
     switch(dir)
     {
     case DriverCfgDirection_Tx:
-        return STRING_MOST_CH_TX;
+        return STRING_DRIVER_CH_TX;
     case DriverCfgDirection_Rx:
-        return STRING_MOST_CH_RX;
+        return STRING_DRIVER_CH_RX;
     default:
         break;
     }
@@ -282,13 +282,13 @@ static const char *GetDataType(DriverCfgDataType_t dtyp)
     switch(dtyp)
     {
     case DriverCfgDataType_Control:
-        return STRING_MOST_CH_CONTROL;
+        return STRING_DRIVER_CH_CONTROL;
     case DriverCfgDataType_Async:
-        return STRING_MOST_CH_ASYNC;
+        return STRING_DRIVER_CH_ASYNC;
     case DriverCfgDataType_Sync:
-        return STRING_MOST_CH_SYNC;
+        return STRING_DRIVER_CH_SYNC;
     case DriverCfgDataType_Isoc:
-        return STRING_MOST_CH_ISOC;
+        return STRING_DRIVER_CH_ISOC;
     default:
         break;
     }
