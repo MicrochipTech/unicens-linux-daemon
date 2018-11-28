@@ -1,27 +1,27 @@
 <?xml version="1.0"?>
-<Unicens AsyncBandwidth="20" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+<Unicens AsyncBandwidth="52" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd" Network="INICnet-50">
     <!-- Server Node -->
-    <Node Address="0x200">
-        <AVPConnection IsocPacketSize="188" Driver="VoD-Driver">
+    <Node Address="0x200" Name="Route_VoD-Server">
+        <AVPConnection IsocPacketSize="188" Driver="Driver_VoD">
             <USBSocket EndpointAddress="0x1" FramesPerTransaction="2"/>
-            <NetworkSocket Route="VoD" Bandwidth="60"/>
+            <NetworkSocket Route="Route_VoD" Bandwidth="60"/>
         </AVPConnection>
     </Node>
     
     <!-- Client Node -->
-    <Node Address="0x2B0">
-        <AVPConnection IsocPacketSize="188" Driver="VoD-Driver">
-            <NetworkSocket Route="VoD" Bandwidth="60"/>
+    <Node Address="0x2B0" Name="Route_VoD-Client">
+        <AVPConnection IsocPacketSize="188" Driver="Driver_VoD">
+            <NetworkSocket Route="Route_VoD" Bandwidth="60"/>
             <USBSocket EndpointAddress="0x81" FramesPerTransaction="2"/>
         </AVPConnection>
-        <SyncConnection Driver="stereo-cdev">
+        <SyncConnection Driver="Driver_Stereo">
             <USBSocket EndpointAddress="0x1" FramesPerTransaction="128"/>
             <NetworkSocket Route="DecodedAudio" Bandwidth="4"/>
         </SyncConnection>
     </Node>
 
     <!-- Slim Amplifier -->
-    <Node Address="0x270" Script="slim-amp-config">
+    <Node Address="0x270" Script="slim-amp-config" Name="Amplifier">
         <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
         <SyncConnection>
             <NetworkSocket Route="DecodedAudio" Bandwidth="4"/>
@@ -30,7 +30,7 @@
     </Node>
 
     <!-- Aux IO -->
-    <Node Address="0x240" Script="aux-io-config">
+    <Node Address="0x240" Script="aux-io-config" Name="AUX IO">
         <StreamPort ClockConfig="64Fs" DataAlignment="Left16Bit"/>
         <SyncConnection>
             <NetworkSocket Route="DecodedAudio" Bandwidth="4"/>
@@ -63,12 +63,12 @@
     </Script>
     
     <!-- Driver settings for avp channel -->
-    <Driver Name="VoD-Driver">
+    <Driver Name="Driver_VoD">
         <Cdev BufferSize="7520" BufferCount="8" Name="avp-vod"/>
     </Driver>
     
     <!-- Driver for stereo audio channel -->
-    <Driver Name="stereo-cdev">
+    <Driver Name="Driver_Stereo">
         <Cdev BufferSize="4096" BufferCount="8" Name="sync-stereo"/>
     </Driver>
 </Unicens>
