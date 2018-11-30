@@ -31,18 +31,33 @@
 #include <stdio.h>
 #include "ucsi_api.h"
 #include "ucsi_print.h"
-/************************************************************************/
-/* Private Definitions and variables                                    */
-/************************************************************************/
-#define TRACE_BUFFER_SZ 100
-static char m_traceBuffer[TRACE_BUFFER_SZ];
 
 /************************************************************************/
 /* Private Definitions and variables                                    */
 /************************************************************************/
+
+#define TRACE_BUFFER_SZ 100
 #define MAGIC (0xA144BEAF)
 #define LOCAL_NODE_ADDR (0x1)
 #define UNKNOWN_NODE_ADDR (0xFFFF)
+
+#define LIB_VERSION_MAJOR   (2)
+#define LIB_VERSION_MINOR   (2)
+#define LIB_VERSION_RELEASE (0)
+#define LIB_VERSION_BUILD   (4073)
+
+static char m_traceBuffer[TRACE_BUFFER_SZ];
+
+/************************************************************************/
+/* Throw error if UNICENS Library is not existent or wrong version      */
+/************************************************************************/
+
+#if !defined(UCS_VERSION_MAJOR) || !defined(UCS_VERSION_MINOR) || !defined(UCS_VERSION_RELEASE) || !defined(UCS_VERSION_BUILD)
+#error UNICENS library is missing. Perform command 'git submodule update --init --recursive'
+#endif
+#if (UCS_VERSION_MAJOR != LIB_VERSION_MAJOR) ||  (UCS_VERSION_MINOR != LIB_VERSION_MINOR) || (UCS_VERSION_RELEASE != LIB_VERSION_RELEASE) || (UCS_VERSION_BUILD != LIB_VERSION_BUILD)
+#error UNICENS library is outdated. Perform command 'git submodule update --init --recursive'
+#endif
 
 /************************************************************************/
 /* Private Function Prototypes                                          */
