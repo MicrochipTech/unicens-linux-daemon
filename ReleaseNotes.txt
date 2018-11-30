@@ -2,21 +2,20 @@ UNICENS V2 Daemon (unicensd)
 ============================
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! Only use OS81118 Firmware V2.5.0 or newer                                          !!!
-!!! Make sure that you enable UNICENS mode in ConfigString                             !!!
-!!! Make sure that you set an unique node address in IdentString                       !!!
-!!! Make sure that you set an unique MAC address in IdentString, when device use MEP   !!!
-!!! Use default config feature from MOST Linux Driver to setup USB/MLB.                !!!
 !!! Control Channel default mapping: /dev/inic-control-rx  and  /dev/inic-control-tx   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 V04.03.00
 =========
+- Integrated UNICENS library V2.2.0
+- Warning: "MOSTSocket" is no longer supports in UNICENS XML files. Use "NetworkSocket" instead.
 - Generated driver names are now the same for static and dynamic configuration
+- Improved default UNICENS XML example configuration files
+- Improved node and resource printing
 
 V04.02.01
 =========
-- repaired compatability to QNX
+- repaired compatibility to QNX
 - Preventing to run dynamic configuration without specified XML file
 
 V04.02.00
@@ -24,7 +23,7 @@ V04.02.00
 - printing table with all nodes and resources (disable with -hide parameter)
 - new command line parameters: -v and -vv to enable some / all debug informations
 - new command line parameters: -lld to enable low level driver traces
-- SwitchingRoute command is exectuded sequential
+- SwitchingRoute command is executed sequential
 
 V04.01.00
 =========
@@ -40,7 +39,7 @@ V04.00.04
 - unicensd does not automatically create GPIO port.
   This prevents the error "Synchronization to the remote device failed due to transmission error. ErrorCode: 0x07".
   But in order to use GPIOs now, you need to create the port in the XML file first
-- unicensd prints verrsion and help screen
+- unicensd prints version and help screen
 - unicensd recover from LLD failures
 - unicensd xml:fixed non working pause in scripts
 - unicensd xml:improved handling of routes

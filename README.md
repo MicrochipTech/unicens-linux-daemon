@@ -1,12 +1,8 @@
-
 # UNICENS DAEMON (unicensd)
 
 This project is an example integration of the [UNICENS library](https://github.com/MicrochipTech/unicens) for any kind of Linux and Android.
 
 Compatible Hardware can be found here: [K2L Slim Board Familiy](https://www.k2l.de/products/34/MOST150%20Slim%20Board%20Family/)
-
-
-
 
 To get it running, you will need to get compilers, cmake and git installed. On debian based machines enter:
 ```bash
@@ -18,6 +14,7 @@ To get the source code, enter:
 $ git clone --recurse-submodules https://github.com/MicrochipTech/unicens-linux-daemon.git
 $ cd unicens-linux-daemon
 ```
+
 :exclamation: Important note :exclamation: 
 If you encounter problems after updating the sources, please perform:
 ```bash
