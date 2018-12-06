@@ -108,18 +108,10 @@ bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx)
 {
     if (NULL == pControlCdevTx || NULL == pControlCdevRx)
         return false;
-    if (!DoesFileExist(ExtendControlCdevName(pControlCdevTx, "ep0f")) &&
-        !DoesFileExist(ExtendControlCdevName(pControlCdevTx, "ep07")) &&
-        !DoesFileExist(ExtendControlCdevName(pControlCdevTx, "ca4")))
-    {
+    if (!DoesFileExist(ExtendControlCdevName(pControlCdevTx, "tx")))
         return false;
-    }
-    if (!DoesFileExist(ExtendControlCdevName(pControlCdevRx, "ep8f")) &&
-        !DoesFileExist(ExtendControlCdevName(pControlCdevRx, "ep87")) &&
-        !DoesFileExist(ExtendControlCdevName(pControlCdevRx, "ca2")))
-    {
+    if (!DoesFileExist(ExtendControlCdevName(pControlCdevRx, "rx")))
         return false;
-    }
     return true;
 }
 
@@ -286,24 +278,46 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
         curPhy = DriverPhyMlb;
     else return;
 
-    if (0 == strcmp("ep0f", channelName) || 0 == strcmp("ep8f", channelName) ||
-        0 == strcmp("ep07", channelName) || 0 == strcmp("ep87", channelName) ||
-        0 == strcmp("ca2", channelName) || 0 == strcmp("ca4", channelName))
+    if (0 == strcmp("ep0f", channelName) ||
+        0 == strcmp("ep07", channelName) ||
+        0 == strcmp("ca4", channelName))
     {
         drv = &localDrv;
         localDrv.driverType = Driver_LinuxCdev;
-        localDrv.drv.LinuxCdev.aimName = "control";
+        localDrv.drv.LinuxCdev.aimName = "control-tx";
         localDrv.drv.LinuxCdev.dataType = DriverCfgDataType_Control;
         localDrv.drv.LinuxCdev.numBuffers = 16;
         localDrv.drv.LinuxCdev.bufferSize = 64;
     }
-    else if (0 == strcmp("ep0e", channelName) || 0 == strcmp("ep8e", channelName) ||
-        0 == strcmp("ep06", channelName) || 0 == strcmp("ep86", channelName) ||
-        0 == strcmp("ca6", channelName) || 0 == strcmp("ca8", channelName))
+    else if (0 == strcmp("ep8f", channelName) ||
+        0 == strcmp("ep87", channelName) ||
+        0 == strcmp("ca2", channelName))
+    {
+        drv = &localDrv;
+        localDrv.driverType = Driver_LinuxCdev;
+        localDrv.drv.LinuxCdev.aimName = "control-rx";
+        localDrv.drv.LinuxCdev.dataType = DriverCfgDataType_Control;
+        localDrv.drv.LinuxCdev.numBuffers = 16;
+        localDrv.drv.LinuxCdev.bufferSize = 64;
+    }
+    else if (0 == strcmp("ep0e", channelName) ||
+        0 == strcmp("ep06", channelName) ||
+        0 == strcmp("ca8", channelName))
     {
         drv = &localDrv;
         localDrv.driverType = Driver_LinuxNetwork;
-        localDrv.drv.LinuxNetwork.aimName = "network";
+        localDrv.drv.LinuxNetwork.aimName = "network-tx";
+        localDrv.drv.LinuxNetwork.dataType = DriverCfgDataType_Async;
+        localDrv.drv.LinuxNetwork.numBuffers = 20;
+        localDrv.drv.LinuxNetwork.bufferSize = 1522;
+    }
+    else if (0 == strcmp("ep8e", channelName) ||
+        0 == strcmp("ep86", channelName) ||
+        0 == strcmp("ca6", channelName))
+    {
+        drv = &localDrv;
+        localDrv.driverType = Driver_LinuxNetwork;
+        localDrv.drv.LinuxNetwork.aimName = "network-rx";
         localDrv.drv.LinuxNetwork.dataType = DriverCfgDataType_Async;
         localDrv.drv.LinuxNetwork.numBuffers = 20;
         localDrv.drv.LinuxNetwork.bufferSize = 1522;
@@ -426,7 +440,7 @@ static bool LinkCdev(const char* channelName, const char* deviceName, DriverInfo
         strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
-    snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
+    snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
     return WriteCharactersToFile("/sys/class/most/mostcore/aims/cdev", "add_link", val);
 }
 
@@ -469,9 +483,8 @@ static bool LinkAlsa(const char* channelName, const char* deviceName, DriverInfo
         strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
-    snprintf(val, sizeof(val), "%s:%s:inic-%s-%s.%dx%d", deviceName, channelName, 
+    snprintf(val, sizeof(val), "%s:%s:inic-%s.%dx%d", deviceName, channelName, 
         aimName,
-        channelName,
         drv->amountOfChannels,
         drv->resolutionInBit
         );
@@ -517,7 +530,7 @@ static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInfo
         strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
-    snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
+    snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
     return WriteCharactersToFile("/sys/class/most/mostcore/aims/v4l", "add_link", val);
 }
 
@@ -551,6 +564,7 @@ static bool LinkNetwork(const char* channelName, const char* deviceName, DriverI
         strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
-    snprintf(val, sizeof(val), "%s:%s:inic-%s-%s", deviceName, channelName, aimName, channelName);
+    snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
     return WriteCharactersToFile("/sys/class/most/mostcore/aims/networking", "add_link", val);
 }
+

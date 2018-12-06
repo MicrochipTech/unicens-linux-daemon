@@ -57,10 +57,8 @@ static const char* STRM_ALIGN_L24 =         "Left24Bit";
 static const char* STRM_ALIGN_R16 =         "Right16Bit";
 static const char* STRM_ALIGN_R24 =         "Right24Bit";
 static const char* STRM_ALIGN_SEQUENTIAL =  "Seq";
-#ifdef TDM_STREAM_FORMAT_SUPPORTED
 static const char* STRM_ALIGN_TDM16 =       "TDM16Bit";
 static const char* STRM_ALIGN_TDM24 =       "TDM24Bit";
-#endif
 
 static const char* I2S_PIN_SRXA0 =          "SRXA0";
 static const char* I2S_PIN_SRXA1 =          "SRXA1";
@@ -122,35 +120,35 @@ void FreeObjList(struct UcsXmlObjectList *cur)
     }
 }
 
-bool GetMostSocket(Ucs_Xrm_MostSocket_t **mostSoc, struct MostSocketParameters *param)
+bool GetNetworkSocket(Ucs_Xrm_NetworkSocket_t **networkSoc, struct NetworkSocketParameters *param)
 {
-    Ucs_Xrm_MostSocket_t *soc = NULL;
-    CHECK_POINTER(mostSoc);
+    Ucs_Xrm_NetworkSocket_t *soc = NULL;
+    CHECK_POINTER(networkSoc);
     CHECK_POINTER(param);
     CHECK_POINTER(param->list);
-    soc = MCalloc(param->list, 1, sizeof(Ucs_Xrm_MostSocket_t));
+    soc = MCalloc(param->list, 1, sizeof(Ucs_Xrm_NetworkSocket_t));
     CHECK_POINTER(soc);
-    *mostSoc = soc;
-    soc->resource_type = UCS_XRM_RC_TYPE_MOST_SOCKET;
-    soc->most_port_handle = 0x0D00;
+    *networkSoc = soc;
+    soc->resource_type = UCS_XRM_RC_TYPE_NW_SOCKET;
+    soc->nw_port_handle = 0x0D00;
     soc->bandwidth = param->bandwidth;
     soc->direction = param->isSource ? UCS_SOCKET_DIR_INPUT : UCS_SOCKET_DIR_OUTPUT;
     switch(param->dataType)
     {
     case SYNC_DATA:
-        soc->data_type = UCS_MOST_SCKT_SYNC_DATA;
+        soc->data_type = UCS_NW_SCKT_SYNC_DATA;
         break;
     case AV_PACKETIZED:
-        soc->data_type = UCS_MOST_SCKT_AV_PACKETIZED;
+        soc->data_type = UCS_NW_SCKT_AV_PACKETIZED;
         break;
     case QOS_IP:
-        soc->data_type = UCS_MOST_SCKT_QOS_IP;
+        soc->data_type = UCS_NW_SCKT_QOS_IP;
         break;
     case DISC_FRAME_PHASE:
-        soc->data_type = UCS_MOST_SCKT_DISC_FRAME_PHASE;
+        soc->data_type = UCS_NW_SCKT_DISC_FRAME_PHASE;
         break;
     default:
-        ASSERT_FALSE("GetMostSocket->dataType", "");
+        ASSERT_FALSE("GetNetworkSocket->dataType", "");
     }
     return true;
 }
@@ -176,7 +174,7 @@ bool GetUsbPort(Ucs_Xrm_UsbPort_t **usbPort, struct UsbPortParameters *param)
     if (0 == strcmp(USB_PHY_STANDARD, param->physicalLayer))
         port->physical_layer = UCS_USB_PHY_LAYER_STANDARD;
     else if (0 == strcmp(USB_PHY_HSIC, param->physicalLayer))
-        port->physical_layer = UCS_USB_PHY_LAYER_HSCI;
+        port->physical_layer = UCS_USB_PHY_LAYER_HSIC;
     else ASSERT_FALSE("GetUsbPort->physical_layer", param->physicalLayer);
     return true;
 }
@@ -359,12 +357,10 @@ bool GetStrmPort(Ucs_Xrm_StrmPort_t **strmPort, struct StrmPortParameters *param
         port->data_alignment = UCS_STREAM_PORT_ALGN_RIGHT24BIT;
     else if (0 == strcmp(param->dataAlignment, STRM_ALIGN_SEQUENTIAL))
         port->data_alignment = UCS_STREAM_PORT_ALGN_SEQ;
-#ifdef TDM_STREAM_FORMAT_SUPPORTED
     else if (0 == strcmp(param->dataAlignment, STRM_ALIGN_TDM16))
         port->data_alignment = UCS_STREAM_PORT_ALGN_TDM16BIT;
     else if (0 == strcmp(param->dataAlignment, STRM_ALIGN_TDM24))
         port->data_alignment = UCS_STREAM_PORT_ALGN_TDM24BIT;
-#endif
     else ASSERT_FALSE("GetStrmPort->dataAlignment", param->dataAlignment);
     return true;
 }
@@ -429,7 +425,7 @@ bool GetSplitter(Ucs_Xrm_Splitter_t **splitter, struct SplitterParameters *param
     split = MCalloc(param->list, 1, sizeof(Ucs_Xrm_Splitter_t));
     CHECK_POINTER(split);
     *splitter = split;
-    split->most_port_handle = 0x0D00;
+    split->nw_port_handle = 0x0D00;
     split->resource_type = UCS_XRM_RC_TYPE_SPLITTER;
     split->bytes_per_frame = param->bytesPerFrame;
     split->socket_in_obj_ptr = param->inSoc;
@@ -445,7 +441,7 @@ bool GetCombiner(Ucs_Xrm_Combiner_t **combiner, struct CombinerParameters *param
     comb = MCalloc(param->list, 1, sizeof(Ucs_Xrm_Combiner_t));
     CHECK_POINTER(comb);
     *combiner = comb;
-    comb->most_port_handle = 0x0D00;
+    comb->nw_port_handle = 0x0D00;
     comb->resource_type = UCS_XRM_RC_TYPE_COMBINER;
     comb->bytes_per_frame = param->bytesPerFrame;
     comb->port_socket_obj_ptr = param->outSoc;

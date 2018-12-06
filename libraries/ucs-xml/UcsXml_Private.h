@@ -57,14 +57,14 @@ struct UcsXmlObjectList
 void *MCalloc(struct UcsXmlObjectList *list, uint32_t nElem, uint32_t elemSize);
 void FreeObjList(struct UcsXmlObjectList *cur);
 
-struct MostSocketParameters
+struct NetworkSocketParameters
 {
     struct UcsXmlObjectList *list;
     bool isSource;
     MDataType_t dataType;
     uint16_t bandwidth;
 };
-bool GetMostSocket(Ucs_Xrm_MostSocket_t **mostSoc, struct MostSocketParameters *param);
+bool GetNetworkSocket(Ucs_Xrm_NetworkSocket_t **networkSoc, struct NetworkSocketParameters *param);
 
 struct UsbPortParameters
 {

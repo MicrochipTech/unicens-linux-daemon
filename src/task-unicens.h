@@ -43,6 +43,7 @@ typedef struct
 {
     bool noRouteTable;
     bool lldTrace;
+    bool promiscuousMode;
     const char *cfgFileName;
     uint16_t drv1LocalNodeAddr;
     const char *drv1Filter;

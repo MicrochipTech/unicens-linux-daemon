@@ -230,12 +230,12 @@ void UcsXml_CB_OnError(const char format[], uint16_t vargsCnt, ...)
 static void PrintHelp(void)
 {
     ConsolePrintfStart(PRIO_HIGH, "Usage: xml2struct [OPTION]... [FILE]\r\n");
-    ConsolePrintfContinue("Translate a UNICENS XML file into structures for the UNICENS library or structures for the MOST Linux Driver.\r\n\r\n");
+    ConsolePrintfContinue("Translate a UNICENS XML file into structures for the UNICENS library or structures for the INIC Linux Driver.\r\n\r\n");
     ConsolePrintfContinue("  -ucs                     Print UNICENS C structures\r\n");
     ConsolePrintfContinue("  -header                  Print UNICENS H file\r\n");
     ConsolePrintfContinue("  -prefix [Name]           Adds the given name before any variable or structure (-ucs and -header mode only)\r\n");
-    ConsolePrintfContinue("  -drv [Address]           Print MOST Linux Driver structure for the given node address (value will be interpreted as hex)\r\n");
-    ConsolePrintfContinue("  -all                     Print all possible MOST Linux Driver structures for all nodes.\r\n");
+    ConsolePrintfContinue("  -drv [Address]           Print INIC Linux Driver structure for the given node address (value will be interpreted as hex)\r\n");
+    ConsolePrintfContinue("  -all                     Print all possible INIC Linux Driver structures for all nodes.\r\n");
     ConsolePrintfContinue("                           There is a file seperator inserted after each configuration\r\n");
     ConsolePrintfContinue("  --version                Prints the version string of this program and exit\r\n\r\n");
     ConsolePrintfContinue("  --help                   Prints this help and exit\r\n\r\n");

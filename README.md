@@ -15,6 +15,12 @@ $ git clone --recurse-submodules https://github.com/MicrochipTech/unicens-linux-
 $ cd unicens-linux-daemon
 ```
 
+:exclamation: Important note :exclamation: 
+If you encounter problems after updating the sources, please perform:
+```bash
+$ git submodule update --init --recursive
+```
+
 Building is easy:
 ```bash
 $ ./build.sh
@@ -28,8 +34,8 @@ Now the binaries `unicensd` and `xml2struct` shall be available in the current f
 In order to run unicensd, first make sure [MOST Linux Driver](https://github.com/microchip-ais/linux/blob/mchp-dev/mld/README.md) is loaded.
 The daemon searches by default for these control enabled character devices (CDEVs):
 
- - /dev/inic-usb-crx
- - /dev/inic-usb-ctx
+ - /dev/inic-control-rx
+ - /dev/inic-control-tx
 
 If you configured the driver in a different way, you can pass your CDEV names to unicensd by command line parameter:
 ```bash

@@ -38,7 +38,7 @@
 #include "Console.h"
 #include "Xml2Struct.h"
 
-static const char *VERSION_STR = "V4.2.0";
+static const char *VERSION_STR = "V4.4.0";
 
 #define CASE(X) case X: { return #X; }
 #define CHECK_ASSERT(X) { \
@@ -61,7 +61,7 @@ struct ObjectList
 
 struct NameLookupTable
 {
-    Ucs_Xrm_ResObject_t *element;
+    UCS_NS_CONST Ucs_Xrm_ResObject_t *element;
     char *name;
     struct NameLookupTable *next;
 };
@@ -78,12 +78,12 @@ struct LocalVar
 static void PrintHeader(void);
 static void *Mcalloc(struct ObjectList *list, uint32_t nElem, uint32_t elemSize);
 static void Mfree(struct ObjectList *cur);
-static char *GetNameFromTable(Ucs_Xrm_ResObject_t *element);
-static void StoreNameInTable(Ucs_Xrm_ResObject_t *element, char *name);
+static char *GetNameFromTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element);
+static void StoreNameInTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element, char *name);
 static char *AllocateString(const char format[], uint16_t vargsCnt, ...);
-static char *GetVariableName(Ucs_Xrm_ResObject_t *element, const char *shortName);
+static char *GetVariableName(UCS_NS_CONST Ucs_Xrm_ResObject_t *element, const char *shortName);
 static void PrintDcPort(Ucs_Xrm_DefaultCreatedPort_t *port);
-static void PrintNetworkSocket(Ucs_Xrm_MostSocket_t *socket);
+static void PrintNetworkSocket(Ucs_Xrm_NetworkSocket_t *socket);
 static const char*GetMlbClkString(Ucs_Mlb_ClockConfig_t clk);
 static void PrintMlbPort(Ucs_Xrm_MlbPort_t *port);
 static void PrintMlbSocket(Ucs_Xrm_MlbSocket_t *socket);
@@ -103,7 +103,7 @@ static void PrintAvpCon(Ucs_Xrm_AvpCon_t *con);
 static const char*GetTypeString(Ucs_Xrm_ResObject_t *element);
 static const char*GetResourceTypeString(Ucs_Xrm_ResourceType_t *element);
 static const char*GetDirectionString(Ucs_SocketDirection_t dir);
-static const char*GetMostDataTypeString(Ucs_Most_SocketDataType_t dtyp);
+static const char*GetNetworkDataTypeString(Ucs_Network_SocketDataType_t dtyp);
 static const char*GetMlbDataTypeString(Ucs_Mlb_SocketDataType_t dtyp);
 static const char*GetUsbDataTypeString(Ucs_Usb_SocketDataType_t dtyp);
 static const char*GetStreamDataTypeString(Ucs_Stream_SocketDataType_t dtyp);
@@ -111,7 +111,7 @@ static const char*GetPortTypeString(Ucs_Xrm_PortType_t ptyp);
 static Ucs_Xrm_ResourceType_t GetType(Ucs_Xrm_ResObject_t *element);
 static void PrintUcsElement(Ucs_Xrm_ResObject_t *element);
 static void PrintJobs(Ucs_Xrm_ResObject_t **jobs_list_ptr);
-static void PrintScripts(Ucs_Ns_Script_t *scripts, uint8_t len, uint16_t nodeAddress);
+static void PrintScripts(UCS_NS_CONST Ucs_Ns_Script_t *scripts, uint8_t len, uint16_t nodeAddress);
 static void PrintNodes(Ucs_Rm_Node_t *nodes, uint8_t len);
 static const char*GetEndpointTypeString(Ucs_Rm_EndPointType_t eptyp);
 static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routePos);
@@ -172,11 +172,11 @@ void PrintUcsStructures(
     for (i = 0; i < nodSize; i++)
     {
         Ucs_Rm_Node_t *node = &pNod[i];
-        if (node->script_list_size)
+        if (node->init_script_list_size)
         {
             CHECK_ASSERT(node->signature_ptr);
             CHECK_ASSERT(0 != node->signature_ptr->node_address);
-            PrintScripts(node->script_list_ptr, node->script_list_size, node->signature_ptr->node_address);
+            PrintScripts(node->init_script_list_ptr, node->init_script_list_size, node->signature_ptr->node_address);
         }
     }
     if (0 == nodSize)
@@ -216,7 +216,7 @@ void PrintHeaderFile(const char *variablePrefix)
 static void PrintHeader(void) {
     ConsolePrintfStart(PRIO_HIGH, "/*------------------------------------------------------------------------------------------------*/\n");
     ConsolePrintfContinue("/* UNICENS Generated Network Configuration                                                        */\n");
-	ConsolePrintfContinue("/* Generator: xml2struct for Linux %s                                                         */\n", VERSION_STR);
+    ConsolePrintfContinue("/* Generator: xml2struct for Linux %s                                                         */\n", VERSION_STR);
     ConsolePrintfExit("/*------------------------------------------------------------------------------------------------*/\n");
 }
 
@@ -254,7 +254,7 @@ void Mfree(struct ObjectList *cur)
     }
 }
 
-static char *GetNameFromTable(Ucs_Xrm_ResObject_t *element)
+static char *GetNameFromTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element)
 {
     struct NameLookupTable *tail = &m.allNames;
     if (!element) return NULL;
@@ -267,7 +267,7 @@ static char *GetNameFromTable(Ucs_Xrm_ResObject_t *element)
     return NULL;
 }
 
-static void StoreNameInTable(Ucs_Xrm_ResObject_t *element, char *name)
+static void StoreNameInTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element, char *name)
 {
     struct NameLookupTable *tail = &m.allNames;
     CHECK_ASSERT(NULL == GetNameFromTable(element));
@@ -304,7 +304,7 @@ static char *AllocateString(const char format[], uint16_t vargsCnt, ...)
     return returnString;
 }
 
-static char *GetVariableName(Ucs_Xrm_ResObject_t *element, const char *shortName)
+static char *GetVariableName(UCS_NS_CONST Ucs_Xrm_ResObject_t *element, const char *shortName)
 {
     char *name = GetNameFromTable(element);
     if (name)
@@ -331,15 +331,15 @@ static void PrintDcPort(Ucs_Xrm_DefaultCreatedPort_t *port)
     ConsolePrintfExit(" };\n");
 }
 
-static void PrintNetworkSocket(Ucs_Xrm_MostSocket_t *socket)
+static void PrintNetworkSocket(Ucs_Xrm_NetworkSocket_t *socket)
 {
     ConsolePrintfStart(PRIO_HIGH, "%s %s = { \n"TAB C99(".resource_type = ")"%s,\n"TAB, 
             GetTypeString(socket), 
             GetVariableName(socket, "NetworkSocket"),
             GetResourceTypeString(&socket->resource_type));
-    ConsolePrintfContinue(C99(".most_port_handle = ")"0x%04X,\n"TAB, socket->most_port_handle);
+    ConsolePrintfContinue(C99(".nw_port_handle = ")"0x%04X,\n"TAB, socket->nw_port_handle);
     ConsolePrintfContinue(C99(".direction = ")"%s,\n"TAB, GetDirectionString(socket->direction));
-    ConsolePrintfContinue(C99(".data_type = ")"%s,\n"TAB, GetMostDataTypeString(socket->data_type));
+    ConsolePrintfContinue(C99(".data_type = ")"%s,\n"TAB, GetNetworkDataTypeString(socket->data_type));
     ConsolePrintfContinue(C99(".bandwidth = ")"%u", socket->bandwidth);
     ConsolePrintfExit(" };\n");
 }
@@ -394,7 +394,7 @@ static const char*GetUsbPhyString(Ucs_Usb_PhysicalLayer_t phy)
     switch(phy)
     {
         CASE(UCS_USB_PHY_LAYER_STANDARD);
-        CASE(UCS_USB_PHY_LAYER_HSCI);
+        CASE(UCS_USB_PHY_LAYER_HSIC);
     default:
         ConsolePrintf(PRIO_ERROR, "GetUsbPhyString phy:%d not implemented\n", phy);
         exit(-1);
@@ -457,10 +457,8 @@ static const char*GetStrmAlignString(Ucs_Stream_PortDataAlign_t align)
         CASE(UCS_STREAM_PORT_ALGN_RIGHT16BIT);
         CASE(UCS_STREAM_PORT_ALGN_RIGHT24BIT);
         CASE(UCS_STREAM_PORT_ALGN_SEQ);
-#ifdef TDM_STREAM_FORMAT_SUPPORTED
         CASE(UCS_STREAM_PORT_ALGN_TDM16BIT);
         CASE(UCS_STREAM_PORT_ALGN_TDM24BIT);
-#endif
     default:
         ConsolePrintf(PRIO_ERROR, "GetStrmAlignString align:%d not implemented\n", align);
         exit(-1);
@@ -516,7 +514,7 @@ static void PrintCombiner(Ucs_Xrm_Combiner_t *combiner)
             GetVariableName(combiner, "Combiner"),
             GetResourceTypeString(&combiner->resource_type));
     ConsolePrintfContinue(C99(".port_socket_obj_ptr = ")"&%s,\n"TAB, GetNameFromTable(combiner->port_socket_obj_ptr));
-    ConsolePrintfContinue(C99(".most_port_handle = ")"0x%04X,\n"TAB, combiner->most_port_handle);
+    ConsolePrintfContinue(C99(".nw_port_handle = ")"0x%04X,\n"TAB, combiner->nw_port_handle);
     ConsolePrintfContinue(C99(".bytes_per_frame = ")"%u", combiner->bytes_per_frame);
     ConsolePrintfExit(" };\n");
 }
@@ -529,7 +527,7 @@ static void PrintSplitter(Ucs_Xrm_Splitter_t *splitter)
             GetVariableName(splitter, "Splitter"),
             GetResourceTypeString(&splitter->resource_type));
     ConsolePrintfContinue(C99(".socket_in_obj_ptr = ")"&%s,\n"TAB, GetNameFromTable(splitter->socket_in_obj_ptr));
-    ConsolePrintfContinue(C99(".most_port_handle = ")"0x%04X,\n"TAB, splitter->most_port_handle);
+    ConsolePrintfContinue(C99(".nw_port_handle = ")"0x%04X,\n"TAB, splitter->nw_port_handle);
     ConsolePrintfContinue(C99(".bytes_per_frame = ")"%u", splitter->bytes_per_frame);
     ConsolePrintfExit(" };\n");
 }
@@ -595,7 +593,7 @@ static const char*GetTypeString(Ucs_Xrm_ResObject_t *element)
     switch(typ)
     {
         case UCS_XRM_RC_TYPE_DC_PORT: return "Ucs_Xrm_DefaultCreatedPort_t";
-        case UCS_XRM_RC_TYPE_MOST_SOCKET: return "Ucs_Xrm_MostSocket_t";
+        case UCS_XRM_RC_TYPE_NW_SOCKET: return "Ucs_Xrm_NetworkSocket_t";
         case UCS_XRM_RC_TYPE_MLB_PORT: return "Ucs_Xrm_MlbPort_t";
         case UCS_XRM_RC_TYPE_MLB_SOCKET: return "Ucs_Xrm_MlbSocket_t";
         case UCS_XRM_RC_TYPE_USB_PORT: return "Ucs_Xrm_UsbPort_t";
@@ -618,7 +616,7 @@ static const char*GetResourceTypeString(Ucs_Xrm_ResourceType_t *element)
     switch(typ)
     {
         CASE(UCS_XRM_RC_TYPE_DC_PORT);
-        CASE(UCS_XRM_RC_TYPE_MOST_SOCKET);
+        CASE(UCS_XRM_RC_TYPE_NW_SOCKET);
         CASE(UCS_XRM_RC_TYPE_MLB_PORT);
         CASE(UCS_XRM_RC_TYPE_MLB_SOCKET);
         CASE(UCS_XRM_RC_TYPE_USB_PORT);
@@ -647,16 +645,16 @@ static const char*GetDirectionString(Ucs_SocketDirection_t dir)
     }
 }
 
-static const char*GetMostDataTypeString(Ucs_Most_SocketDataType_t dtyp)
+static const char*GetNetworkDataTypeString(Ucs_Network_SocketDataType_t dtyp)
 {
     switch(dtyp)
     {
-        CASE(UCS_MOST_SCKT_SYNC_DATA);
-        CASE(UCS_MOST_SCKT_AV_PACKETIZED);
-        CASE(UCS_MOST_SCKT_QOS_IP);
-        CASE(UCS_MOST_SCKT_DISC_FRAME_PHASE);
+        CASE(UCS_NW_SCKT_SYNC_DATA);
+        CASE(UCS_NW_SCKT_AV_PACKETIZED);
+        CASE(UCS_NW_SCKT_QOS_IP);
+        CASE(UCS_NW_SCKT_DISC_FRAME_PHASE);
         default:
-            ConsolePrintf(PRIO_ERROR, "GetMostDataTypeString Ucs_Most_SocketDataType_t:%d not implemented\n", dtyp);
+            ConsolePrintf(PRIO_ERROR, "GetNetworkDataTypeString Ucs_Network_SocketDataType_t:%d not implemented\n", dtyp);
             exit(-1);
     }
 }
@@ -733,8 +731,8 @@ static void PrintUcsElement(Ucs_Xrm_ResObject_t *element)
     case UCS_XRM_RC_TYPE_DC_PORT:
         PrintDcPort((Ucs_Xrm_DefaultCreatedPort_t *)element);
         break;
-    case UCS_XRM_RC_TYPE_MOST_SOCKET:
-        PrintNetworkSocket((Ucs_Xrm_MostSocket_t *)element);
+    case UCS_XRM_RC_TYPE_NW_SOCKET:
+        PrintNetworkSocket((Ucs_Xrm_NetworkSocket_t *)element);
         break;
     case UCS_XRM_RC_TYPE_MLB_PORT:
         PrintMlbPort((Ucs_Xrm_MlbPort_t *)element);
@@ -793,11 +791,11 @@ static void PrintJobs(Ucs_Xrm_ResObject_t **jobs_list_ptr)
     ConsolePrintfExit(" };\n");
 }
 
-static void PrintScriptMessage(Ucs_Ns_ConfigMsg_t *msg, uint16_t nodeAddress, bool isRequest, uint8_t scriptNr)
+static void PrintScriptMessage(UCS_NS_CONST Ucs_Ns_ConfigMsg_t *msg, uint16_t nodeAddress, bool isRequest, uint8_t scriptNr)
 {
     uint8_t i;
     char *varName;
-    bool gotPayload = (0xFF != msg->DataLen && NULL != msg->DataPtr);
+    bool gotPayload = (0xFF != msg->data_size && NULL != msg->data_ptr);
     if (GetNameFromTable(msg)) return;
     varName = AllocateString("%s%s%dForNode%x", 3, 
         m.prefix,
@@ -806,31 +804,31 @@ static void PrintScriptMessage(Ucs_Ns_ConfigMsg_t *msg, uint16_t nodeAddress, bo
     StoreNameInTable(msg, varName);
     if (gotPayload)
     {
-        ConsolePrintfStart(PRIO_HIGH, "uint8_t Payload%s[] = {\n"TAB, varName);
-        for (i = 0; i < msg->DataLen; i++)
+        ConsolePrintfStart(PRIO_HIGH, "UCS_NS_CONST uint8_t Payload%s[] = {\n"TAB, varName);
+        for (i = 0; i < msg->data_size; i++)
         {
             if(i) ConsolePrintfContinue(", ");
-            ConsolePrintfContinue("0x%02X", msg->DataPtr[i]);
+            ConsolePrintfContinue("0x%02X", msg->data_ptr[i]);
         }
         ConsolePrintfExit(" };\n");
     }
-    ConsolePrintfStart(PRIO_HIGH, "Ucs_Ns_ConfigMsg_t %s = {\n"TAB, varName);
-    ConsolePrintfContinue(C99(".FBlockId = ")"0x%02X,\n"TAB, msg->FBlockId);
-    ConsolePrintfContinue(C99(".InstId = ")"0x%02X,\n"TAB, msg->InstId);
-    ConsolePrintfContinue(C99(".FunktId = ")"0x%04X,\n"TAB, msg->FunktId);
-    ConsolePrintfContinue(C99(".OpCode = ")"0x%02X,\n"TAB, msg->OpCode);
-    ConsolePrintfContinue(C99(".DataLen = ")"0x%02X,\n"TAB, msg->DataLen);
+    ConsolePrintfStart(PRIO_HIGH, "UCS_NS_CONST Ucs_Ns_ConfigMsg_t %s = {\n"TAB, varName);
+    ConsolePrintfContinue(C99(".fblock_id = ")"0x%02X,\n"TAB, msg->fblock_id);
+    ConsolePrintfContinue(C99(".inst_id = ")"0x%02X,\n"TAB, msg->inst_id);
+    ConsolePrintfContinue(C99(".funct_id = ")"0x%04X,\n"TAB, msg->funct_id);
+    ConsolePrintfContinue(C99(".op_type = ")"0x%02X,\n"TAB, msg->op_type);
+    ConsolePrintfContinue(C99(".data_size = ")"0x%02X,\n"TAB, msg->data_size);
     if (gotPayload)
-        ConsolePrintfContinue(C99(".DataPtr = ")"Payload%s", varName);
+        ConsolePrintfContinue(C99(".data_ptr = ")"Payload%s", varName);
     else
-        ConsolePrintfContinue(C99(".DataPtr = ")"NULL");
+        ConsolePrintfContinue(C99(".data_ptr = ")"NULL");
     ConsolePrintfExit(" };\n");
 }
 
-static void PrintScripts(Ucs_Ns_Script_t *scripts, uint8_t len, uint16_t nodeAddress)
+static void PrintScripts(UCS_NS_CONST Ucs_Ns_Script_t *scripts, uint8_t len, uint16_t nodeAddress)
 {
     uint8_t i;
-    Ucs_Ns_Script_t *script = NULL;
+    UCS_NS_CONST Ucs_Ns_Script_t *script = NULL;
     char *varName;
     if (NULL == scripts || 0 == len) return;
     if (GetNameFromTable(scripts)) return;
@@ -844,7 +842,7 @@ static void PrintScripts(Ucs_Ns_Script_t *scripts, uint8_t len, uint16_t nodeAdd
     }
     varName = AllocateString("%sScriptsForNode%X", 2, m.prefix, nodeAddress);
     StoreNameInTable(scripts, varName);
-    ConsolePrintfStart(PRIO_HIGH, "Ucs_Ns_Script_t %s[] = {\n"TAB"{\n"TAB, varName);
+    ConsolePrintfStart(PRIO_HIGH, "UCS_NS_CONST Ucs_Ns_Script_t %s[] = {\n"TAB"{\n"TAB, varName);
     for (i = 0; i < len; i++ )
     {
         script = &scripts[i];
@@ -888,15 +886,15 @@ static void PrintNodes(Ucs_Rm_Node_t *nodes, uint8_t len)
         StoreNameInTable(node, varName);
         if(i) ConsolePrintfContinue(", {\n"TAB);
         ConsolePrintfContinue(TAB C99(".signature_ptr = ")"&%sSignatureForNode%X,\n"TAB, m.prefix, addr);
-        if (node->script_list_ptr && node->script_list_size)
+        if (node->init_script_list_ptr && node->init_script_list_size)
         {
-            ConsolePrintfContinue(TAB C99(".script_list_ptr = ")"%s,\n"TAB, GetNameFromTable(node->script_list_ptr));
-            ConsolePrintfContinue(TAB C99(".script_list_size = ")"%u\n"TAB, node->script_list_size);
+            ConsolePrintfContinue(TAB C99(".init_script_list_ptr = ")"%s,\n"TAB, GetNameFromTable(node->init_script_list_ptr));
+            ConsolePrintfContinue(TAB C99(".init_script_list_size = ")"%u\n"TAB, node->init_script_list_size);
         }
         else
         {
-            ConsolePrintfContinue(TAB C99(".script_list_ptr = ")"NULL,\n"TAB);
-            ConsolePrintfContinue(TAB C99(".script_list_size = ")"0\n"TAB);
+            ConsolePrintfContinue(TAB C99(".init_script_list_ptr = ")"NULL,\n"TAB);
+            ConsolePrintfContinue(TAB C99(".init_script_list_size = ")"0\n"TAB);
         }
         ConsolePrintfContinue("}");
     }

@@ -37,7 +37,7 @@ extern "C" {
 #include <stdint.h>
 #include "ucs_api.h"
     
-/*#define C99_STRUCTS*/
+#define C99_STRUCTS
 #define TAB "    "
 
 const char *GetXml2StructVersion(void);

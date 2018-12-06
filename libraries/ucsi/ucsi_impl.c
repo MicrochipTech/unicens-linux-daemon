@@ -31,18 +31,33 @@
 #include <stdio.h>
 #include "ucsi_api.h"
 #include "ucsi_print.h"
-/************************************************************************/
-/* Private Definitions and variables                                    */
-/************************************************************************/
-#define TRACE_BUFFER_SZ 100
-static char m_traceBuffer[TRACE_BUFFER_SZ];
 
 /************************************************************************/
 /* Private Definitions and variables                                    */
 /************************************************************************/
+
+#define TRACE_BUFFER_SZ 100
 #define MAGIC (0xA144BEAF)
 #define LOCAL_NODE_ADDR (0x1)
 #define UNKNOWN_NODE_ADDR (0xFFFF)
+
+#define LIB_VERSION_MAJOR   (2)
+#define LIB_VERSION_MINOR   (2)
+#define LIB_VERSION_RELEASE (0)
+#define LIB_VERSION_BUILD   (4073)
+
+static char m_traceBuffer[TRACE_BUFFER_SZ];
+
+/************************************************************************/
+/* Throw error if UNICENS Library is not existent or wrong version      */
+/************************************************************************/
+
+#if !defined(UCS_VERSION_MAJOR) || !defined(UCS_VERSION_MINOR) || !defined(UCS_VERSION_RELEASE) || !defined(UCS_VERSION_BUILD)
+#error UNICENS library is missing. Perform command 'git submodule update --init --recursive'
+#endif
+#if (UCS_VERSION_MAJOR != LIB_VERSION_MAJOR) ||  (UCS_VERSION_MINOR != LIB_VERSION_MINOR) || (UCS_VERSION_RELEASE != LIB_VERSION_RELEASE) || (UCS_VERSION_BUILD != LIB_VERSION_BUILD)
+#error UNICENS library is outdated. Perform command 'git submodule update --init --recursive'
+#endif
 
 /************************************************************************/
 /* Private Function Prototypes                                          */
@@ -58,15 +73,16 @@ static uint16_t OnUnicensGetTime(void *user_ptr);
 static void OnUnicensService( void *user_ptr );
 static void OnUnicensError( Ucs_Error_t error_code, void *user_ptr );
 static void OnUnicensAppTimer( uint16_t timeout, void *user_ptr );
-static void OnUnicensDebugErrorMsg(Msg_MostTel_t *m, void *user_ptr);
+static void OnUnicensDebugErrorMsg(Ucs_Message_t *m, void *user_ptr);
 static void OnLldCtrlStart( Ucs_Lld_Api_t* api_ptr, void *inst_ptr, void *lld_user_ptr );
 static void OnLldCtrlStop( void *lld_user_ptr );
+static void OnLldResetInic(void *lld_user_ptr);
 static void OnLldCtrlRxMsgAvailable( void *lld_user_ptr );
 static void OnLldCtrlTxTransmitC( Ucs_Lld_TxMsg_t *msg_ptr, void *lld_user_ptr );
 static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_t route_infos, void *user_ptr);
 static void OnUnicensNetworkStatus(uint16_t change_mask, uint16_t events, Ucs_Network_Availability_t availability,
-    Ucs_Network_AvailInfo_t avail_info, Ucs_Network_AvailTransCause_t avail_trans_cause, uint16_t node_address,
-    uint8_t node_position, uint8_t max_position, uint16_t packet_bw, void *user_ptr);
+    Ucs_Network_AvailInfo_t avail_info,Ucs_Network_AvailTransCause_t avail_trans_cause, uint16_t node_address,
+    uint8_t max_position, uint16_t packet_bw, void *user_ptr );
 static void OnUnicensDebugXrmResources(Ucs_Xrm_ResourceType_t resource_type,
     Ucs_Xrm_ResObject_t *resource_ptr, Ucs_Xrm_ResourceInfos_t resource_infos,
     Ucs_Rm_EndPoint_t *endpoint_inst_ptr, void *user_ptr);
@@ -74,8 +90,8 @@ static void OnUcsInitResult(Ucs_InitResult_t result, void *user_ptr);
 static void OnUcsStopResult(Ucs_StdResult_t result, void *user_ptr);
 static void OnUcsGpioPortCreate(uint16_t node_address, uint16_t gpio_port_handle, Ucs_Gpio_Result_t result, void *user_ptr);
 static void OnUcsGpioPortWrite(uint16_t node_address, uint16_t gpio_port_handle, uint16_t current_state, uint16_t sticky_state, Ucs_Gpio_Result_t result, void *user_ptr);
-static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_Node_t *node_ptr, void *user_ptr);
-static void OnUcsNsRun(Ucs_Rm_Node_t * node_ptr, Ucs_Ns_ResultCode_t result, void *ucs_user_ptr);
+static void OnUcsMgrReport(Ucs_MgrReport_t code, Ucs_Signature_t *signature_ptr, Ucs_Rm_Node_t *node_ptr, void *user_ptr);
+static void OnUcsNsRun(uint16_t node_address, Ucs_Ns_ResultCode_t result, Ucs_Ns_ErrorInfo_t error_info, void *ucs_user_ptr);
 static void OnUcsAmsRxMsgReceived(void *user_ptr);
 static void OnUcsGpioTriggerEventStatus(uint16_t node_address, uint16_t gpio_port_handle,
     uint16_t rising_edges, uint16_t falling_edges, uint16_t levels, void * user_ptr);
@@ -83,6 +99,7 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     uint8_t i2c_slave_address, uint8_t data_len, Ucs_I2c_Result_t result, void *user_ptr);
 static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
             uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr);
+static void OnUcsPacketFilterMode(uint16_t node_address, Ucs_StdResult_t result, void *user_ptr);
 #if ENABLE_AMS_LIB
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
 #endif
@@ -130,6 +147,7 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
     my->uniInitData.lld.lld_user_ptr = my;
     my->uniInitData.lld.start_fptr =  &OnLldCtrlStart;
     my->uniInitData.lld.stop_fptr = &OnLldCtrlStop;
+    my->uniInitData.lld.reset_fptr = &OnLldResetInic;
     my->uniInitData.lld.rx_available_fptr = &OnLldCtrlRxMsgAvailable;
     my->uniInitData.lld.tx_transmit_fptr = &OnLldCtrlTxTransmitC;
 
@@ -173,8 +191,6 @@ bool UCSI_NewConfig(UCSI_Data_t *my,
 
 bool UCSI_ExecuteScript(UCSI_Data_t *my, uint16_t targetAddress, Ucs_Ns_Script_t *pScriptList, uint8_t scriptListLength)
 {
-    uint8_t i = 0;
-    Ucs_Rm_Node_t *pNode = NULL;
     UnicensCmdEntry_t e;
     assert(MAGIC == my->magic);
     if (NULL == my) return false;
@@ -184,24 +200,10 @@ bool UCSI_ExecuteScript(UCSI_Data_t *my, uint16_t targetAddress, Ucs_Ns_Script_t
     {
         return false;
     }
-    for (i = 0; i < my->uniInitData.mgr.nodes_list_size; i++)
-    {
-        Ucs_Rm_Node_t *pTempNode = &my->uniInitData.mgr.nodes_list_ptr[i];
-        if (NULL == pTempNode)
-            break;
-        if (pTempNode->signature_ptr && targetAddress == pTempNode->signature_ptr->node_address)
-        {
-            /* Found correct node in List */
-            pNode = pTempNode;
-            break;
-        }
-    }
-    if (NULL == pNode)
-        return false;
-    pNode->script_list_ptr = pScriptList;
-    pNode->script_list_size = scriptListLength;
     e.cmd = UnicensCmd_NsRun;
-    e.val.NsRun.node_ptr = pNode;
+    e.val.NsRun.nodeAddress = targetAddress;
+    e.val.NsRun.scriptPtr = pScriptList;
+    e.val.NsRun.scriptSize = scriptListLength;
     return EnqueueCommand(my, &e);
 }
 
@@ -271,10 +273,10 @@ void UCSI_Service(UCSI_Data_t *my)
             }
             break;
         case UnicensCmd_NsRun:
-            if (UCS_RET_SUCCESS != Ucs_Ns_Run(my->unicens, e->val.NsRun.node_ptr, OnUcsNsRun))
+            if (UCS_RET_SUCCESS != Ucs_Ns_Run(my->unicens, e->val.NsRun.nodeAddress, e->val.NsRun.scriptPtr, e->val.NsRun.scriptSize, OnUcsNsRun))
             {
                 UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Ns_Run failed", 0);
-                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_NsRun, false, e->val.NsRun.node_ptr->signature_ptr->node_address);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_NsRun, false, e->val.NsRun.nodeAddress);
             }
             break;
         case UnicensCmd_GpioCreatePort:
@@ -350,6 +352,15 @@ void UCSI_Service(UCSI_Data_t *my)
             break;
         }
 #endif
+        case UnicensCmd_PacketFilterMode:
+            if (UCS_RET_SUCCESS == Ucs_Network_SetPacketFilterMode(my->unicens, e->val.PacketFilterMode.destination_address, e->val.PacketFilterMode.mode, OnUcsPacketFilterMode))
+                popEntry = false;
+            else
+            {
+                UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Network_SetPacketFilterMode failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_PacketFilterMode, false, e->val.PacketFilterMode.destination_address);
+            }
+            break;
         default:
             assert(false);
             break;
@@ -484,6 +495,17 @@ bool UCSI_SetGpioState(UCSI_Data_t *my, uint16_t targetAddress, uint8_t gpioPinI
     return EnqueueCommand(my, &entry);
 }
 
+bool UCSI_EnablePromiscuousMode(UCSI_Data_t *my, uint16_t targetAddress, bool enablePromiscuous)
+{
+    UnicensCmdEntry_t entry;
+    assert(MAGIC == my->magic);
+    if (NULL == my) return false;
+    entry.cmd = UnicensCmd_PacketFilterMode;
+    entry.val.PacketFilterMode.destination_address = targetAddress;
+    entry.val.PacketFilterMode.mode = enablePromiscuous ? 0xA : 0x0;
+    return EnqueueCommand(my, &entry);
+}
+
 /************************************************************************/
 /* Private Functions                                                    */
 /************************************************************************/
@@ -557,6 +579,9 @@ static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd, bool success)
                 UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.SendAms.targetAddress);
             break;
 #endif
+        case UnicensCmd_PacketFilterMode:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.PacketFilterMode.destination_address);
+            break;
         default:
             UCSI_CB_OnCommandResult(my->tag, cmd, success, UNKNOWN_NODE_ADDR);
             break;
@@ -653,7 +678,7 @@ static void OnUnicensAppTimer( uint16_t timeout, void *user_ptr )
     UCSI_CB_OnSetServiceTimer(my->tag, timeout);
 }
 
-static void OnUnicensDebugErrorMsg(Msg_MostTel_t *m, void *user_ptr)
+static void OnUnicensDebugErrorMsg(Ucs_Message_t *m, void *user_ptr)
 {
     char val[5];
     uint8_t i;
@@ -685,7 +710,15 @@ static void OnLldCtrlStop( void *lld_user_ptr )
     assert(MAGIC == my->magic);
     my->uniLld = NULL;
     my->uniLldHPtr = NULL;
+    UCSIPrint_SetNetworkAvailable(false, 0);
     UCSI_CB_OnStop(my->tag);
+}
+
+static void OnLldResetInic(void *lld_user_ptr)
+{
+    UCSI_Data_t *my = (UCSI_Data_t *)lld_user_ptr;
+    assert(MAGIC == my->magic);
+    UCSI_CB_OnResetInic(my->tag);
 }
 
 static void OnLldCtrlRxMsgAvailable( void *lld_user_ptr )
@@ -727,7 +760,7 @@ static void OnLldCtrlTxTransmitC( Ucs_Lld_TxMsg_t *msg_ptr, void *lld_user_ptr )
 
 static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_t route_infos, void *user_ptr)
 {
-    uint32_t i;
+    bool available;
     uint16_t conLabel;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
@@ -736,57 +769,19 @@ static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_
         OnCommandExecuted(my, UnicensCmd_RmSetRoute, (UCS_RM_ROUTE_INFOS_BUILT == route_infos));
         my->pendingRoutePtr = NULL;
     }
-    if (NULL == route_ptr || NULL == route_ptr->source_endpoint_ptr ||
-        NULL == route_ptr->source_endpoint_ptr->node_obj_ptr ||
-        NULL == route_ptr->sink_endpoint_ptr ||
-        NULL == route_ptr->sink_endpoint_ptr->node_obj_ptr)
+    if (NULL == route_ptr || 
+        UCS_RM_ROUTE_INFOS_ATD_UPDATE == route_infos ||
+        UCS_RM_ROUTE_INFOS_ATD_ERROR == route_infos)
         return;
-    /* Report pending available node signature */
-    for (i = 0; i < MAX_NODES; i++)
-    {
-        uint16_t addressCur;
-        Ucs_Signature_t *src;
-        Ucs_Signature_t *snk;
-        if (!my->nodeAvailable[i].valid)
-            continue;
-        addressCur = my->nodeAvailable[i].nodeAddress;
-        src = route_ptr->source_endpoint_ptr->node_obj_ptr->signature_ptr;
-        snk = route_ptr->sink_endpoint_ptr->node_obj_ptr->signature_ptr;
-        if (addressCur == src->node_address)
-        {
-            Ucs_Rm_Node_t *nodePtr = route_ptr->source_endpoint_ptr->node_obj_ptr;
-            /* Execute scripts, if there are any */
-            if (nodePtr->script_list_ptr && nodePtr->script_list_size)
-            {
-                UnicensCmdEntry_t e;
-                e.cmd = UnicensCmd_NsRun;
-                e.val.NsRun.node_ptr = nodePtr;
-                EnqueueCommand(my, &e);
-            }
-            my->nodeAvailable[i].valid = false;
-        }
-        else if (addressCur == snk->node_address)
-        {
-            Ucs_Rm_Node_t *nodePtr = route_ptr->sink_endpoint_ptr->node_obj_ptr;
-            /* Execute scripts, if there are any */
-            if (nodePtr->script_list_ptr && nodePtr->script_list_size)
-            {
-                UnicensCmdEntry_t e;
-                e.cmd = UnicensCmd_NsRun;
-                e.val.NsRun.node_ptr = nodePtr;
-                EnqueueCommand(my, &e);
-            }
-            my->nodeAvailable[i].valid = false;
-        }
-    }
+    available = UCS_RM_ROUTE_INFOS_BUILT == route_infos;
     conLabel = Ucs_Rm_GetConnectionLabel(my->unicens, route_ptr);
-    UCSIPrint_SetRouteState(route_ptr->route_id, (UCS_RM_ROUTE_INFOS_BUILT == route_infos), conLabel);
-    UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, UCS_RM_ROUTE_INFOS_BUILT == route_infos, conLabel);
+    UCSIPrint_SetRouteState(route_ptr->route_id, available, conLabel);
+    UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, available, conLabel);
 }
 
 static void OnUnicensNetworkStatus(uint16_t change_mask, uint16_t events, Ucs_Network_Availability_t availability,
-    Ucs_Network_AvailInfo_t avail_info, Ucs_Network_AvailTransCause_t avail_trans_cause, uint16_t node_address,
-    uint8_t node_position, uint8_t max_position, uint16_t packet_bw, void *user_ptr)
+    Ucs_Network_AvailInfo_t avail_info,Ucs_Network_AvailTransCause_t avail_trans_cause, uint16_t node_address,
+    uint8_t max_position, uint16_t packet_bw, void *user_ptr )
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
@@ -839,12 +834,12 @@ static void OnUnicensDebugXrmResources(Ucs_Xrm_ResourceType_t resource_type,
     }
     switch(resource_type)
     {
-        case UCS_XRM_RC_TYPE_MOST_SOCKET:
+        case UCS_XRM_RC_TYPE_NW_SOCKET:
         {
-            Ucs_Xrm_MostSocket_t *ms = (Ucs_Xrm_MostSocket_t *)resource_ptr;
+            Ucs_Xrm_NetworkSocket_t *ms = (Ucs_Xrm_NetworkSocket_t *)resource_ptr;
             assert(ms->resource_type == resource_type);
-            UCSI_CB_OnUserMessage(my->tag, false, "Xrm-Debug (0x%03X): MOST socket %s, handle=%04X, "\
-                "direction=%d, type=%d, bandwidth=%d", 6, adr, msg, ms->most_port_handle,
+            UCSI_CB_OnUserMessage(my->tag, false, "Xrm-Debug (0x%03X): NW socket %s, handle=%04X, "\
+                "direction=%d, type=%d, bandwidth=%d", 6, adr, msg, ms->nw_port_handle,
                 ms->direction, ms->data_type, ms->bandwidth);
             break;
         }
@@ -977,70 +972,60 @@ static void OnUcsGpioPortWrite(uint16_t node_address, uint16_t gpio_port_handle,
     OnCommandExecuted(my, UnicensCmd_GpioWritePort, (UCS_GPIO_RES_SUCCESS == result.code));
 }
 
-static void OnUcsMgrReport(Ucs_MgrReport_t code, uint16_t node_address, Ucs_Rm_Node_t *node_ptr, void *user_ptr)
+static void OnUcsMgrReport(Ucs_MgrReport_t code, Ucs_Signature_t *signature_ptr, Ucs_Rm_Node_t *node_ptr, void *user_ptr)
 {
-    uint32_t i;
+    uint16_t node_address;
+    uint16_t node_pos_addr;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
+    assert(NULL != signature_ptr);
+    node_address = signature_ptr->node_address;
+    node_pos_addr = signature_ptr->node_pos_addr;
     switch (code)
     {
     case UCS_MGR_REP_IGNORED_UNKNOWN:
-        UCSIPrint_SetNodeAvailable(node_address, NodeState_Ignored);
-        UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Ignored, because unknown", 1, node_address);
+        UCSIPrint_SetNodeAvailable(node_address, node_pos_addr, NodeState_Ignored);
+        UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Ignored, because unknown", 2, node_address, node_pos_addr);
         break;
     case UCS_MGR_REP_IGNORED_DUPLICATE:
-        UCSIPrint_SetNodeAvailable(node_address, NodeState_Ignored);
-        UCSI_CB_OnUserMessage(my->tag, true, "Node=%X: Ignored, because duplicated", 1, node_address);
-        break;
-    case UCS_MGR_REP_AVAILABLE:
-        UCSIPrint_SetNodeAvailable(node_address, NodeState_Available);
-        UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Available", 1, node_address);
+        UCSIPrint_SetNodeAvailable(node_address, node_pos_addr, NodeState_Ignored);
+        UCSI_CB_OnUserMessage(my->tag, true, "Node=%X(%X): Ignored, because duplicated", 2, node_address, node_pos_addr);
         break;
     case UCS_MGR_REP_NOT_AVAILABLE:
-        UCSIPrint_SetNodeAvailable(node_address, NodeState_NotAvailable);
-        UCSI_CB_OnUserMessage(my->tag, false, "Node=%X: Not available", 1, node_address);
+        UCSIPrint_SetNodeAvailable(node_address, node_pos_addr, NodeState_NotAvailable);
+        UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Not available", 2, node_address, node_pos_addr);
+        break;
+    case UCS_MGR_REP_WELCOMED:
+        UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Welcomed", 2, node_address, node_pos_addr);
+        break;
+    case UCS_MGR_REP_SCRIPT_FAILURE:
+        UCSI_CB_OnUserMessage(my->tag, true, "Node=%X(%X): Script failure", 2, node_address, node_pos_addr);
+        break;
+    case UCS_MGR_REP_IRRECOVERABLE:
+        UCSI_CB_OnUserMessage(my->tag, true, "Node=%X(%X): IRRECOVERABLE ERROR!!", 2, node_address, node_pos_addr);
+        break;
+    case UCS_MGR_REP_SCRIPT_SUCCESS:
+        UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Script ok", 2, node_address, node_pos_addr);
+        break;
+    case UCS_MGR_REP_AVAILABLE:
+        UCSIPrint_SetNodeAvailable(node_address, node_pos_addr, NodeState_Available);
+        UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Available", 2, node_address, node_pos_addr);
         break;
     default:
-        UCSI_CB_OnUserMessage(my->tag, true, "Node=%X: unknown code", 1, node_address);
+        UCSI_CB_OnUserMessage(my->tag, true, "Node=%X(%X): unknown code", 2, node_address, node_pos_addr);
         break;
     }
-    /* Remove all pending flags for that node address */
-    for (i = 0; i < MAX_NODES; i++)
-    {
-        if (my->nodeAvailable[i].nodeAddress == node_address)
-        {
-            my->nodeAvailable[i].valid = false;
-        }
-    }
-    if (UCS_MGR_REP_AVAILABLE == code)
-    {
-        for (i = 0; i < MAX_NODES; i++)
-        {
-            /* Store signature to send out UCSI_CB_OnMgrReport together with first Routing Result */
-            if (!my->nodeAvailable[i].valid)
-            {
-                my->nodeAvailable[i].nodeAddress = node_address;
-                my->nodeAvailable[i].valid = true;
-                break;
-            }
-        }
-    }
+    UCSI_CB_OnMgrReport(my->tag, code, signature_ptr, node_ptr);
 }
 
-static void OnUcsNsRun(Ucs_Rm_Node_t * node_ptr, Ucs_Ns_ResultCode_t result, void *ucs_user_ptr)
+static void OnUcsNsRun(uint16_t node_address, Ucs_Ns_ResultCode_t result, Ucs_Ns_ErrorInfo_t error_info, void *ucs_user_ptr)
 {
     UCSI_Data_t *my = (UCSI_Data_t *)ucs_user_ptr;
     assert(MAGIC == my->magic);
-    assert(NULL != node_ptr);
-    assert(NULL != node_ptr->signature_ptr);
-    UCSI_CB_OnCommandResult(my->tag, UnicensCmd_NsRun, (UCS_NS_RES_SUCCESS == result), node_ptr->signature_ptr->node_address);
-#ifndef DEBUG_XRM
-    node_ptr = node_ptr;
-    ucs_user_ptr;
-#else
+    UCSI_CB_OnCommandResult(my->tag, UnicensCmd_NsRun, (UCS_NS_RES_SUCCESS == result), node_address);
+#ifdef DEBUG_XRM
     UCSI_CB_OnUserMessage(my->tag, (UCS_NS_RES_SUCCESS != result), "OnUcsNsRun (%03X): script executed %s",
-        2, node_ptr->signature_ptr->node_address,
-        (UCS_NS_RES_SUCCESS == result ? "succeeded" : "false"));
+        2, node_address, (UCS_NS_RES_SUCCESS == result ? "succeeded" : "false"));
 #endif
 }
 
@@ -1095,6 +1080,15 @@ static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, U
         UCSI_CB_OnUserMessage(my->tag, true, "SendAms failed with result=0x%x, info=0x%X", 2, result, info);
 }
 #endif
+
+static void OnUcsPacketFilterMode(uint16_t node_address, Ucs_StdResult_t result, void *user_ptr)
+{
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(MAGIC == my->magic);
+    OnCommandExecuted(my, UnicensCmd_PacketFilterMode, (UCS_RES_SUCCESS == result.code));
+    if (UCS_RES_SUCCESS != result.code)
+        UCSI_CB_OnUserMessage(my->tag, true, "Set promiscuous mode failed with error code %d", 1, result.code);
+}
 
 /************************************************************************/
 /* Callback from UCSI Print component:                                  */

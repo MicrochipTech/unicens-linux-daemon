@@ -84,7 +84,8 @@ typedef enum
     UnicensCmd_GpioWritePort,
     UnicensCmd_I2CWrite,
     UnicensCmd_I2CRead,
-    UnicensCmd_SendAmsMessage
+    UnicensCmd_SendAmsMessage,
+    UnicensCmd_PacketFilterMode
 } UnicensCmd_t;
 
 /**
@@ -109,7 +110,9 @@ typedef struct
  */
 typedef struct
 {
-    Ucs_Rm_Node_t * node_ptr;
+    uint16_t nodeAddress;
+    Ucs_Ns_Script_t *scriptPtr;
+    uint8_t scriptSize;
 } UnicensCmdNsRun_t;
 
 /**
@@ -172,6 +175,15 @@ typedef struct
  */
 typedef struct
 {
+    uint16_t destination_address;
+    uint16_t mode;
+} UnicensCmdPacketFilterMode_t;
+
+/**
+ * \brief Internal struct for UNICENS Integration
+ */
+typedef struct
+{
     UnicensCmd_t cmd;
     union
     {
@@ -182,6 +194,7 @@ typedef struct
         UnicensCmdGpioWritePort_t GpioWritePort;
         UnicensCmdI2CWrite_t I2CWrite;
         UnicensCmdI2CRead_t I2CRead;
+        UnicensCmdPacketFilterMode_t PacketFilterMode;
 #if (ENABLE_AMS_LIB)
         UnicensCmdSendAmsMessage_t SendAms;
 #endif
@@ -201,12 +214,6 @@ typedef struct {
     volatile uint32_t rxPos;
     volatile uint32_t txPos;
 } RB_t;
-
-typedef struct
-{
-    bool valid;
-    uint16_t nodeAddress;
-} NodeAvailable_t;
 
 /**
  * \brief Internal variables for one instance of UNICENS Integration
@@ -228,7 +235,6 @@ typedef struct
     Ucs_Lld_Api_t *uniLld;
     void *uniLldHPtr;
     UnicensCmdEntry_t *currentCmd;
-    NodeAvailable_t nodeAvailable[MAX_NODES];
     bool printTrigger;
 } UCSI_Data_t;
 
