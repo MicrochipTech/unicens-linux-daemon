@@ -73,6 +73,7 @@ typedef struct
     bool unicensRunning;
     bool unicensTimeout;
     bool unicensTrigger;
+    bool promiscuousMode;
     bool amsReceived;
     bool unicensDataAvailable;
     bool txErrorState;
@@ -115,6 +116,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     }
     m.noRouteTable = pVar->noRouteTable;
     m.lldTrace = pVar->lldTrace;
+    m.promiscuousMode = pVar->promiscuousMode;
     if (!TimerInitialize() || !SemInitialize())
     {
         ConsolePrintf(PRIO_ERROR, RED"Failed to initialize timer/threading resources"RESETCOLOR"\r\n");
@@ -329,7 +331,6 @@ void UCSI_CB_OnPrintRouteTable(void *pTag, const char pString[])
     ConsolePrintf(PRIO_HIGH, "%s\r\n", pString);
 }
 
-/* Callback from UNICENS Integration component */
 void UCSI_CB_OnServiceRequired(void *pTag)
 {
     pTag = pTag;
@@ -408,6 +409,15 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPin
     pTag = pTag;
     ConsolePrintf(PRIO_HIGH, "GPIO state changed, nodeAddress=0x%X, gpioPinId=%d, isHighState=%s\r\n",
                   nodeAddress, gpioPinId, isHighState ? "yes" : "no");
+}
+
+void UCSI_CB_OnMgrReport(void *pTag, Ucs_MgrReport_t code, Ucs_Signature_t *signature, Ucs_Rm_Node_t *pNode)
+{
+    pTag = pTag;
+    if (m.promiscuousMode && NULL != signature && UCS_MGR_REP_AVAILABLE == code) 
+    {
+        UCSI_EnablePromiscuousMode(&m.unicens, signature->node_address, true);
+    }
 }
 
 void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, uint8_t slaveAddr, const uint8_t *pBuffer, uint32_t bufLen)

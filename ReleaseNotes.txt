@@ -1,5 +1,5 @@
-UNICENS V2 Daemon (unicensd)
-============================
+UNICENS Daemon (unicensd) & UNICENS Client (unicensc)
+=====================================================
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!! Control Channel default mapping: /dev/inic-control-rx  and  /dev/inic-control-tx   !!!
@@ -8,7 +8,8 @@ UNICENS V2 Daemon (unicensd)
 V04.03.00
 =========
 - Integrated UNICENS library V2.2.0
-- Warning: "MOSTSocket" is no longer supports in UNICENS XML files. Use "NetworkSocket" instead.
+- Warning: "MOSTSocket" is no longer supported in UNICENS XML files. Use "NetworkSocket" instead.
+- new command line parameters: -promisc enables promiscuous mode, so all Ethernet packets will be received on all nodes.
 - Generated driver names are now the same for static and dynamic configuration
 - Improved default UNICENS XML example configuration files
 - Improved node and resource printing

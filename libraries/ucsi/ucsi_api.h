@@ -222,6 +222,17 @@ bool UCSI_I2CRead(UCSI_Data_t *pPriv, uint16_t targetAddress,
  */
 bool UCSI_SetGpioState(UCSI_Data_t *pPriv, uint16_t targetAddress, uint8_t gpioPinId, bool isHighState);
 
+/**
+ * \brief Enables Promiscuous Mode on the given Node.
+ *
+ * \param pPriv - private data section of this instance
+ * \param targetAddress - targetAddress - The node / group target address
+ * \param enablePromiscuous - true, perfect match filter will be disabled. false, otherwise.
+ *
+ * \return true, if command was enqueued to UNICENS.
+ */
+bool UCSI_EnablePromiscuousMode(UCSI_Data_t *pPriv, uint16_t targetAddress, bool enablePromiscuous);
+
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                        CALLBACK SECTION                              */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
@@ -293,7 +304,6 @@ extern void UCSI_CB_OnPrintRouteTable(void *pTag, const char pString[]);
  */
 extern void UCSI_CB_OnServiceRequired(void *pTag);
 
-
 /**
  * \brief Callback when ever the INIC should be reseted by the integration code
   * \note This function must be implemented by the integrator
@@ -356,6 +366,16 @@ extern void UCSI_CB_OnRouteResult(void *pTag, uint16_t routeId, bool isActive, u
  * \param isHighState - true, high state = 3,3V. false, low state = 0V.
  */
 extern void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPinId, bool isHighState);
+
+/**
+ * \brief Callback when nodes are discovered or disappear
+ * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param code - Report code
+ * \param signature - Signature of the found device. Maybe NULL in error cases
+ * \param pNode - Reference to the node structure found in nodes list. Maybe NULL.
+ */
+extern void UCSI_CB_OnMgrReport(void *pTag, Ucs_MgrReport_t code, Ucs_Signature_t *signature, Ucs_Rm_Node_t *pNode);
 
 /**
  * \brief Callback when an I2C Read (triggered by UCSI_I2CRead) command has been executed

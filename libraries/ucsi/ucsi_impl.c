@@ -99,6 +99,7 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     uint8_t i2c_slave_address, uint8_t data_len, Ucs_I2c_Result_t result, void *user_ptr);
 static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
             uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr);
+static void OnUcsPacketFilterMode(uint16_t node_address, Ucs_StdResult_t result, void *user_ptr);
 #if ENABLE_AMS_LIB
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
 #endif
@@ -351,6 +352,15 @@ void UCSI_Service(UCSI_Data_t *my)
             break;
         }
 #endif
+        case UnicensCmd_PacketFilterMode:
+            if (UCS_RET_SUCCESS == Ucs_Network_SetPacketFilterMode(my->unicens, e->val.PacketFilterMode.destination_address, e->val.PacketFilterMode.mode, OnUcsPacketFilterMode))
+                popEntry = false;
+            else
+            {
+                UCSI_CB_OnUserMessage(my->tag, true, "Ucs_Network_SetPacketFilterMode failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_PacketFilterMode, false, e->val.PacketFilterMode.destination_address);
+            }
+            break;
         default:
             assert(false);
             break;
@@ -485,6 +495,17 @@ bool UCSI_SetGpioState(UCSI_Data_t *my, uint16_t targetAddress, uint8_t gpioPinI
     return EnqueueCommand(my, &entry);
 }
 
+bool UCSI_EnablePromiscuousMode(UCSI_Data_t *my, uint16_t targetAddress, bool enablePromiscuous)
+{
+    UnicensCmdEntry_t entry;
+    assert(MAGIC == my->magic);
+    if (NULL == my) return false;
+    entry.cmd = UnicensCmd_PacketFilterMode;
+    entry.val.PacketFilterMode.destination_address = targetAddress;
+    entry.val.PacketFilterMode.mode = enablePromiscuous ? 0xA : 0x0;
+    return EnqueueCommand(my, &entry);
+}
+
 /************************************************************************/
 /* Private Functions                                                    */
 /************************************************************************/
@@ -558,6 +579,9 @@ static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd, bool success)
                 UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.SendAms.targetAddress);
             break;
 #endif
+        case UnicensCmd_PacketFilterMode:
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.PacketFilterMode.destination_address);
+            break;
         default:
             UCSI_CB_OnCommandResult(my->tag, cmd, success, UNKNOWN_NODE_ADDR);
             break;
@@ -735,6 +759,7 @@ static void OnLldCtrlTxTransmitC( Ucs_Lld_TxMsg_t *msg_ptr, void *lld_user_ptr )
 
 static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_t route_infos, void *user_ptr)
 {
+    bool available;
     uint16_t conLabel;
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
@@ -743,14 +768,14 @@ static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_
         OnCommandExecuted(my, UnicensCmd_RmSetRoute, (UCS_RM_ROUTE_INFOS_BUILT == route_infos));
         my->pendingRoutePtr = NULL;
     }
-    if (NULL == route_ptr || NULL == route_ptr->source_endpoint_ptr ||
-        NULL == route_ptr->source_endpoint_ptr->node_obj_ptr ||
-        NULL == route_ptr->sink_endpoint_ptr ||
-        NULL == route_ptr->sink_endpoint_ptr->node_obj_ptr)
+    if (NULL == route_ptr || 
+        UCS_RM_ROUTE_INFOS_ATD_UPDATE == route_infos ||
+        UCS_RM_ROUTE_INFOS_ATD_ERROR == route_infos)
         return;
+    available = UCS_RM_ROUTE_INFOS_BUILT == route_infos;
     conLabel = Ucs_Rm_GetConnectionLabel(my->unicens, route_ptr);
-    UCSIPrint_SetRouteState(route_ptr->route_id, (UCS_RM_ROUTE_INFOS_BUILT == route_infos), conLabel);
-    UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, UCS_RM_ROUTE_INFOS_BUILT == route_infos, conLabel);
+    UCSIPrint_SetRouteState(route_ptr->route_id, available, conLabel);
+    UCSI_CB_OnRouteResult(my->tag, route_ptr->route_id, available, conLabel);
 }
 
 static void OnUnicensNetworkStatus(uint16_t change_mask, uint16_t events, Ucs_Network_Availability_t availability,
@@ -989,6 +1014,7 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, Ucs_Signature_t *signature_ptr,
         UCSI_CB_OnUserMessage(my->tag, true, "Node=%X(%X): unknown code", 2, node_address, node_pos_addr);
         break;
     }
+    UCSI_CB_OnMgrReport(my->tag, code, signature_ptr, node_ptr);
 }
 
 static void OnUcsNsRun(uint16_t node_address, Ucs_Ns_ResultCode_t result, Ucs_Ns_ErrorInfo_t error_info, void *ucs_user_ptr)
@@ -1053,6 +1079,15 @@ static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, U
         UCSI_CB_OnUserMessage(my->tag, true, "SendAms failed with result=0x%x, info=0x%X", 2, result, info);
 }
 #endif
+
+static void OnUcsPacketFilterMode(uint16_t node_address, Ucs_StdResult_t result, void *user_ptr)
+{
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(MAGIC == my->magic);
+    OnCommandExecuted(my, UnicensCmd_PacketFilterMode, (UCS_RES_SUCCESS == result.code));
+    if (UCS_RES_SUCCESS != result.code)
+        UCSI_CB_OnUserMessage(my->tag, true, "Set promiscuous mode failed with error code %d", 1, result.code);
+}
 
 /************************************************************************/
 /* Callback from UCSI Print component:                                  */

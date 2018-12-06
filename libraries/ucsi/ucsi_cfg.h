@@ -84,7 +84,8 @@ typedef enum
     UnicensCmd_GpioWritePort,
     UnicensCmd_I2CWrite,
     UnicensCmd_I2CRead,
-    UnicensCmd_SendAmsMessage
+    UnicensCmd_SendAmsMessage,
+    UnicensCmd_PacketFilterMode
 } UnicensCmd_t;
 
 /**
@@ -171,6 +172,16 @@ typedef struct
 
 /**
  * \brief Internal struct for UNICENS Integration
+ * \note: currently identical to UnicensCmdProgIsRam_t, but maybe different in future
+ */
+typedef struct
+{
+    uint16_t destination_address;
+    uint16_t mode;
+} UnicensCmdPacketFilterMode_t;
+
+/**
+ * \brief Internal struct for UNICENS Integration
  */
 typedef struct
 {
@@ -184,6 +195,7 @@ typedef struct
         UnicensCmdGpioWritePort_t GpioWritePort;
         UnicensCmdI2CWrite_t I2CWrite;
         UnicensCmdI2CRead_t I2CRead;
+        UnicensCmdPacketFilterMode_t PacketFilterMode;
 #if (ENABLE_AMS_LIB)
         UnicensCmdSendAmsMessage_t SendAms;
 #endif

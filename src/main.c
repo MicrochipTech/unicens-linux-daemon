@@ -156,6 +156,11 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         {
             pVar->lldTrace = true;
         }
+        else if (0 == strcmp("-promisc", argv[i]))
+        {
+            ConsolePrintf(PRIO_ERROR, YELLOW "Promiscuous Mode active for all nodes" RESETCOLOR "\r\n");
+            pVar->promiscuousMode = true;
+        }
         else if (0 == strcmp("-crx", argv[i]))
         {
             if (argc <= (i+1))
@@ -212,6 +217,8 @@ static void PrintHelp(void)
     ConsolePrintfContinue("                           An additional filter string can be passed with a colon as delimiter. This filter applies to\r\n");
     ConsolePrintfContinue("                           description file inside the sys fs from the MOST Linux Driver.\r\n");
     ConsolePrintfContinue("  -drv2                    Configures the Microchip MOST Linux Driver V2.X (reserved)\r\n");
+    ConsolePrintfContinue("  -promisc                 Enable promiscuous mode on all INICs.\r\n" \
+                          "                           Promiscuous mode disables packet filter in all INICS, so all Ethernet packets will be received by all nodes.\r\n");
     ConsolePrintfContinue("  -lld                     Prints out the byte arrays send and received via Low Level Driver\r\n");
     ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
     ConsolePrintfContinue("Examples:\r\n");
