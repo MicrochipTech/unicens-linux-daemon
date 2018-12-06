@@ -457,10 +457,8 @@ static const char*GetStrmAlignString(Ucs_Stream_PortDataAlign_t align)
         CASE(UCS_STREAM_PORT_ALGN_RIGHT16BIT);
         CASE(UCS_STREAM_PORT_ALGN_RIGHT24BIT);
         CASE(UCS_STREAM_PORT_ALGN_SEQ);
-#ifdef TDM_STREAM_FORMAT_SUPPORTED
         CASE(UCS_STREAM_PORT_ALGN_TDM16BIT);
         CASE(UCS_STREAM_PORT_ALGN_TDM24BIT);
-#endif
     default:
         ConsolePrintf(PRIO_ERROR, "GetStrmAlignString align:%d not implemented\n", align);
         exit(-1);

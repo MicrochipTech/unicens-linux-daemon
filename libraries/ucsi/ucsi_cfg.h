@@ -172,7 +172,6 @@ typedef struct
 
 /**
  * \brief Internal struct for UNICENS Integration
- * \note: currently identical to UnicensCmdProgIsRam_t, but maybe different in future
  */
 typedef struct
 {

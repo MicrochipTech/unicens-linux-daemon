@@ -206,9 +206,6 @@ static const char* FUNCTION_ID =            "FunctionId";
 static const char* OP_TYPE_REQUEST =        "OpTypeRequest";
 static const char* OP_TYPE_RESPONSE =       "OpTypeResponse";
 static const char* PAYLOAD_REQ_HEX =        "PayloadRequest";
-#ifndef SCRIPT_RESPONSE_USE_WILDCAST
-static const char* PAYLOAD_RES_HEX =        "PayloadResponse";
-#endif
 static const char* PAUSE_MS =               "WaitTime";
 static const char* DEBOUNCE_TIME =          "DebounceTime";
 static const char* PIN_CONFIG =             "PinConfiguration";
@@ -1471,12 +1468,7 @@ static ParseResult_t ParseScriptMsgSend(mxml_node_t *act, Ucs_Ns_Script_t *scr, 
     if (!GetPayload(act, PAYLOAD_REQ_HEX, (uint8_t **)&req->data_ptr, &req->data_size, 0, objList, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
     
-#ifdef SCRIPT_RESPONSE_USE_WILDCAST
-    res->data_size = 0x0; /* Using Wildcard */
-#else
-    if (!GetPayload(act, PAYLOAD_RES_HEX, &res->data_ptr, &res->data_size, 0, objList, true))
-        RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-#endif    
+    res->data_size = 0x0; /* Using Wildcard */ 
     return Parse_Success;
 }
 
@@ -1501,15 +1493,7 @@ static ParseResult_t ParseScriptGpioPortCreate(mxml_node_t *act, Ucs_Ns_Script_t
     ((uint8_t *)req->data_ptr)[0] = 0; /*GPIO Port instance, always 0*/
     ((uint8_t *)req->data_ptr)[1] = MISC_HB(debounce);
     ((uint8_t *)req->data_ptr)[2] = MISC_LB(debounce);
-#ifdef SCRIPT_RESPONSE_USE_WILDCAST
     res->data_size = 0x0; /* Using Wildcard */
-#else
-    res->data_size = 2;
-    res->data_ptr = MCalloc(objList, res->data_size, 1);
-    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    ((uint8_t *)res->data_ptr)[0] = 0x1D;
-    ((uint8_t *)res->data_ptr)[1] = 0x00;
-#endif
     return Parse_Success;
 }
 
@@ -1535,12 +1519,7 @@ static ParseResult_t ParseScriptGpioPinMode(mxml_node_t *act, Ucs_Ns_Script_t *s
     payload[1] = 0x00;
     req->data_ptr = payload;
     req->data_size = payloadLen + PORT_HANDLE_OFFSET;
-#ifdef SCRIPT_RESPONSE_USE_WILDCAST
     res->data_size = 0x0; /* Using Wildcard */
-#else
-    res->data_ptr = payload;
-    res->data_size = payloadLen + PORT_HANDLE_OFFSET;
-#endif
     return Parse_Success;
 }
 
@@ -1570,16 +1549,7 @@ static ParseResult_t ParseScriptGpioPinState(mxml_node_t *act, Ucs_Ns_Script_t *
     ((uint8_t *)req->data_ptr)[3] = MISC_LB(mask);
     ((uint8_t *)req->data_ptr)[4] = MISC_HB(data);
     ((uint8_t *)req->data_ptr)[5] = MISC_LB(data);
-#ifdef SCRIPT_RESPONSE_USE_WILDCAST
     res->data_size = 0x0; /* Using Wildcard */
-#else
-    res->data_size = 8;
-    res->data_ptr = MCalloc(objList, res->data_size, 1);
-    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    memcpy(res->data_ptr, req->data_ptr, req->data_size);
-    ((uint8_t *)res->data_ptr)[6] = 0x00;
-    ((uint8_t *)res->data_ptr)[7] = 0x00;
-#endif
     return Parse_Success;
 }
 
@@ -1615,15 +1585,7 @@ static ParseResult_t ParseScriptPortCreate(mxml_node_t *act, Ucs_Ns_Script_t *sc
     ((uint8_t *)req->data_ptr)[1] = 0x00; /* I2C slave address, always 0, because we are Master */
     ((uint8_t *)req->data_ptr)[2] = 0x01; /* We are Master */
     ((uint8_t *)req->data_ptr)[3] = speed;
-#ifdef SCRIPT_RESPONSE_USE_WILDCAST
     res->data_size = 0x0; /* Using Wildcard */
-#else
-    res->data_size = 2;
-    res->data_ptr = MCalloc(objList, res->data_size, 1);
-    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    ((uint8_t *)res->data_ptr)[0] = 0x0F;
-    ((uint8_t *)res->data_ptr)[1] = 0x00;
-#endif
     return Parse_Success;
 }
 
@@ -1683,20 +1645,7 @@ static ParseResult_t ParseScriptPortWrite(mxml_node_t *act, Ucs_Ns_Script_t *scr
     ((uint8_t *)req->data_ptr)[5] = length;
     ((uint8_t *)req->data_ptr)[6] = MISC_HB(timeout);
     ((uint8_t *)req->data_ptr)[7] = MISC_LB(timeout);
-#ifdef SCRIPT_RESPONSE_USE_WILDCAST
     res->data_size = 0x0; /* Using Wildcard */
-#else
-    res->data_size = 4;
-    res->data_ptr = MCalloc(objList, res->data_size, 1);
-    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    ((uint8_t *)res->data_ptr)[0] = 0x0F;
-    ((uint8_t *)res->data_ptr)[1] = 0x00;
-    ((uint8_t *)res->data_ptr)[2] = address;
-    if (2 == mode)
-        ((uint8_t *)res->data_ptr)[3] = blockCount * length;
-    else
-        ((uint8_t *)res->data_ptr)[3] = length;
-#endif
     return Parse_Success;
 }
 
@@ -1730,17 +1679,7 @@ static ParseResult_t ParseScriptPortRead(mxml_node_t *act, Ucs_Ns_Script_t *scr,
     ((uint8_t *)req->data_ptr)[3] = length;
     ((uint8_t *)req->data_ptr)[4] = MISC_HB(timeout);
     ((uint8_t *)req->data_ptr)[5] = MISC_LB(timeout);
-#ifdef SCRIPT_RESPONSE_USE_WILDCAST
     res->data_size = 0x0; /* Using Wildcard */
-#else
-    res->data_size = 4;
-    res->data_ptr = MCalloc(objList, res->data_size, 1);
-    if (NULL == res->data_ptr) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-    ((uint8_t *)res->data_ptr)[0] = 0x0F;
-    ((uint8_t *)res->data_ptr)[1] = 0x00;
-    ((uint8_t *)res->data_ptr)[2] = address;
-    ((uint8_t *)res->data_ptr)[3] = length;
-#endif
     return Parse_Success;
 }
 

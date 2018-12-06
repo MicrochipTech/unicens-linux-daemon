@@ -57,10 +57,8 @@ static const char* STRM_ALIGN_L24 =         "Left24Bit";
 static const char* STRM_ALIGN_R16 =         "Right16Bit";
 static const char* STRM_ALIGN_R24 =         "Right24Bit";
 static const char* STRM_ALIGN_SEQUENTIAL =  "Seq";
-#ifdef TDM_STREAM_FORMAT_SUPPORTED
 static const char* STRM_ALIGN_TDM16 =       "TDM16Bit";
 static const char* STRM_ALIGN_TDM24 =       "TDM24Bit";
-#endif
 
 static const char* I2S_PIN_SRXA0 =          "SRXA0";
 static const char* I2S_PIN_SRXA1 =          "SRXA1";
@@ -359,12 +357,10 @@ bool GetStrmPort(Ucs_Xrm_StrmPort_t **strmPort, struct StrmPortParameters *param
         port->data_alignment = UCS_STREAM_PORT_ALGN_RIGHT24BIT;
     else if (0 == strcmp(param->dataAlignment, STRM_ALIGN_SEQUENTIAL))
         port->data_alignment = UCS_STREAM_PORT_ALGN_SEQ;
-#ifdef TDM_STREAM_FORMAT_SUPPORTED
     else if (0 == strcmp(param->dataAlignment, STRM_ALIGN_TDM16))
         port->data_alignment = UCS_STREAM_PORT_ALGN_TDM16BIT;
     else if (0 == strcmp(param->dataAlignment, STRM_ALIGN_TDM24))
         port->data_alignment = UCS_STREAM_PORT_ALGN_TDM24BIT;
-#endif
     else ASSERT_FALSE("GetStrmPort->dataAlignment", param->dataAlignment);
     return true;
 }

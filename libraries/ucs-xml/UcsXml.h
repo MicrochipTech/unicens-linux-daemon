@@ -38,8 +38,6 @@ extern "C" {
 /*                        USER ADJUSTABLE DEFINES                       */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
-#define TDM_STREAM_FORMAT_SUPPORTED
-#define SCRIPT_RESPONSE_USE_WILDCAST
 #define XML_FILE_SUPPORTED
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
