@@ -710,6 +710,7 @@ static void OnLldCtrlStop( void *lld_user_ptr )
     assert(MAGIC == my->magic);
     my->uniLld = NULL;
     my->uniLldHPtr = NULL;
+    UCSIPrint_SetNetworkAvailable(false, 0);
     UCSI_CB_OnStop(my->tag);
 }
 
