@@ -1,0 +1,288 @@
+# UNICENS XML Description
+
+This file describes how to write a valid UNICENS XML configuration file.
+
+**1.) XML Basics**
+Be aware that the rules of XML enforce that the document is well formed. This means it is zero tolerant, a single typo will invalidate the whole document and any application using it must not continue. So in any case it is useful  to use an IDE to check the document. This can be the UNICENS System Designer, which covers also deeper rule set related to UNICENS. But any other editor will also work, examples are Eclipse, NetBeans, Visual Studio.
+
+**In short the XML provides those terminolgies: *(partly from Wikipedia)***
+
+Tag
+A _tag_ is a construct that begins with `<` and ends with `>`. 
+Tags come in three flavors:
+
+-   _start-tag_, such as  `<section>`;
+-   _end-tag_, such as  `</section>`;
+-   _empty-element tag_, such as  `<line-break />`.
+
+Tags can be stored inside other tags. This will form a tree architecture.
+For example:
+```xml
+<Parent>
+	<Child/>
+	<Child>
+		<GrandChild/>
+	</Child>
+</Parent>
+```
+Then the tree would like that:
+```
+Parent
+│
+└───Child
+│
+└───Child
+    │
+    └─── GrandChild
+```
+
+Element
+An _element_ is a construct that begins with a start-tag and ends with a matching end-tag. 
+An example is `<greeting>Hello, world!</greeting>`
+Note, that the UNICENS schema is not using elements currently.
+
+Attribute
+An _attribute_ is a construct consisting of a name–value pair that exists within a start-tag or empty-element tag.
+An example is `<img src="madonna.jpg" alt="Madonna" />`, where the names of the attributes are "src" and "alt", and their values are "madonna.jpg" and "Madonna" respectively.
+
+XML declaration
+XML documents may begin with an  _XML declaration_  that describes some information about themselves. 
+An example is  `<?xml version="1.0" encoding="UTF-8"?>`
+
+Schema
+In addition to being well-formed, an XML document may reference to an external rule set (Document Type Definition (DTD)). There are certain rules applicable, such as the name of tags, elements and attributes. Also the values of the attributes can be specified as regular expression.
+Such a file is shipped along with UNICENS, its called *unicens.xsd* is shipped. The linkage between the document and its DTD is done in the first tag (Root Tag):
+ `<Unicens xsi:noNamespaceSchemaLocation="unicens.xsd">`
+
+Comments
+_Comments_ may appear anywhere in a document. Comments begin with `<!--` and end with `-->`
+An example of a valid comment: `<!--this is a comment -->`
+
+**2.) Start with an empty document**
+Add the XML declaration and the root tag *Unicens*, along with the reference to the used Schema. Make sure that the file unicens.xsd is in the same folder as your current document.
+
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+</Unicens>
+```
+**2.1) Bandwidth calculation**
+The attribute AsyncBandwidth in the previous example is mandatory. It specifies how fast the Ethernet channel on INICnet shall be. The value specified is in Bytes within 48KHz. So in the example above, this would mean 
+
+> 80 Bytes \* 48000 1/s = 3,84 MByte/s 
+> 3,84 MByte/s \* 8 Bit/Byte = 30,72 MBit/s
+
+Note the total network bandwidth limit for both INICnet speed grades:
+|Speedgrade| Bytes Within 48KHz  |
+|----------|---------------------|
+|INICnet50 | 116 Byte            |
+|INICnet150| 372 Byte            |
+
+This means for the example above, that the remaining bandwidth for audio / video streaming on an INICnet50 network is 36 Byte (116 Byte - 80 Byte).
+
+Setting the AsyncBandwidth to 0 is allowed. Then no Ethernet communication is possible and all bandwidth is available for audio and video streaming.
+
+Beside of using the Ethernet channel, there are dedicated streaming channels to transport audio and video. They use also use the bytes within 48KHz as their bandwidth configuration.
+
+This table gives an idea, what amount of Bytes within 48KHz is used for which use case and what data rate it consumes on the network.
+
+| Use Case                  | Data Type | Bytes Within 48KHz | Bandwidth in MBit/s |
+|---------------------------|-----------|--------------------|---------------------|
+| Mono 16 Bit               | Synchron  | 2                  | 0,768               |
+| Mono 24 Bit               | Synchron  | 3                  | 1,152               |
+| Stereo 16 Bit             | Synchron  | 4                  | 1,536               |
+| Stereo 24 Bit             | Synchron  | 6                  | 2,304               |
+| 5.1 channels 16 Bit       | Synchron  | 12                 | 4,608               |
+| 5.1 channels 24 Bit       | Synchron  | 18                 | 6,912               |
+| 7.1 channels 16 Bit       | Synchron  | 16                 | 6,144               |
+| 7.1 channels 24 Bit       | Synchron  | 24                 | 9,216               |
+| Low Quality H264 Video    | Isochron  | 8                  | 3,072               |
+| Superb Quality H264 Video | Isochron  | 80                 | 30,72               |
+
+**3.) Defining the nodes**
+A node is a device wich participates on the INICnet.
+There are three categories which a node can belong to:
+
+ 1. The root node. It runs the central UNICENS stack. There can only be one device with this role.
+ 2.  A slim node without any CPU on it, such as an Microphone or Booster. It is completely remote controlled. Any GPIO or I2C peripheral can be remotely triggered from the root node via the network.
+ 3. A smart node with an CPU or microcontroller. It is also completely remoted controlled and have GPIO and I2C remote access like the slim node. But there are two additional ways to communicate (peer to peer): via the INICnet control channel and the INICnet Ethernet channel.
+
+Slim Nodes and Smart Nodes may be equipped multiple times in the network. The theoretical limit of nodes per network is 64. Due to power and timing reasons, the actual value can be lower than that.
+
+Each device needs to have a Node Address which only exists once in that network (not global unique like a MAC address). This node address specified by the system integrator and need to be flashed into the Flash or OTP memory of the INIC chip.
+
+This Node Address is a 16 Bit address, which is usually written in hexadecimal representation. Due to historical reasons the range of the Node Address is limited to those sections:
+| Start |  End  |
+|-------|-------|
+| 0x10  | 0xFF  |
+| 0x140 | 0x2FF |
+| 0x500 | 0xEFF |
+
+This table can be used as an example starting point for a system integrator:
+| Address Range | Device Type              | Instance Numbers |
+|---------------|--------------------------|------------------|
+| 0x200         | UNICENS Master Node      | 1                |
+| 0x201         | Smart Antenna            | 1                |
+| 0x202         | Digital Signal Processor | 1                |
+| 0x205 - 0x209 | Cluster                  | 1 - 5            |
+| 0x210 - 0x23F | Microphone               | 1 - 64           |
+| 0x240 - 0x26F | AUX IO Board Instance    | 1 - 64           |
+| 0x270 - 0x29F | Slim Amplifier Instance  | 1 - 64           |
+| 0x2B0 - 0x2DF | Entertainment System     | 1 - 64           |
+| 0x2E0 - 0x2EF | Camera Instance          | 1 - 16           |
+
+Specifying an node is done with the \<Node> tag. All node tags are childs from the UNICENS tag.
+It's important to know, that all devices need to be specified in the document. If a device with an unknown Node address tries to enter the network it's getting ignored.
+
+For example, specifying two devices in the Network: UNICENS Master Node and a smart Entertainment System:
+
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+	<Node Address="0x200"/>
+	<Node Address="0x2B0"/>
+</Unicens>
+```
+With this example the mentioned devices are allowed to join the network. As there is no additional information given, the devices can communicate via the Control and Ethernet channel but there is no dedicated channels for Audio or Video transmission.
+
+**4.)  Connections**
+In order to get the major benefits from INICnet, certain connections needs to be defined. Those connections are reserved bandwidth on the network, which are guarantied for that particular use case only (Quality of Service or QoS).
+
+**4.1) Defining Synchronous Streams for Audio use cases**
+For transportation of uncompressed audio data the synchronous data channel of INICnet is optimal. It always streams with a constant data rate which is by design synchronous on every device. This means there is no offset, no drift and no Jitter problems to deal with.
+To define a synchronous connection the \<SyncConnection> tag is used. It is a child of the \<Node> tag described in Chapter 3. Every node may have more than one synchronous connection.
+
+A **non** working example (because of missing parameters) would be:
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+	<Node Address="0x200">
+		<SyncConnection>
+		</SyncConnection>
+	</Node>
+	<Node Address="0x2B0">
+		<SyncConnection>
+		</SyncConnection>
+	</Node>
+</Unicens>
+```
+
+**4.2) Defining Isochronous Streams for compressed Audio and Video use cases**
+In contrast to the synchronous data channel, the isochronous channel is able to transfer a variable data rate. The user specifies a worst case (or burst) date rate, which then is allocated on the network. When the used compression algorithm (Example:H264 and/or MP3) produce less or no bandwidth, the channel utilization becomes also less. The specialty about this is stream is that a single data chunk is 188 Byte, when unencrypted or 192 Byte when encrypted.
+Refer [MPEG transport stream](https://en.wikipedia.org/wiki/MPEG_transport_stream) for more information.
+To define an isochronous connection the \<AVPConnection> tag is used (Audio Video Packetized). It is a child of the \<Node> tag described in Chapter 3. Every node may have more than one isochronous connection.
+
+A **non** working example (because of missing parameters) would be:
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+	<Node Address="0x200">
+		<AVPConnection>
+		</AVPConnection>
+	</Node>
+	<Node Address="0x2B0">
+		<AVPConnection>
+		</AVPConnection>
+	</Node>
+</Unicens>
+```
+
+**5.) Working with Sockets**
+A socket represents a way into the INIC or out of the INIC. It references the used INIC port and specify how the data shall be formated on that port.
+This are the possible Socket types:
+| XML Tag          | Mandatory Attributes                  | Usage                      |
+|------------------|---------------------------------------|----------------------------|
+| \<USBSocket>     | EndpointAddress, FramesPerTransaction | Universal Serial Bus (USB) |
+| \<MediaLBSocket> | ChannelAddress, Bandwidth             | Media Local Bus (MLB)      |
+| \<StreamSocket>  | StreamPinID, Bandwidth                | I2S or other TDM port      |
+| \<NetworkSocket> | Bandwidth, Route                      | INICnet channel            |
+
+Always two Sockets resist inside a connection (Applies to \<SyncConnection> and \<AVPConnection>). The order of the socket tag inside the connection tag is crucial.  The first socket is the input socket, where the second is the output socket, both of with the view of the INIC. In any case, the \<NetworkSocket> tag must be either in the first or the second entry. And the input and output sockets must be from a different kind.
+
+A **non** working example (because of missing parameters) of routing isochronous data from the USB port to the INICnet channel  would be:
+```xml
+...
+	<Node Address="0x200">
+		<AVPConnection>
+			<!-- Input (INIC view) is USB: -->
+			<USBSocket/>
+
+			<!-- Output (INIC view) is isochronous channel on INICnet: -->
+			<NetworkSocket/>
+		</AVPConnection>
+	</Node>
+...
+```
+A **non** working example (because of missing parameters) of routing synchronous data from the INICnet channel to an streaming port (I2S):
+```xml
+...
+	<Node Address="0x200">
+		<SyncConnection>
+			<!-- Input (INIC view) is synchronous channel on INICnet: -->
+			<NetworkSocket/>
+
+			<!-- Output (INIC view) is Streaming Port (I2S): -->
+			<StreamSocket/>
+		</SyncConnection>
+	</Node>
+...
+```
+
+**5.1) Defining an USB Socket**
+Following two Attributes are mandatory to define a valid USB Socket:
+
+ - EndpointAddress=".."
+	 - This is the USB endpoint address. This is an byte value usually written in hexadecimal notation. If the data is transmitted out of the INIC, received by the main CPU (EHC), the highest bit is set, this leads to values starting with 0x80. Data which is received by the INIC, sent by the EHC no additional bits are set, so the starting address is 0x00.
+	 - Endpoint 0x00 is reserved for administrative purposes.
+	 - For streaming data, the INIC supports currently in maximum 5 endpoints. So the range 0x01 -- 0x05 (EHC TX) and 0x81 -- 0x85 (EHC RX) may be used.
+	 - Control data is on endpoints for OS81118/9 are 0x0F & 0x8F; for OS81210 are 0x07 & 0x87 (must not be used inside SyncConnection or AVPConnection)
+ 	 - asynchronous Ethernet is on endpoints for OS81118/9 are 0x0E & 0x8E; for OS81210 are 0x06 & 0x86 (must not be used inside SyncConnection or AVPConnection)
+- FramesPerTransaction=".."
+	- A micro frame on USB is chunk of 512 Byte. This is the maximum transmission unit (MTU) for the used bulk transfer mode on USB. In order to get a very efficient streaming behavior the INIC always fills a micro frame completely, so there is no additional signaling needed. Depending on the use case, waiting for 512 Byte of data (for example audio data) to arrive and then start the transmission after that can cause a measurable latency, which for example for active noise cancellation use cases my be unwanted.
+	- To achieve low latency, the integrator can choose to not fill the the micro frame entirely with data. This means, that the transmission is started earlier, with less then 512 Bytes of valid streaming data. The software driver (for EHC TX) or the INIC hardware for (EHC RX) automatically appends invalid stuffing data to fill the micro frame and keep the signaling overhead as less as possible. The invalid stuffing data is never transported on the INICnet, so no bandwidth on the network is wasted.
+	-  The FramesPerTransaction value describes how many samples (PCM, PDM or TS-Packets) are put into one micro frame. For instance, if the there is an stereo 16 bit PCM audio stream (2x2Byte = 4 Byte) to be transported, the maximum possible value for FramesPerTransaction would be 128 (128 x 4 Byte = 512 Byte). Setting an value of 64 in that particular case would leave the micro frame half filled, improving the latency and downgrade the efficiency of USB.
+	- For synchronous sockets the **minimum** value for FramesPerTransaction is **7**! This is due to the different timing of USB and INICnet.
+	- For isochronous sockets there are only two possibilities: FramesPerTransaction set to 2, in that case two transport stream packets (2 x 188/192 Byte) will stored in one micro frame. The second option is to set the FramesPerTransaction value to 0xFF. In that case, the micro frame is always completely filled. But as 512 Byte of micro frame is not dividable by 188/192 Byte, the fractional rest of the streaming data is put into the next micro frame. This means, that on the received side the integrator can not rely any longer on the fact, that the first Byte which is received, is the first Byte of the transport stream packet. In that case you need to search for 0x47 inside the payload of the stream, which marks the start of a transport stream packet.
+	- In contrast to other sockets, the USB socket bandwidth must not be specified. It automatically adjusts its speed to the corresponding network socket.
+
+**5.2) Defining a MLB Socket**
+The Media Local Bus is a dedicated bus for interfacing the INIC and Companions. It is adopted by many vendors like Atmel SAM V71, NXP i.MX6, Rensas RCAR H3/M3. It can provide very low latency (lower than USB). Of cause the operating system needs to have a scheduler which is fast enough to deal with the increasing amount of interrupts.
+Following two Attributes are mandatory to define a valid MLB Socket:
+ - ChannelAddress=".."
+	 - Integer value between 10 -- 64
+	 - Value must be even!
+	 - Channel address 0 is unused
+	 - Channel addresses 2 & 4 are reserved for control channel
+	 - Channel addresses 6 & 8 are reserved for asynchronous Ethernet channel
+ - Bandwidth=".."
+	 - The amount of Bytes transferred within 48 KHz. See (2.1) Bandwidth calculation.
+	 - The MLB port can be configured with different speed rates (FS). Depending on the chosen speed, the bandwidth must be in a certain range:
+
+| MLB Speed (Fs) | MLB type |  Bandwidth Range (Byte)  |
+|----------------|----------|--------------------------|
+|  256           | 3 pin    |  1 -- 28                 |
+|  512           | 3 pin    |  1 -- 60                 |
+|  1024          | 3 pin    |  1 -- 124                |
+|  2048          | 6 pin    |  1 -- 228                |
+|  3072          | 6 pin    |  1 -- 344                |
+|  4096          | 6 pin    |  1 -- 372                |
+
+
+**5.3) Defining a Stream Socket**
+The Streaming Port addressed with a Stream Socket, is most known as I2S port. But it can also support multi channel TDM and PDM data types.
+Following two Attributes are mandatory to define a valid Stream Socket:
+- StreamPinID=".."
+	- The hardware pin of the INIC, transporting the data part of the stream. FSY and CLK may be shared between multiple data pins.
+	- Following enumeration represents the allowed values. Choose one out of it: SRXA0, SRXA1, SRXB0, SRXB1
+ - Bandwidth=".."
+	 - The amount of Bytes transferred within 48 KHz. See (2.1) Bandwidth calculation.
+	 - The Streaming port can be configured with different speed rates (FS). Depending on the chosen speed, the bandwidth must be in a certain range:
+
+| Streaming Port Speed (Fs) | Bandwidth Range (Byte)  |
+|---------------------------|-------------------------|
+|  64                       |  1 -- 8                 |
+|  128                      |  1 -- 16                |
+|  256                      |  1 -- 32                |
+|  512                      |  1 -- 64                |
+
+**5.4) Defining a Network Socket**
