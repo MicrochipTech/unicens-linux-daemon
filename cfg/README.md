@@ -73,10 +73,11 @@ The attribute AsyncBandwidth in the previous example is mandatory. It specifies 
 > 3,84 MByte/s \* 8 Bit/Byte = 30,72 MBit/s
 
 Note the total network bandwidth limit for both INICnet speed grades:
-|Speedgrade| Bytes Within 48KHz  |
-|----------|---------------------|
-|INICnet50 | 116 Byte            |
-|INICnet150| 372 Byte            |
+
+| Speedgrade | Bytes Within 48KHz  |
+|------------|---------------------|
+| INICnet50  | 116 Byte            |
+| INICnet150 | 372 Byte            |
 
 This means for the example above, that the remaining bandwidth for audio / video streaming on an INICnet50 network is 36 Byte (116 Byte - 80 Byte).
 
@@ -112,6 +113,7 @@ Slim Nodes and Smart Nodes may be equipped multiple times in the network. The th
 Each device needs to have a Node Address which only exists once in that network (not global unique like a MAC address). This node address specified by the system integrator and need to be flashed into the Flash or OTP memory of the INIC chip.
 
 This Node Address is a 16 Bit address, which is usually written in hexadecimal representation. Due to historical reasons the range of the Node Address is limited to those sections:
+
 | Start |  End  |
 |-------|-------|
 | 0x10  | 0xFF  |
@@ -119,6 +121,7 @@ This Node Address is a 16 Bit address, which is usually written in hexadecimal r
 | 0x500 | 0xEFF |
 
 This table can be used as an example starting point for a system integrator:
+
 | Address Range | Device Type              | Instance Numbers |
 |---------------|--------------------------|------------------|
 | 0x200         | UNICENS Master Node      | 1                |
@@ -190,6 +193,7 @@ A **non** working example (because of missing parameters) would be:
 **5.) Working with Sockets**
 A socket represents a way into the INIC or out of the INIC. It references the used INIC port and specify how the data shall be formated on that port.
 This are the possible Socket types:
+
 | XML Tag          | Mandatory Attributes                  | Usage                      |
 |------------------|---------------------------------------|----------------------------|
 | \<USBSocket>     | EndpointAddress, FramesPerTransaction | Universal Serial Bus (USB) |
