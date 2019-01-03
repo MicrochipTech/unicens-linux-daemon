@@ -3,6 +3,7 @@
 This file describes how to write a valid UNICENS XML configuration file.
 
 **1.) XML Basics**
+
 Be aware that the rules of XML enforce that the document is well formed.
 This means it is zero tolerant, a single typo will invalidate the whole document and any application using it must not continue.
 So in any case it is useful  to use an IDE to check the document.
@@ -67,6 +68,7 @@ _Comments_ may appear anywhere in a document. Comments begin with `<!--` and end
 An example of a valid comment: `<!--this is a comment -->`
 
 **2.) Start with an empty document**
+
 Add the XML declaration and the root tag *Unicens*, along with the reference to the used Schema.
 Make sure that the file unicens.xsd is in the same folder as your current document.
 
@@ -76,6 +78,7 @@ Make sure that the file unicens.xsd is in the same folder as your current docume
 </Unicens>
 ```
 **2.1) Bandwidth calculation**
+
 The attribute AsyncBandwidth in the previous example is mandatory.
 It specifies how fast the Ethernet channel on INICnet shall be.
 The value specified is in Bytes within 48kHz. So in the example above, this would mean 
@@ -113,6 +116,7 @@ This table gives an idea, what amount of Bytes within 48kHz is used for which us
 | Superb Quality H264 Video | Isochron  | 80                 | 30,72               |
 
 **3.) Defining the nodes**
+
 A node is a device wich participates on the INICnet.
 There are three categories which a node can belong to:
 
@@ -167,10 +171,12 @@ As there is no additional information given, the devices can communicate via the
 and Ethernet channel but there is no dedicated channels for Audio or Video transmission.
 
 **4.)  Connections**
+
 In order to get the major benefits from INICnet, certain connections needs to be defined.
 Those connections are reserved bandwidth on the network, which are guarantied for that particular use case only (Quality of Service or QoS).
 
 **4.1) Defining Synchronous Streams for Audio use cases**
+
 For transportation of uncompressed audio data the synchronous data channel of INICnet is optimal.
 It always streams with a constant data rate which is by design synchronous on every device.
 This means there is no offset, no drift and no Jitter problems to deal with.
@@ -193,6 +199,7 @@ A **non** working example (because of missing parameters) would be:
 ```
 
 **4.2) Defining Isochronous Streams for compressed Audio and Video use cases**
+
 In contrast to the synchronous data channel, the isochronous channel is able to transfer a variable data rate.
 The user specifies a worst case (or burst) date rate, which then is allocated on the network.
 When the used compression algorithm (Example:H264 and/or MP3) produce less or no bandwidth, the channel utilization becomes also less.
@@ -217,6 +224,7 @@ A **non** working example (because of missing parameters) would be:
 ```
 
 **5.) Working with Sockets**
+
 A socket represents a way into the INIC or out of the INIC. It references the used INIC port and specify how the data shall be formatted on that port.
 This are the possible socket types:
 
@@ -263,6 +271,7 @@ A **non** working example (because of missing parameters) of routing synchronous
 ```
 
 **5.1) Defining an USB Socket**
+
 Following two Attributes are mandatory to define a valid USB Socket:
 
  - EndpointAddress=".."
@@ -280,6 +289,7 @@ Following two Attributes are mandatory to define a valid USB Socket:
 	- In contrast to other sockets, the USB socket bandwidth must not be specified. It automatically adjusts its speed to the corresponding network socket.
 
 **5.2) Defining a MLB Socket**
+
 The Media Local Bus is a dedicated bus for interfacing the INIC and Companions. 
 It is adopted by many vendors like Atmel SAM V71, NXP i.MX6, Rensas RCAR H3/M3.
 It can provide very low latency (lower than USB). 
@@ -305,6 +315,7 @@ Following two Attributes are mandatory to define a valid MLB Socket:
 |  4096          | 6 pin    |  1 .. 372                |
 
 **5.3) Defining a Stream Socket**
+
 The Streaming Port addressed with a Stream Socket, is most known as I2S port.
 But it can also support multi channel TDM and PDM data types.
 Following two Attributes are mandatory to define a valid Stream Socket:
@@ -373,9 +384,11 @@ So both devices are getting the audio data from the microphone in parallel and w
 The node 0x200 is streaming to USB endpoint address 0x81 and the node 0x2B0 to MLB channel address 0x10.
 
 **6.) Working with Combiner and Splitter**
+
 For audio streaming use cases on synchronous channel it can be very helpful to group or separate channels. 
 
 **6.1) Defining a Combiner**
+
 The Combiner is for synchronous connections only and has the ability to join multiple audio streams from the network to one big time division multiplex (TDM) data stream. This newly generated stream can be routed out to USB, MediaLB or Streaming port. For instance to combine 3 stereo microphones on the network into a single six channel TDM stream on USB.
 Doing so has multiple benefits:
 	- It safes resources (USB endpoints, MLB channels or Streaming Pins).
@@ -439,6 +452,7 @@ An example, routing three mono microphones to a head unit using a Combiner:
 </Unicens>
 ```
 **6.2) Defining a Splitter**
+
 The Splitter is for synchronous connections only and has the ability to cut multi channel audio TDM streams into one or multiple audio streams with smaller bandwidth and stream them to the network.
 Doing so has one benefits:
 	- It helps arrange the audio channels in different orders.
@@ -501,6 +515,7 @@ Here is An example, cutting a 5.1 multi channel stream from a head into three st
 ```
 
 **7.) Defining an Audio Loopback**
+
 In certain cases it may be helpful to route the audio from the source back to it self (looping back). This may be the case, where the radio tuner shall not accidental activate the head units wake word (like "Alexa" or "Hey Siri").
 To achieve this simply add two \<SyncConnection> where the Route name is the same, and where the \<NetworkSocket> is an output in connection, and the input on the other connection. The target bus (USB, MediaLB, Streaming Port) may be different for both connections.
 
@@ -545,6 +560,7 @@ An example, routing an SyncConnection back to the same device (0x200):
 Unfortunately it is not possible to use a loopback with connections where a Splitter or a Combiner is used!
 
 **8.) Switching Connections**
+
 It may be very useful to activate / deactivate certain connections (applies to \<SyncConnection> and \<AVPConnection>).
 Reasons to do so are:
  - Save Network bandwidth. If all connections together consume more bandwidth as the network can handle, switching off unused streams can free the needed space.
@@ -626,6 +642,7 @@ void SwitchRoute(uint16_t newRoute)
 Error cases can be handled by inspecting the callback "UCSI_CB_OnRouteResult".
 
 **9.) Working with Ports**
+
 So far only sockets where used. They also configured the ports of the INIC. But the attributes used there, configured only the specific parameters for that connection. There are more parameters, which are shared for all connections using a port. Those parameters can be stored in port tags in the XML file or saved persistent into the INIC Configuration String (Flash / OTP) memory. Those parameters are mandatory, not configuring them in the XML nor configuring them in the Configuration String will lead to a lot of run time errors and may leave the entire setup unusable.
 Port tags are defined as a child of a \<Node> tag.
 This are the possible port types:
@@ -637,6 +654,7 @@ This are the possible port types:
 | \<StreamPort>  | DataAlignment, ClockConfig                                                   | I2S/TDM/PDM port           |
 
 **9.1) Defining an USB port**
+
 Following four Attributes are mandatory to define a valid USB port:
 
  - DeviceInterfaces=".."
@@ -660,6 +678,7 @@ Following four Attributes are mandatory to define a valid USB port:
 	- The amount of streaming channels going into the INIC (TX for CPU), starting with 0x01. The maximum number is 5.
 
 **9.2) Defining a MediaLB port**
+
 This tag has only one attribute:
 
  - ClockConfig=".."
@@ -678,6 +697,7 @@ MediaLB port can only be frequency locked to the network’s system clock.
 		 - 8192Fs
 
 **9.3) Defining a Streaming port**
+
 Following two Attributes are mandatory to define a valid streaming port:
  - DataAlignment=".."
 	 - Defines the alignment of the data bytes within the Streaming Port frame.
@@ -703,6 +723,7 @@ streaming port can only be frequency locked to the network’s system clock.
 		 - 512Fs
 
 **10.) Working with Scripts**
+
 The INIC on Slim and Smart nodes can remote control peripheral like audio codecs, camera sensors, INIC companions, port expander, LEDs and Buttons. Therefor it provides an I2C master interface and GPIO pins, which are controllable via network.
 UNICENS provides the capability to execute a list of jobs, when a device first time enters the network.  This list is called script.
 Those scripts can be assigned for each node in the XML file. Therefor the \<Node> tag has an optional attribute called Script:
@@ -761,8 +782,9 @@ Example, how to create I2C port with 400kHz:
 <I2CPortCreate Speed="FastMode"/>
 ```
 
-**10.1) Defining a I2C port write job**
-In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortCreate> tag.
+**10.2) Defining a I2C write job**
+
+In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortWrite> tag.
 With this job a single or multiple I2C write commands can be sent.
 When only the two mandatory attributes are given, then a single message is sent:
 
@@ -807,7 +829,8 @@ In order to boost up the overall sending speed of I2C, multiple I2C write comman
 
 Example, how to write 5 blocks with each 3 Bytes to I2C slave with address 0x10:
 ```xml
-<I2CPortWrite Mode="BurstMode" BlockCount="5" Length="3" Payload="10 50 50 11 00 00 12 00 00 13 00 00 14 00 00" Address="0x18"/>
+<I2CPortWrite Mode="BurstMode" BlockCount="5" Length="3" Address="0x18"
+              Payload="10 50 50 11 00 00 12 00 00 13 00 00 14 00 00" />
 ```
 With the example above, the following I2C write commands will be issued to slave address 0x18:
 
@@ -819,7 +842,38 @@ With the example above, the following I2C write commands will be issued to slave
 
 Another attribute is the Timeout:
 
- - Timeout=""
+ - Timeout=".."
 	 - Time in milliseconds.
 	 - If not set, 1000 ms is used as default.
 	 - Reduce this value, if an I2C device is optional and the system does not want to wait for it to appear.
+
+**10.3) Defining a I2C read job**
+
+In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortRead> tag.
+With this job a single I2C read commands can be triggered.
+This are the two mandatory attributes:
+
+ - Length=".."
+	 - The amount of Bytes to read.
+- Address=".."
+	- The I2C slave address.
+	- The lowest Bit (Read/Write) is not part of this address (so shift right by one Bit).
+	- If addressing in hexadecimal notation is intended, add leading 0x before the value. Otherwise it will be interpreted in decimal notation. 
+
+This is an optional attribute:
+ - Timeout=".."
+	 - Time in milliseconds.
+	 - If not set, 1000 ms is used as default.
+	 - Reduce this value, if an I2C device is optional and the system does not want to wait for it to appear.
+
+ Example, how to read 8 Bytes to I2C slave with address 0x10:
+```xml
+<I2CPortRead Length="8" Address="0x10"/>
+```
+
+To get the result and use the received data to trigger further action the code of UNICENS daemon needs to be adjusted. Inspect the callback function "UCSI_CB_OnI2CRead" for this purpose:
+
+```C
+void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t inicNetNodeAddress, uint8_t i2cSlaveAddr, const uint8_t *pBuffer, uint32_t bufLen)
+{ }
+```
