@@ -1,5 +1,3 @@
-
-
 # UNICENS XML Description
 
 This file describes how to write a valid UNICENS XML configuration file.
@@ -120,7 +118,7 @@ There are three categories which a node can belong to:
 
  1. The root node. It runs the central UNICENS stack. There can only be one device with this role.
  2. A slim node without any CPU on it, such as an Microphone or Booster. It is completely remote controlled. Any GPIO or I2C peripheral can be remotely triggered from the root node via the network.
- 3. A smart node with an CPU or microcontroller. It is also completely remoted controlled and have GPIO and I2C remote access like the slim node. But there are two additional ways to communicate (peer to peer): via the INICnet control channel and the INICnet Ethernet channel.
+ 3. A smart node with an CPU or micro-controller. It is also completely remote controlled and have GPIO and I2C remote access like the slim node. But there are two additional ways to communicate (peer to peer): via the INICnet control channel and the INICnet Ethernet channel.
 
 Slim Nodes and Smart Nodes may be equipped multiple times in the network. 
 The theoretical limit of nodes per network is 64. Due to power and timing reasons, the actual value can be lower than that.
@@ -139,17 +137,17 @@ Due to historical reasons the range of the Node Address is limited to those sect
 
 This table can be used as an example starting point for a system integrator:
 
-| Address Range | Device Type              | Instance Numbers |
-|---------------|--------------------------|------------------|
-| 0x200         | UNICENS Master Node      | 1                |
-| 0x201         | Smart Antenna            | 1                |
-| 0x202         | Digital Signal Processor | 1                |
-| 0x205 - 0x209 | Cluster                  | 1 - 5            |
-| 0x210 - 0x23F | Microphone               | 1 - 64           |
-| 0x240 - 0x26F | AUX IO Board Instance    | 1 - 64           |
-| 0x270 - 0x29F | Slim Amplifier Instance  | 1 - 64           |
-| 0x2B0 - 0x2DF | Entertainment System     | 1 - 64           |
-| 0x2E0 - 0x2EF | Camera Instance          | 1 - 16           |
+| Address Range  | Device Type              | Instance Numbers |
+|----------------|--------------------------|------------------|
+| 0x200          | UNICENS Master Node      | 1                |
+| 0x201          | Smart Antenna            | 1                |
+| 0x202          | Digital Signal Processor | 1                |
+| 0x205 .. 0x209 | Cluster                  | 1 .. 5           |
+| 0x210 .. 0x23F | Microphone               | 1 .. 64          |
+| 0x240 .. 0x26F | AUX IO Board Instance    | 1 .. 64          |
+| 0x270 .. 0x29F | Slim Amplifier Instance  | 1 .. 64          |
+| 0x2B0 .. 0x2DF | Entertainment System     | 1 .. 64          |
+| 0x2E0 .. 0x2EF | Camera Instance          | 1 .. 16          |
 
 Specifying an node is done with the \<Node> tag. All node tags are childs from the UNICENS tag.
 It's important to know, that all devices need to be specified in the document.
@@ -220,13 +218,13 @@ A **non** working example (because of missing parameters) would be:
 
 **5.) Working with Sockets**
 A socket represents a way into the INIC or out of the INIC. It references the used INIC port and specify how the data shall be formatted on that port.
-This are the possible Socket types:
+This are the possible socket types:
 
 | XML Tag          | Mandatory Attributes                  | Usage                      |
 |------------------|---------------------------------------|----------------------------|
 | \<USBSocket>     | EndpointAddress, FramesPerTransaction | Universal Serial Bus (USB) |
 | \<MediaLBSocket> | ChannelAddress, Bandwidth             | Media Local Bus (MLB)      |
-| \<StreamSocket>  | StreamPinID, Bandwidth                | I2S or other TDM port      |
+| \<StreamSocket>  | StreamPinID, Bandwidth                | I2S/TDM/PDM port           |
 | \<NetworkSocket> | Bandwidth, Route                      | INICnet channel            |
 
 Always two Sockets resist inside a connection (Applies to \<SyncConnection> and \<AVPConnection>).
@@ -339,7 +337,7 @@ Following two Attributes are mandatory to define a valid Network Socket:
 	 - If two connections share the same route name, they will be automatically connected.
 	 - The integrator must make sure that all source network sockets are connected to at least one sink network socket.
 
-A working example, routing a microphone to a head unit and an additional slave device would be:
+An example, routing a microphone to a head unit and an additional slave device would be:
 
 ```xml
 <?xml version="1.0"?>
@@ -402,7 +400,7 @@ The childs of the Combiner are then multiple \<NetworkSocket> tags with addition
 
 Each \<NetworkSocket> forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping it each other.
 
-A working example, routing three mono microphones to a head unit using a Combiner:
+An example, routing three mono microphones to a head unit using a Combiner:
 
 ```xml
 <?xml version="1.0"?>
@@ -463,7 +461,7 @@ The childs of the Splitter are then multiple \<NetworkSocket> tags with addition
 
 Each \<NetworkSocket> forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping it each other.
 
-Here is a working example, cutting a 5.1 multi channel stream from a head into three stereo streams using a Splitter. The sinks are three stereo slim amplifier.
+Here is An example, cutting a 5.1 multi channel stream from a head into three stereo streams using a Splitter. The sinks are three stereo slim amplifier.
 
 ```xml
 <?xml version="1.0"?>
@@ -501,3 +499,327 @@ Here is a working example, cutting a 5.1 multi channel stream from a head into t
     </Node>    
 </Unicens>
 ```
+
+**7.) Defining an Audio Loopback**
+In certain cases it may be helpful to route the audio from the source back to it self (looping back). This may be the case, where the radio tuner shall not accidental activate the head units wake word (like "Alexa" or "Hey Siri").
+To achieve this simply add two \<SyncConnection> where the Route name is the same, and where the \<NetworkSocket> is an output in connection, and the input on the other connection. The target bus (USB, MediaLB, Streaming Port) may be different for both connections.
+
+An example, routing an SyncConnection back to the same device (0x200):
+
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+	<Node Address="0x200">
+		<!-- Audio sent by the Head Unit -->
+		<SyncConnection>
+			<USBSocket EndpointAddress="0x1" FramesPerTransaction="128" />
+			<NetworkSocket Bandwidth="4" Route="Amp" />
+		</SyncConnection>
+		<!-- Loopback, to be analyzed by an attached DSP -->
+		<SyncConnection>
+			<NetworkSocket Bandwidth="4" Route="Amp" />
+			<MediaLBSocket ChannelAddress="0x10" Bandwidth="4" />
+		</SyncConnection>
+		<!-- Microphone, to be analyzed by an attached DSP -->
+		<SyncConnection>
+			<NetworkSocket Bandwidth="4" Route="Mic" />
+			<MediaLBSocket ChannelAddress="0x12" Bandwidth="4" />
+		</SyncConnection>
+	</Node>
+
+	<Node Address="0x210">
+		<SyncConnection>
+			<StreamSocket StreamPinID="SRXA0" Bandwidth="4" />
+			<NetworkSocket Route="Mic" Bandwidth="4" />
+		</SyncConnection>
+	</Node>
+
+	<Node Address="0x270">
+		<SyncConnection>
+			<NetworkSocket Route="Amp" Bandwidth="4" />
+			<StreamSocket StreamPinID="SRXA0" Bandwidth="4" />
+		</SyncConnection>
+	</Node>
+</Unicens>
+```
+Unfortunately it is not possible to use a loopback with connections where a Splitter or a Combiner is used!
+
+**8.) Switching Connections**
+It may be very useful to activate / deactivate certain connections (applies to \<SyncConnection> and \<AVPConnection>).
+Reasons to do so are:
+ - Save Network bandwidth. If all connections together consume more bandwidth as the network can handle, switching off unused streams can free the needed space.
+- Having multiple sources. Connections can only be established, if there is exactly one source available. However, if a source is switched off, another source may be activated instead.
+- Safely shut down audio connections to avoid plopping sound.
+
+In order to prepare a connection to be switched, the integrator needs to add two optional attributes to the \<NetworkSocket> tag (valid for source and sink):
+ - RouteId=".."
+	 - The RouteId  value must be a unsigned 16 bit value (0x0 .. 0xFFFF). The RouteId value must be unique over the complete XML file. It acts as a handle, which can be used later in the C-code to address this connection.
+ - IsActive=".."
+	 - The IsActive value is a Boolean (either "true" or "false"). If this attribute is not specified, the default behavior is activated. If there are multiple sources for one connection, only one source may be activated by setting "true", all other need to be set to "false".
+
+An example, supporting switching of multiple sources, would be:
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+
+	<Node Address="0x200">
+		<SyncConnection>
+			<USBSocket EndpointAddress="0x1" FramesPerTransaction="128" />
+			<NetworkSocket Bandwidth="4" Route="HeadUnit" />
+		</SyncConnection>
+	</Node>
+
+	<Node Address="0x210">
+		<SyncConnection>
+			<StreamSocket StreamPinID="SRXA0" Bandwidth="4" />
+			<NetworkSocket Route="Microphone" Bandwidth="4" />
+		</SyncConnection>
+	</Node>
+
+	<Node Address="0x240">
+		<SyncConnection>
+			<NetworkSocket Route="HeadUnit" Bandwidth="4" RouteId="0x1001" IsActive="true" />
+			<StreamSocket StreamPinID="SRXA1" Bandwidth="4" />
+		</SyncConnection>
+		
+		<SyncConnection>
+			<NetworkSocket Route="Microphone" Bandwidth="4" RouteId="0x1002" IsActive="false" />
+			<StreamSocket StreamPinID="SRXA1" Bandwidth="4" />
+		</SyncConnection>
+
+		<SyncConnection>
+			<NetworkSocket Route="LineIn" Bandwidth="4" RouteId="0x1003" IsActive="false" />
+			<StreamSocket StreamPinID="SRXA1" Bandwidth="4" />
+		</SyncConnection>
+
+		<SyncConnection>
+			<StreamSocket StreamPinID="SRXA0" Bandwidth="4" />
+			<NetworkSocket Route="LineIn" Bandwidth="4" />
+		</SyncConnection>
+	</Node>
+```
+
+In the example above three sources are available:
+ - 0x1001: The  Head Unit will be routed on the auxiliary boards headphone jacket, by default actived.
+ - 0x1002: The  microphone will be routed on the auxiliary boards headphone jacket, by default deactivated.
+ - 0x1003: The auxiliary boards "Line In"-jacket will be routed to its own headphone jacket (Loopback (see 7)), by default deactivated.
+
+Once the XML is prepared, the source code of the UNICENS daemon shall be modified.
+A solution would be this C-code snippet (can be put everywhere in the project):
+
+```C
+#include "ucsi_api.h"
+extern UCSI_Data_t *unicens;
+static uint16_t currentRoute = 0x1001;
+
+void SwitchRoute(uint16_t newRoute)
+{
+    /* Deactivate current route */
+    UCSI_SetRouteActive(unicens, currentRoute, false);
+
+    /* Activate route given as parameter */
+    currentRoute = newRoute;
+    UCSI_SetRouteActive(unicens, currentRoute, true);
+}
+```
+
+Error cases can be handled by inspecting the callback "UCSI_CB_OnRouteResult".
+
+**9.) Working with Ports**
+So far only sockets where used. They also configured the ports of the INIC. But the attributes used there, configured only the specific parameters for that connection. There are more parameters, which are shared for all connections using a port. Those parameters can be stored in port tags in the XML file or saved persistent into the INIC Configuration String (Flash / OTP) memory. Those parameters are mandatory, not configuring them in the XML nor configuring them in the Configuration String will lead to a lot of run time errors and may leave the entire setup unusable.
+Port tags are defined as a child of a \<Node> tag.
+This are the possible port types:
+
+| XML Tag        | Mandatory Attributes                                                         | Usage                      |
+|----------------|------------------------------------------------------------------------------|----------------------------|
+| \<USBPort>     | DeviceInterfaces, PhysicalLayer, StreamingIfEpOutCount, StreamingIfEpInCount | Universal Serial Bus (USB) |
+| \<MediaLBPort> | ClockConfig                                                                  | Media Local Bus (MLB)      |
+| \<StreamPort>  | DataAlignment, ClockConfig                                                   | I2S/TDM/PDM port           |
+
+**9.1) Defining an USB port**
+Following four Attributes are mandatory to define a valid USB port:
+
+ - DeviceInterfaces=".."
+	 - This value is a bit mask. 
+	 - Each bit has the meaning: 0=Deactive; 1=Activate
+
+| Bit # | Description                                      |
+|-------|--------------------------------------------------|
+| 0     | EnableControlIf (control interface activate)     |
+| 1     | EnablePacketIf (packet interface activate)       |
+| 2     | EnableIpcPacketIf (IPC packet interface activate)|
+| 3     | EnableStreamingIf (streaming interface activate) |
+
+ - PhysicalLayer=".."
+	 - For this attribute only two values are valid.
+		 - "Standard" will configure the USB port to be used external as norm USB device
+		 - "HSIC" will configure the USB port to be used for PCB connections only. This reduces cost, when the INIC is on the same PCB as the CPU, because the analog front end is less complex.
+ - StreamingIfEpOutCount=".."
+	 - The amount of streaming channels going out of the INIC (RX for CPU), starting with 0x81. The maximum number is 5.
+ - StreamingIfEpInCount=".."
+	- The amount of streaming channels going into the INIC (TX for CPU), starting with 0x01. The maximum number is 5.
+
+**9.2) Defining a MediaLB port**
+This tag has only one attribute:
+
+ - ClockConfig=".."
+	 - The value is a multiple of the network frame rate Fs  (48kHz); this means the
+MediaLB port can only be frequency locked to the network’s system clock.
+	 - This is an enumeration.
+	 - Refer 5.2 to see the meaning.
+	 - Those values are allowed (Case Sensitive):
+		 - 256Fs
+		 - 512Fs
+		 - 1024Fs
+		 - 2048Fs
+		 - 3072Fs
+		 - 4096Fs
+		 - 6114Fs
+		 - 8192Fs
+
+**9.3) Defining a Streaming port**
+Following two Attributes are mandatory to define a valid streaming port:
+ - DataAlignment=".."
+	 - Defines the alignment of the data bytes within the Streaming Port frame.
+	 - This is an enumeration.
+	 - Refer 5.3 to see the meaning.
+	 - Those values are allowed (Case Sensitive):
+		 - Left16Bit
+		 - Right16Bit
+		 - TDM16Bit
+		 - Left24Bit
+		 - Right24it
+		 - TDM24Bit
+		 - Seq
+ - ClockConfig=".."
+	 - The value is a multiple of the network frame rate Fs (48kHz); this means the
+streaming port can only be frequency locked to the network’s system clock.
+ 	 - This is an enumeration.
+	 - Refer 5.3 to see the meaning.
+	 - Those values are allowed (Case Sensitive):
+		 - 64Fs
+		 - 128Fs
+		 - 256Fs
+		 - 512Fs
+
+**10.) Working with Scripts**
+The INIC on Slim and Smart nodes can remote control peripheral like audio codecs, camera sensors, INIC companions, port expander, LEDs and Buttons. Therefor it provides an I2C master interface and GPIO pins, which are controllable via network.
+UNICENS provides the capability to execute a list of jobs, when a device first time enters the network.  This list is called script.
+Those scripts can be assigned for each node in the XML file. Therefor the \<Node> tag has an optional attribute called Script:
+ - Script=".."
+	 - The value is any sort of user defined name, there is no syntax to be followed (other than to be XML complaint).
+	 - This script name acts as a reference. 
+
+The content of the script is then embedded in a tag called \<Script>, which is a child of \<Unicens>, the same hierarchy level as \<Node>
+The \<Script> tag has only mandatory attribute called "Name":
+ - Name=".."
+	 - This is the counter part of the Script attribute of the <\Node> tag
+	 - If the name of the names are identical, there are linked and the script will be executed once the device is found at network startup.
+
+A **non** working example (because of missing parameters) would be:
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+	<Node Address="0x240" Script="Script_AUX_IO"/>
+	<Script Name="Script_AUX_IO">
+		<!-- Job 1 goes here ->
+		<!-- Job 2 goes here ->
+	</Script>
+</Unicens>
+```
+
+In the example above, the node with the address 0x240 references to the script named "Script_AUX_IO". 
+In the next line the script is getting declared, with exact the same name (Case sensitive!). 
+The jobs will then declared as childs of the \<Script> tag. UNICENS will execute the jobs in the same order as they appear in the XML file.
+
+These are the possible jobs:
+
+| XML Tag            | Mandatory Attributes                                | Optional Attributes               | Usage                      |
+|--------------------|-----------------------------------------------------|-----------------------------------|----------------------------|
+| \<I2CPortCreate>   | Speed                                               |                                   | Creating Remote I2C port   |
+| \<I2CPortWrite>    | Address, Payload                                    | Mode, BlockCount, Length, Timeout | Writing to I2C             |
+| \<I2CPortRead>     | Length, Address                                     | Timeout                           | Reading from I2C           |
+| \<GPIOPortCreate>  | DebounceTime                                        |                                   | Creating Remote GPIO port  |
+| \<GPIOPortPinMode> | PinConfiguration                                    |                                   | Configuring GPIO port      |
+| \<GPIOPinState>    | Data, Mask                                          |                                   | Toggling GPIOs             |
+| \<MsgSend>         | FBlockId, FunctionId, OpTypeRequest, PayloadRequest | OpTypeResponse, PayloadResponse   | Generic INIC command API   |
+
+**10.1) Defining a I2C port create job**
+In order to enable the usage of remote I2C, the ports need to be created first with the \<I2CPortCreate> tag. It only has one mandatory attribute called Speed:
+
+ - Speed=".."
+	 - This is an enumeration.
+	 - Those values are allowed (Case Sensitive):
+
+| Value    | Meaning                           |
+|----------|-----------------------------------|
+| SlowMode | Port SCL clock operates at 100kHz |
+| FastMode | Port SCL clock operates at 400kHz |
+
+Example, how to create I2C port with 400kHz:
+```xml
+<I2CPortCreate Speed="FastMode"/>
+```
+
+**10.1) Defining a I2C port write job**
+In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortCreate> tag.
+With this job a single or multiple I2C write commands can be sent.
+When only the two mandatory attributes are given, then a single message is sent:
+
+- Address=".."
+	- The I2C slave address.
+	- The lowest Bit (Read/Write) is not part of this address (so shift right by one Bit).
+	- If addressing in hexadecimal notation is intended, add leading 0x before the value. Otherwise it will be interpreted in decimal notation. 
+ - Payload=".."
+	 - Hexadecimal array of Bytes.
+	 - Bytes will be sent to the remote I2C slave, in the same order as written in this string.
+	 - The notation is without leading 0x.
+	 - Each Byte is represented by two digits [0..F].
+	 - Each Byte (except the last one) is separated by a trailing space.
+
+
+Example, how to write 5 Bytes to I2C slave with address 0x20:
+```xml
+<I2CPortWrite Payload="A1 B2 C3 D4 E5" Address="0x20"/>
+```
+
+In order to boost up the overall sending speed of I2C, multiple I2C write commands can be grouped into a single job. Therefor the following three optional attributes are used:
+
+ - Mode=".."
+	 - This is an enumeration.
+	 - Those values are allowed (Case Sensitive):
+
+| Value             | Meaning                                                                                                   |
+|-------------------|-----------------------------------------------------------------------------------------------------------|
+| DefaultMode       | No optimization used (Default). After transaction a STOP condition is issued and the bus is released      |                                                                           |
+| BurstMode         | After transaction the STOP condition will be suppressed and further read or write sequences can be issued |
+| RepeatedStartMode | Enables writing multiple blocks of bytes of the same size                                                 |
+
+ - BlockCount=".."
+	 - Specifies the number of blocks to be written to the I2C address.
+	 - If parameter Mode is not set to BurstMode, the value of BlockCount has to be set to 0 (default).
+	 -  Otherwise the valid range for this parameter is from 1 to 30.
+
+ - Length
+	 - Number of bytes to be written to the I2C address. 
+	 - If parameter Mode is set to BurstMode, the valid range of this parameter goes from 1 to 30
+	 - For all other modes, the length is automatically taken from the Byte array length given with the Payload attribute.
+
+Example, how to write 5 blocks with each 3 Bytes to I2C slave with address 0x10:
+```xml
+<I2CPortWrite Mode="BurstMode" BlockCount="5" Length="3" Payload="10 50 50 11 00 00 12 00 00 13 00 00 14 00 00" Address="0x18"/>
+```
+With the example above, the following I2C write commands will be issued to slave address 0x18:
+
+ -  0x10, 0x50, 0x50, STOP
+ -  0x11, 0x00, 0x00, STOP
+ -  0x12, 0x00, 0x00, STOP
+ -  0x13, 0x00, 0x00, STOP
+ -  0x14, 0x00, 0x00, STOP
+
+Another attribute is the Timeout:
+
+ - Timeout=""
+	 - Time in milliseconds.
+	 - If not set, 1000 ms is used as default.
+	 - Reduce this value, if an I2C device is optional and the system does not want to wait for it to appear.
