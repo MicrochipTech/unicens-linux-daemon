@@ -763,7 +763,7 @@ These are the possible jobs:
 | \<GPIOPortCreate>  | DebounceTime                                        |                                   | Creating Remote GPIO port  |
 | \<GPIOPortPinMode> | PinConfiguration                                    |                                   | Configuring GPIO port      |
 | \<GPIOPinState>    | Data, Mask                                          |                                   | Toggling GPIOs             |
-| \<MsgSend>         | FBlockId, FunctionId, OpTypeRequest, PayloadRequest | OpTypeResponse, PayloadResponse   | Generic INIC command API   |
+
 
 **10.1) Defining a I2C port create job**
 In order to enable the usage of remote I2C, the ports need to be created first with the \<I2CPortCreate> tag. It only has one mandatory attribute called Speed:
@@ -772,7 +772,7 @@ In order to enable the usage of remote I2C, the ports need to be created first w
 	 - This is an enumeration.
 	 - Those values are allowed (Case Sensitive):
 
-| Value    | Meaning                           |
+| Value    | Mnemonic                          |
 |----------|-----------------------------------|
 | SlowMode | Port SCL clock operates at 100kHz |
 | FastMode | Port SCL clock operates at 400kHz |
@@ -784,7 +784,8 @@ Example, how to create I2C port with 400kHz:
 
 **10.2) Defining a I2C write job**
 
-In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortWrite> tag.
+In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortCreate>.
+The tag to be used is named \<I2CPortWrite>.
 With this job a single or multiple I2C write commands can be sent.
 When only the two mandatory attributes are given, then a single message is sent:
 
@@ -793,12 +794,11 @@ When only the two mandatory attributes are given, then a single message is sent:
 	- The lowest Bit (Read/Write) is not part of this address (so shift right by one Bit).
 	- If addressing in hexadecimal notation is intended, add leading 0x before the value. Otherwise it will be interpreted in decimal notation. 
  - Payload=".."
+ - 	 - Bytes will be sent to the remote I2C slave, in the same order as written in this string.
 	 - Hexadecimal array of Bytes.
-	 - Bytes will be sent to the remote I2C slave, in the same order as written in this string.
 	 - The notation is without leading 0x.
-	 - Each Byte is represented by two digits [0..F].
+	 - Each Byte is represented by two nibbles [0..F].
 	 - Each Byte (except the last one) is separated by a trailing space.
-
 
 Example, how to write 5 Bytes to I2C slave with address 0x20:
 ```xml
@@ -811,7 +811,7 @@ In order to boost up the overall sending speed of I2C, multiple I2C write comman
 	 - This is an enumeration.
 	 - Those values are allowed (Case Sensitive):
 
-| Value             | Meaning                                                                                                   |
+| Value             | Mnemonic                                                                                                  |
 |-------------------|-----------------------------------------------------------------------------------------------------------|
 | DefaultMode       | No optimization used (Default). After transaction a STOP condition is issued and the bus is released      |                                                                           |
 | BurstMode         | After transaction the STOP condition will be suppressed and further read or write sequences can be issued |
@@ -849,7 +849,8 @@ Another attribute is the Timeout:
 
 **10.3) Defining a I2C read job**
 
-In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortRead> tag.
+In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortCreate>.
+The tag to be used is named \<I2CPortRead> tag.
 With this job a single I2C read commands can be triggered.
 This are the two mandatory attributes:
 
@@ -871,9 +872,86 @@ This is an optional attribute:
 <I2CPortRead Length="8" Address="0x10"/>
 ```
 
-To get the result and use the received data to trigger further action the code of UNICENS daemon needs to be adjusted. Inspect the callback function "UCSI_CB_OnI2CRead" for this purpose:
+To get the result and use the received data to trigger further action, the code of UNICENS daemon needs to be adjusted. Inspect the callback function "UCSI_CB_OnI2CRead" for this purpose:
 
 ```C
 void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t inicNetNodeAddress, uint8_t i2cSlaveAddr, const uint8_t *pBuffer, uint32_t bufLen)
+{ }
+```
+
+**10.4) Defining a GPIO create job**
+
+In order to enable the usage of remote GPIO, the ports need to be created first with the \<GPIOPortCreate> tag.
+It only has one mandatory attribute called DebounceTime:
+
+ - DebounceTime=".."
+	 - Specifies the timeout for the GPIO debounce timer (in ms). 
+	 - Each pin is debounced with its own timer that starts to count on every pin event.
+	 - This suppresses unintended events from push buttons, as they usual flicker for a short time on press and release.
+
+ Example, how to create a GPIO port with debouncing filter set to 20ms:
+ 
+```xml
+<GPIOPortCreate DebounceTime="20"/>
+```
+
+**10.4) Defining a GPIO Pin Mode job**
+
+In order to use this job, make sure that the I2C port has already been created by the  \<GPIOPortCreate>.
+The tag to be used is named \<GPIOPortPinMode> tag.
+It only has one mandatory attribute called PinConfiguration:
+
+ - PinConfiguration=".."
+ 	 - Hexadecimal array of Bytes.
+	 - The notation is without leading 0x.
+	 - Each Byte is represented by two nibbles [0..F].
+	 - Each Byte (except the last one) is separated by a trailing space.
+	 - For every GPIO pin to be defined (just skip unused pins) add two bytes to the array:
+		 - First Byte: The GPIO pin number (from 0 for GPIO0 to 8 for GPIO 8)
+		 - Second Byte: The pin configuration byte, which is must be chosen from this table:
+
+| Valid Values | Mnemonic                               |
+|--------------|----------------------------------------|
+| 0x00         | Unavailable                            |
+| 0x01         | Unused                                 |
+| 0x10         | Input                                  |
+| 0x11         | InputStickyHighLevel                   |
+| 0x12         | InputStickyLowLevel                    |
+| 0x13         | InputTriggerRisingEdge                 |
+| 0x14         | InputTriggerFallingEdge                |
+| 0x15         | InputTriggerRisingFallingEdge          |
+| 0x16         | InputTriggerHighLevel                  |
+| 0x17         | InputTriggerLowLevel                   |
+| 0x30         | InputDebounced                         |
+| 0x33         | InputDebouncedTriggerRisingEdge        |
+| 0x34         | InputDebouncedTriggerFallingEdge       |
+| 0x35         | InputDebouncedTriggerRisingFallingEdge |
+| 0x36         | InputDebouncedTriggerHighLevel         |
+| 0x37         | InputDebouncedTriggerLowLevel          |
+| 0x40         | OutputDefaultLow                       |
+| 0x41         | OutputDefaultHigh                      |
+| 0x50         | OutputOpenDrain                        |
+| 0x53         | OutputOpenDrainTriggerRisingEdge       |
+| 0x54         | OutputOpenDrainTriggerFallingEdge      |
+| 0x56         | OutputOpenDrainTriggerHighLevel        |
+| 0x57         | OutputOpenDrainTriggerLowLevel         |
+
+ Example, how to configure GPIO Pin Modes:
+ 
+```xml
+<GPIOPortPinMode PinConfiguration="03 35 07 41 08 40" />
+```
+
+In the example above, there are 3 GPIO pins configured:
+
+ - GPIO Pin 3 is set to InputDebouncedTriggerRisingFallingEdge: It is debounced input and will report network events on rising and falling edges.
+ - GPIO Pin 7 is set to OutputDefaultHigh: It is an output, the initial state of the output is high level.
+ -  GPIO Pin 8 is set to OutputDefaultLow: It is an output, the initial state of the output is low level.
+ - GPIO Pins 0, 1, 2, 4, 5, 6 will remain in an unused state.
+
+To get the result and use the received events from the input pins, the code of UNICENS daemon needs to be adjusted. Inspect the callback function "UCSI_CB_OnGpioStateChange" for this purpose:
+
+```C
+void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t inicNetNodeAddress, uint8_t gpioPinId, bool isHighState)
 { }
 ```
