@@ -1,3 +1,4 @@
+
 # UNICENS XML Description
 
 This file describes how to write a valid UNICENS XML configuration file.
@@ -14,14 +15,16 @@ But any other IDE will work (with less functionality), such as Atmel Studio, MPL
 
 **Tag**
 
-A _tag_ is a construct that begins with `<` and ends with `>`. 
+A _tag_ is a construct that begins with `<` and ends with `>`
+
 Tags come in three flavors:
 
--   _start-tag_, such as  `<section>`;
--   _end-tag_, such as  `</section>`;
--   _empty-element tag_, such as  `<line-break />`.
+-   _start-tag_, such as  `<section>`
+-   _end-tag_, such as  `</section>`
+-   _empty-element tag_, such as  `<line-break />`
 
 Tags can be stored inside other tags. This will form a tree architecture.
+
 For example:
 ```xml
 <Parent>
@@ -56,7 +59,8 @@ and their values are "madonna.jpg" and "Madonna" respectively.
 
 **XML declaration**
 
-XML documents may begin with an  _XML declaration_  that describes some information about themselves. 
+XML documents may begin with an  _XML declaration_  that specify the used version and encoding. 
+
 An example is  `<?xml version="1.0" encoding="UTF-8"?>`
 
 **Schema**
@@ -64,7 +68,7 @@ An example is  `<?xml version="1.0" encoding="UTF-8"?>`
 In addition to being well-formed, an XML document may reference to an external rule set (Document Type Definition (DTD)).
 There are certain rules applicable, such as the name of tags, elements and attributes.
 Also the values of the attributes can be specified as regular expression.
-Such a file is shipped along with UNICENS, its called *unicens.xsd* is shipped.
+Such a file comes along with the UNICENS configuration examples, its called *unicens.xsd*.
 The linkage between the document and its DTD is done in the first tag (Root Tag):
  `<Unicens xsi:noNamespaceSchemaLocation="unicens.xsd">`
 
@@ -85,11 +89,12 @@ Make sure that the file unicens.xsd is in the same folder as your current docume
 ```
 **2.1) Bandwidth calculation**
 
-The attribute AsyncBandwidth in the previous example is mandatory.
+The attribute AsyncBandwidth in the example above is mandatory.
 It specifies how fast the Ethernet channel on INICnet shall be.
 The value specified is in Bytes within 48kHz. So in the example above, this would mean 
 
 > 80 Bytes \* 48000 1/s = 3,84 MByte/s 
+
 > 3,84 MByte/s \* 8 Bit/Byte = 30,72 MBit/s
 
 Note the total network bandwidth limit for both INICnet speed grades:
@@ -102,9 +107,10 @@ Note the total network bandwidth limit for both INICnet speed grades:
 This means for the example above, that the remaining bandwidth for audio / video streaming on an INICnet50 network is 36 Byte (116 Byte - 80 Byte).
 
 Setting the AsyncBandwidth to 0 is allowed. Then no Ethernet communication is possible and all bandwidth is available for audio and video streaming.
+Setting  the AsyncBandwidth to the maximum possible value (here 116 Byte) is allowed. In that case the Ethernet channel is running with the full speed, but no streaming is possible.
 
 Beside of using the Ethernet channel, there are dedicated streaming channels to transport audio and video.
-They use also use the bytes within 48kHz as their bandwidth configuration.
+They use also use the same metric "Bytes within 48kHz" as their bandwidth configuration.
 
 This table gives an idea, what amount of Bytes within 48kHz is used for which use case and what data rate it consumes on the network.
 
@@ -127,16 +133,16 @@ A node is a device wich participates on the INICnet.
 There are three categories which a node can belong to:
 
  1. The root node. It runs the central UNICENS stack. There can only be one device with this role.
- 2. A slim node without any CPU on it, such as an Microphone or Booster. It is completely remote controlled. Any GPIO or I2C peripheral can be remotely triggered from the root node via the network.
+ 2. A slim node without any CPU on it, such as an Microphone or a Booster. It is completely remote controlled. Any GPIO or I2C peripheral can be remotely triggered from the root node via the network.
  3. A smart node with an CPU or micro-controller. It is also completely remote controlled and have GPIO and I2C remote access like the slim node. But there are two additional ways to communicate (peer to peer): via the INICnet control channel and the INICnet Ethernet channel.
 
-Slim Nodes and Smart Nodes may be equipped multiple times in the network. 
+Slim Nodes and Smart Nodes may be instanced multiple times in the network. 
 The theoretical limit of nodes per network is 64. Due to power and timing reasons, the actual value can be lower than that.
 
 Each device needs to have a Node Address which only exists once in that network (not global unique like a MAC address).
 This node address specified by the system integrator and need to be flashed into the Flash or OTP memory of the INIC chip.
 
-This Node Address is a 16 Bit address, which is usually written in hexadecimal representation.
+This Node Address is a 16 Bit address, which is usually written in a hexadecimal representation.
 Due to historical reasons the range of the Node Address is limited to those sections:
 
 | Start |  End  |
@@ -159,7 +165,7 @@ This table can be used as an example starting point for a system integrator:
 | 0x2B0 .. 0x2DF | Entertainment System     | 1 .. 64          |
 | 0x2E0 .. 0x2EF | Camera Instance          | 1 .. 16          |
 
-Specifying an node is done with the \<Node> tag. All node tags are childs from the UNICENS tag.
+Specifying a node is done with the \<Node> tag. All Node tags are childs from the Unicens tag.
 It's important to know, that all devices need to be specified in the document.
 If a device with an unknown Node address tries to enter the network it's getting ignored.
 
@@ -172,7 +178,7 @@ For example, specifying two devices in the Network: UNICENS Master Node and a sm
 	<Node Address="0x2B0"/>
 </Unicens>
 ```
-With this example the mentioned devices are allowed to join the network.
+With this example, the mentioned devices are allowed to join the network.
 As there is no additional information given, the devices can communicate via the Control
 and Ethernet channel but there is no dedicated channels for Audio or Video transmission.
 
@@ -183,7 +189,7 @@ Those connections are reserved bandwidth on the network, which are guarantied fo
 
 **4.1) Defining Synchronous Streams for Audio use cases**
 
-For transportation of uncompressed audio data the synchronous data channel of INICnet is optimal.
+For transportation of uncompressed audio data, the synchronous data channel of INICnet is optimal.
 It always streams with a constant data rate which is by design synchronous on every device.
 This means there is no offset, no drift and no Jitter problems to deal with.
 To define a synchronous connection the \<SyncConnection> tag is used.
@@ -209,15 +215,17 @@ A **non** working example (because of missing parameters) would be:
 In contrast to the synchronous data channel, the isochronous channel is able to transfer a variable data rate.
 The user specifies a worst case (or burst) date rate, which then is allocated on the network.
 When the used compression algorithm (Example:H264 and/or MP3) produce less or no bandwidth, the channel utilization becomes also less.
+
 The specialty about this is stream is that a single data chunk is 188 Byte, when unencrypted or 192 Byte when encrypted.
 Refer [MPEG transport stream](https://en.wikipedia.org/wiki/MPEG_transport_stream) for more information.
+
 To define an isochronous connection the \<AVPConnection> tag is used (Audio Video Packetized).
 It is a child of the \<Node> tag described in Chapter 3. 
 Every node may have more than one isochronous connection.
 There is only a mandatory attribute for the \<AVPConnection> called IsocPacketSize.
 
  - IsocPacketSize=".."
-	 - Enumeration of three integers:
+	 - Enumeration of three integers, choose one:
 		 - *188* use for unencrypted transport streams.
 		 - *196* or *206* for encrypted transport streams (value depending on the used cipher algorithm).
 
@@ -288,35 +296,37 @@ A **non** working example (because of missing parameters) of routing synchronous
 Following two Attributes are mandatory to define a valid USB Socket:
 
  - EndpointAddress=".."
-	 - This is the USB endpoint address. This is an byte value usually written in hexadecimal notation. If the data is transmitted out of the INIC, received by the main CPU (EHC), the highest bit is set, this leads to values starting with 0x80. Data which is received by the INIC, sent by the EHC no additional bits are set, so the starting address is 0x00.
+	 - This is the USB endpoint address. This is a Byte value usually written in a hexadecimal notation. If the data is transmitted out of the INIC, received by the main CPU (EHC), the highest bit is set, this leads to values starting with 0x80. Data which is received by the INIC, sent by the EHC no additional bits are set, so the starting address is 0x00.
 	 - Endpoint 0x00 is reserved for administrative purposes.
 	 - For streaming data, the INIC supports currently in maximum 5 endpoints. So the range 0x01 .. 0x05 (EHC TX) and 0x81 .. 0x85 (EHC RX) may be used.
-	 - Control data is on endpoints for OS81118/9 are 0x0F & 0x8F; for OS81210 are 0x07 & 0x87 (must not be used inside SyncConnection or AVPConnection)
- 	 - asynchronous Ethernet is on endpoints for OS81118/9 are 0x0E & 0x8E; for OS81210 are 0x06 & 0x86 (must not be used inside SyncConnection or AVPConnection)
+	 - Control data is transmitted on endpoints for OS81118/9: 0x0F & 0x8F; for OS81210: 0x07 & 0x87 (must not be used inside SyncConnection or AVPConnection)
+ 	 - Asynchronous Ethernet data is transmitted on endpoints for OS81118/9: 0x0E & 0x8E; for OS81210: 0x06 & 0x86 (must not be used inside SyncConnection or AVPConnection)
 - FramesPerTransaction=".."
-	- A micro frame on USB is chunk of 512 Byte. This is the maximum transmission unit (MTU) for the used bulk transfer mode on USB. In order to get a very efficient streaming behavior the INIC always fills a micro frame completely, so there is no additional signaling needed. Depending on the use case, waiting for 512 Byte of data (for example audio data) to arrive and then start the transmission after that can cause a measurable latency, which for example for active noise cancellation use cases my be unwanted.
-	- To achieve low latency, the integrator can choose to not fill the the micro frame entirely with data. This means, that the transmission is started earlier, with less then 512 Bytes of valid streaming data. The software driver (for EHC TX) or the INIC hardware for (EHC RX) automatically appends invalid stuffing data to fill the micro frame and keep the signaling overhead as less as possible. The invalid stuffing data is never transported on the INICnet, so no bandwidth on the network is wasted.
-	-  The FramesPerTransaction value describes how many samples (PCM, PDM or TS-Packets) are put into one micro frame. For instance, if the there is an stereo 16 bit PCM audio stream (2x2Byte = 4 Byte) to be transported, the maximum possible value for FramesPerTransaction would be 128 (128 x 4 Byte = 512 Byte). Setting an value of 64 in that particular case would leave the micro frame half filled, improving the latency and downgrade the efficiency of USB.
+	- A micro frame on USB is chunk of 512 Byte. This is the maximum transmission unit (MTU) for the used bulk transfer mode on USB. In order to get a very efficient streaming behavior, the INIC always fills a micro frame completely, so there is no additional signaling needed. Depending on the use case, waiting for 512 Byte of data (for example audio data) to arrive and then start the transmission after that can cause a measurable latency, which for example for active noise cancellation use cases may be unwanted.
+	- To achieve low latency, the integrator can choose to not fill the the micro frame entirely with data. This means, that the transmission is started earlier, with less then 512 Bytes of valid streaming data. The software driver (for EHC TX) or the INIC hardware for (EHC RX) automatically appends invalid stuffing data to fill the USB micro frame and keep the signaling overhead as less as possible. The invalid stuffing data is never transported on the INICnet, so no bandwidth on the network is wasted.
+	-  The FramesPerTransaction value describes how many samples (PCM, PDM or TS-Packets) are put into one USB micro frame.
+	- For instance, if the there is an stereo 16 bit PCM audio stream (2x2Byte = 4 Byte) to be transported, the maximum possible value for FramesPerTransaction would be 128 (128 x 4 Byte = 512 Byte). Setting an value of 64 in that particular case would leave the micro frame half filled, improving the latency and downgrade the efficiency of USB.
 	- For synchronous sockets the **minimum** value for FramesPerTransaction is **7**! This is due to the different timing of USB and INICnet.
-	- For isochronous sockets there are only two possibilities: FramesPerTransaction set to 2, in that case two transport stream packets (2 x 188/192 Byte) will stored in one micro frame. The second option is to set the FramesPerTransaction value to 0xFF. In that case, the micro frame is always completely filled. But as 512 Byte of micro frame is not dividable by 188/192 Byte, the fractional rest of the streaming data is put into the next micro frame. This means, that on the received side the integrator can not rely any longer on the fact, that the first Byte which is received, is the first Byte of the transport stream packet. In that case you need to search for 0x47 inside the payload of the stream, which marks the start of a transport stream packet.
+	- For isochronous sockets there are only two possibilities: FramesPerTransaction set to 2, in that case two transport stream packets (2 x 188/192 Byte) will be stored in one USB micro frame. The second option is to set the FramesPerTransaction value to 0xFF. In that case, the USB micro frame is always completely filled. But as 512 Byte of the micro frame is not dividable by 188/192 Byte, the fractional rest of the streaming data is put into the next micro frame. This means, that on the receiver side the integrator can not rely any longer on the fact, that the first Byte which is received will be the first Byte of the transport stream packet. In that case he need to search for 0x47 inside the payload of the stream, which marks the start of a transport stream packet.
 	- In contrast to other sockets, the USB socket bandwidth must not be specified. It automatically adjusts its speed to the corresponding network socket.
 
 **5.2) Defining a MLB Socket**
 
-The Media Local Bus is a dedicated bus for interfacing the INIC and Companions. 
+The Media Local Bus is a dedicated bus for interfacing the INIC and Companions chips. 
 It is adopted by many vendors like Atmel SAM V71, NXP i.MX6, Rensas RCAR H3/M3.
-It can provide very low latency (lower than USB). 
-Of cause the operating system needs to have a scheduler which is fast enough to deal with the increasing amount of interrupts.
+It can provide very low latency use cases (lower than USB). 
+Of cause the operating system needs to have a scheduler, which is fast enough to deal with the increasing amount of interrupts.
+
 Following two Attributes are mandatory to define a valid MLB Socket:
  - ChannelAddress=".."
-	 - Integer value between 10 .. 64
+	 - Integer value between 10 .. 64.
 	 - Value must be even!
-	 - Channel address 0 is unused
-	 - Channel addresses 2 & 4 are reserved for control channel
-	 - Channel addresses 6 & 8 are reserved for asynchronous Ethernet channel
+	 - Channel address 0 is unused.
+	 - Channel addresses 2 & 4 are reserved for control channel.
+	 - Channel addresses 6 & 8 are reserved for asynchronous Ethernet channel.
  - Bandwidth=".."
-	 - The amount of Bytes transferred within 48kHz. See (2.1) Bandwidth calculation.
-	 - The MLB port can be configured with different speed rates (FS). Depending on the chosen speed, the bandwidth must be in a certain range:
+	 - The amount of Bytes transferred within 48kHz (See 2.1).
+	 - The MLB port can be configured with different speed rates (See 9.2). Depending on the chosen speed, the bandwidth must be in a certain range:
 
 | MLB Speed (Fs) | MLB type |  Bandwidth Range (Byte)  |
 |----------------|----------|--------------------------|
@@ -336,8 +346,8 @@ Following two Attributes are mandatory to define a valid Stream Socket:
 	- The hardware pin of the INIC, transporting the data part of the stream. FSY and CLK may be shared between multiple data pins.
 	- Following enumeration represents the allowed values. Choose one out of it: *SRXA0*, *SRXA1*, *SRXB0*, *SRXB1*
  - Bandwidth=".."
-	 - The amount of Bytes transferred within 48kHz. See (2.1) Bandwidth calculation.
-	 - The Streaming port can be configured with different speed rates (FS) and different data formats. Depending on the chosen speed and format, the bandwidth must be in a certain range:
+	 - The amount of Bytes transferred within 48kHz (See 2.1).
+	 - The Streaming port can be configured with different speed rates and different data formats (See 9.3). Depending on the chosen speed and format, the bandwidth must be in a certain range:
 
 | Streaming Port Speed (Fs) | 16Bit Bandwidth Range | 24Bit Bandwidth Range  | Sequential Bandwidth Range |
 |---------------------------|-----------------------|------------------------|----------------------------|
@@ -348,20 +358,20 @@ Following two Attributes are mandatory to define a valid Stream Socket:
 
 **5.4) Defining a Network Socket**
 
-The Network Socket describes the resources allocated on the INICnet streaming channels.
+The Network Socket describes the resources allocated on the INICnet streaming channel.
 As mentioned earlier, in every Connection (SyncConnection, AVPConnection), there must be exactly one Network Socket defined, either as input or as output.
 Following two Attributes are mandatory to define a valid Network Socket:
  - Bandwidth=".."
-	 - The amount of Bytes transferred within 48kHz. See (2.1) Bandwidth calculation.
+	 - The amount of Bytes transferred within 48kHz (See 2.1).
 	 - This value should match to the opposite socket bandwidth (except for USB).
-	 - For isochronous streaming on MLB the socket bandwidth of the Network Socket and the MediaLB Socket may be different.
+	 - For isochronous streaming on MLB, the socket bandwidth of the Network Socket and the MediaLB Socket may be different.
  - Route=".."
 	 - The value is any sort of user defined name, there is no syntax to be followed (other than to be XML complaint).
 	 - This route name acts as a reference. 
 	 - If two connections share the same route name, they will be automatically connected.
 	 - The integrator must make sure that all source network sockets are connected to at least one sink network socket.
 
-An example, routing a microphone to a head unit and an additional slave device would be:
+An example, routing a microphone to a head unit and an additional slave device:
 
 ```xml
 <?xml version="1.0"?>
@@ -392,21 +402,24 @@ An example, routing a microphone to a head unit and an additional slave device w
 In the example above, the node 0x210 is acting as audio source, because the \<NetworkSocket> is the second entry in the \<SyncConnection>.
 It defines the route name "Route_Microphone", as mentioned earlier, any name would be valid here.
 You will find exactly the same name (case and space sensitive!) in node 0x200 and 0x2B0.
-This time \<SyncConnection> is the first entry within \<SyncConnection>, meaning those connections are the sinks.
+This time \<NetworkSocket> is the first entry within \<SyncConnection>, meaning those connections are the sinks.
+
 So both devices are getting the audio data from the microphone in parallel and with the same latency and phase.
 The node 0x200 is streaming to USB endpoint address 0x81 and the node 0x2B0 to MLB channel address 0x10.
 
 **6.) Working with Combiner and Splitter**
 
-For audio streaming use cases on synchronous channel it can be very helpful to group or separate channels. 
+For audio streaming use cases on synchronous channel, it can be very helpful to group or separate channels. 
 
 **6.1) Defining a Combiner**
 
-The Combiner is for synchronous connections only and has the ability to join multiple audio streams from the network to one big time division multiplex (TDM) data stream. This newly generated stream can be routed out to USB, MediaLB or Streaming port. For instance to combine 3 stereo microphones on the network into a single six channel TDM stream on USB.
+The Combiner is for synchronous connections only and has the ability to join multiple audio streams from the network to one time division multiplex (TDM) data stream. This newly generated stream can be routed out to USB, MediaLB or Streaming port. For instance to combine 3 stereo microphones on the network into a single six channel TDM stream on USB.
+
 Doing so has multiple benefits:
-	- It safes resources (USB endpoints, MLB channels or Streaming Pins).
-	- It keeps multiple channels in the correct phase relation. Especially important for beam forming and noise canceling applications.
-	- It helps to improve the efficiency of the sink port in low latency use cases. Especially the USB bus becomes inefficient, if it must transport very small data chunks (see FramesPerTransaction attribute in 5.1).
+
+ - It safes resources (USB endpoints, MLB channels or Streaming Pins).
+ - It keeps multiple channels in the correct phase relation. Especially important for beam forming and noise canceling applications.
+ - It helps to improve the efficiency of the sink port in low latency use cases. Especially the USB bus becomes inefficient, if it must transport very small data chunks (See 5.1, FramesPerTransaction attribute).
 
 A Combiner resists in  inside a \<SyncConnection> as first entry, meaning it is an input to the INIC. It has one mandatory attribute:
  - BytesPerFrame=".."
@@ -421,10 +434,10 @@ The childs of the Combiner are then multiple \<NetworkSocket> tags with addition
 	 - A value of 0 means that it shall be routed to begin of the TDM stream.
 	 - This value must be smaller than the attribute BytesPerFrame of the \<SyncConnection> tag
  - Bandwidth 
-	 - This attribute was already marked as mandatory in (5.4). But in the Combiner context it is also used to define indirect the end position inside of the combined TDM stream: 
+	 - This attribute was already marked as mandatory in (See 5.4). But in the Combiner context it is also used to define indirect the end position inside of the combined TDM stream: 
 *End = Bandwidth + Offset*
 
-Each \<NetworkSocket> forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping it each other.
+Each \<NetworkSocket> forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping each other.
 
 An example, routing three mono microphones to a head unit using a Combiner:
 
@@ -467,9 +480,11 @@ An example, routing three mono microphones to a head unit using a Combiner:
 **6.2) Defining a Splitter**
 
 The Splitter is for synchronous connections only and has the ability to cut multi channel audio TDM streams into one or multiple audio streams with smaller bandwidth and stream them to the network.
+
 Doing so has one benefits:
-	- It helps arrange the audio channels in different orders.
-	- For instance, the integrator can choose to have only mono channels on the network using a Splitter. On the sink side he can then combine various mono channels (also from different source devices) for that particular use case using a Combiner (see 6.1).
+	
+ - It helps to arrange the audio channels in different orders.
+	- For instance, the integrator can choose to have only mono channels on the network using a Splitter. On the sink side he can then combine various mono channels (also from different source devices) for that particular use case using a Combiner (See 6.1).
 
 A Splitter resists in  inside a \<SyncConnection> as second entry, meaning it is an output of the INIC. It has one mandatory attribute:
  - BytesPerFrame=".."
@@ -483,12 +498,12 @@ The childs of the Splitter are then multiple \<NetworkSocket> tags with addition
 	 - A value of 0 means that it shall be cutted at the begin of the TDM stream.
 	 - This value must be smaller than the attribute BytesPerFrame of the \<SyncConnection> tag
  - Bandwidth 
-	 - This attribute was already marked as mandatory in (5.4). But in the Splitter context it is also used to define indirect the cutting end position inside of the combined TDM stream: 
+	 - This attribute was already marked as mandatory in (See 5.4). But in the Splitter context it is also used to define indirect the cutting end position inside of the combined TDM stream: 
 *End = Bandwidth + Offset*
 
-Each \<NetworkSocket> forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping it each other.
+Each \<NetworkSocket> forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping each other.
 
-Here is An example, cutting a 5.1 multi channel stream from a head into three stereo streams using a Splitter. The sinks are three stereo slim amplifier.
+Here is An example, cutting a 5.1 multi channel stream from a head unit into three stereo streams using a Splitter. The sinks are three stereo slim amplifier.
 
 ```xml
 <?xml version="1.0"?>
@@ -530,9 +545,10 @@ Here is An example, cutting a 5.1 multi channel stream from a head into three st
 **7.) Defining an Audio Loopback**
 
 In certain cases it may be helpful to route the audio from the source back to it self (looping back). This may be the case, where the radio tuner shall not accidental activate the head units wake word (like "Alexa" or "Hey Siri").
-To achieve this simply add two \<SyncConnection> where the Route name is the same, and where the \<NetworkSocket> is an output in connection, and the input on the other connection. The target bus (USB, MediaLB, Streaming Port) may be different for both connections.
+To achieve this simply add two \<SyncConnection> to the same Node. Ensure that the Route name of the  \<NetworkSocket> is the same for both.
+The target bus (USB, MediaLB, Streaming Port) may be different for both connections.
 
-An example, routing an SyncConnection back to the same device (0x200):
+An example, routing a SyncConnection back to the same device (0x200):
 
 ```xml
 <?xml version="1.0"?>
@@ -582,7 +598,7 @@ Reasons to do so are:
 
 In order to prepare a connection to be switched, the integrator needs to add two optional attributes to the \<NetworkSocket> tag (valid for source and sink):
  - RouteId=".."
-	 - The RouteId  value must be a unsigned 16 bit value (0x0 .. 0xFFFF). The RouteId value must be unique over the complete XML file. It acts as a handle, which can be used later in the C-code to address this connection.
+	 - The RouteId  value must be an unsigned 16 bit value (0x0 .. 0xFFFF). The RouteId value must be unique over the complete XML file. It acts as a handle, which can be used later in the C-code to address this connection.
  - IsActive=".."
 	 - The IsActive value is a Boolean (either "true" or "false"). If this attribute is not specified, the default behavior is activated. If there are multiple sources for one connection, only one source may be activated by setting "true", all other need to be set to "false".
 
@@ -631,9 +647,9 @@ An example, supporting switching of multiple sources, would be:
 In the example above three sources are available:
  - 0x1001: The  Head Unit will be routed on the auxiliary boards headphone jacket, by default actived.
  - 0x1002: The  microphone will be routed on the auxiliary boards headphone jacket, by default deactivated.
- - 0x1003: The auxiliary boards "Line In"-jacket will be routed to its own headphone jacket (Loopback (see 7)), by default deactivated.
+ - 0x1003: The auxiliary boards "Line In"-jacket will be routed to its own headphone jacket (Loopback (See 7)), by default deactivated.
 
-Once the XML is prepared, the source code of the UNICENS daemon shall be modified.
+Once the XML is prepared, the source code of the UNICENS daemon can be modified.
 A solution would be this C-code snippet (can be put everywhere in the project):
 
 ```C
