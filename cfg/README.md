@@ -5,14 +5,15 @@ This file describes how to write a valid UNICENS XML configuration file.
 **1.) XML Basics**
 
 Be aware that the rules of XML enforce that the document is well formed.
-This means it is zero tolerant, a single typo will invalidate the whole document and any application using it must not continue.
+This means it is zero tolerant, a single typo will invalidate the whole document and any application using it, must not continue.
 So in any case it is useful  to use an IDE to check the document.
-This can be the UNICENS System Designer, which covers also deeper rule set related to UNICENS.
-But any other editor will also work, examples are Eclipse, NetBeans, Visual Studio.
+This can be the UNICENS System Designer, which covers also deep rule set related to UNICENS, INIC and Drivers.
+But any other IDE will work (with less functionality), such as Atmel Studio, MPLAB-X, Eclipse, NetBeans, Visual Studio.
 
 **In short the XML provides those terminolgies: *(partly from Wikipedia)***
 
-Tag
+**Tag**
+
 A _tag_ is a construct that begins with `<` and ends with `>`. 
 Tags come in three flavors:
 
@@ -41,21 +42,25 @@ Parent
     └─── GrandChild
 ```
 
-Element
+**Element**
+
 An _element_ is a construct that begins with a start-tag and ends with a matching end-tag. 
 An example is `<greeting>Hello, world!</greeting>`
 Note, that the UNICENS schema is not using elements currently.
 
-Attribute
+**Attribute**
+ 
 An _attribute_ is a construct consisting of a name–value pair that exists within a start-tag or empty-element tag.
 An example is `<img src="madonna.jpg" alt="Madonna" />`, where the names of the attributes are "src" and "alt",
 and their values are "madonna.jpg" and "Madonna" respectively.
 
-XML declaration
+**XML declaration**
+
 XML documents may begin with an  _XML declaration_  that describes some information about themselves. 
 An example is  `<?xml version="1.0" encoding="UTF-8"?>`
 
-Schema
+**Schema**
+
 In addition to being well-formed, an XML document may reference to an external rule set (Document Type Definition (DTD)).
 There are certain rules applicable, such as the name of tags, elements and attributes.
 Also the values of the attributes can be specified as regular expression.
@@ -63,7 +68,8 @@ Such a file is shipped along with UNICENS, its called *unicens.xsd* is shipped.
 The linkage between the document and its DTD is done in the first tag (Root Tag):
  `<Unicens xsi:noNamespaceSchemaLocation="unicens.xsd">`
 
-Comments
+**Comments**
+
 _Comments_ may appear anywhere in a document. Comments begin with `<!--` and end with `-->`
 An example of a valid comment: `<!--this is a comment -->`
 
@@ -206,18 +212,25 @@ When the used compression algorithm (Example:H264 and/or MP3) produce less or no
 The specialty about this is stream is that a single data chunk is 188 Byte, when unencrypted or 192 Byte when encrypted.
 Refer [MPEG transport stream](https://en.wikipedia.org/wiki/MPEG_transport_stream) for more information.
 To define an isochronous connection the \<AVPConnection> tag is used (Audio Video Packetized).
-It is a child of the \<Node> tag described in Chapter 3. Every node may have more than one isochronous connection.
+It is a child of the \<Node> tag described in Chapter 3. 
+Every node may have more than one isochronous connection.
+There is only a mandatory attribute for the \<AVPConnection> called IsocPacketSize.
+
+ - IsocPacketSize=".."
+	 - Enumeration of three integers:
+		 - *188* use for unencrypted transport streams.
+		 - *196* or *206* for encrypted transport streams (value depending on the used cipher algorithm).
 
 A **non** working example (because of missing parameters) would be:
 ```xml
 <?xml version="1.0"?>
 <Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
 	<Node Address="0x200">
-		<AVPConnection>
+		<AVPConnection IsocPacketSize="188">
 		</AVPConnection>
 	</Node>
 	<Node Address="0x2B0">
-		<AVPConnection>
+		<AVPConnection IsocPacketSize="188">
 		</AVPConnection>
 	</Node>
 </Unicens>
@@ -321,7 +334,7 @@ But it can also support multi channel TDM and PDM data types.
 Following two Attributes are mandatory to define a valid Stream Socket:
 - StreamPinID=".."
 	- The hardware pin of the INIC, transporting the data part of the stream. FSY and CLK may be shared between multiple data pins.
-	- Following enumeration represents the allowed values. Choose one out of it: SRXA0, SRXA1, SRXB0, SRXB1
+	- Following enumeration represents the allowed values. Choose one out of it: *SRXA0*, *SRXA1*, *SRXB0*, *SRXB1*
  - Bandwidth=".."
 	 - The amount of Bytes transferred within 48kHz. See (2.1) Bandwidth calculation.
 	 - The Streaming port can be configured with different speed rates (FS) and different data formats. Depending on the chosen speed and format, the bandwidth must be in a certain range:
@@ -687,14 +700,14 @@ MediaLB port can only be frequency locked to the network’s system clock.
 	 - This is an enumeration.
 	 - Refer 5.2 to see the meaning.
 	 - Those values are allowed (Case Sensitive):
-		 - 256Fs
-		 - 512Fs
-		 - 1024Fs
-		 - 2048Fs
-		 - 3072Fs
-		 - 4096Fs
-		 - 6114Fs
-		 - 8192Fs
+		 - *256Fs*
+		 - *512Fs*
+		 - *1024Fs*
+		 - *2048Fs*
+		 - *3072Fs*
+		 - *4096Fs*
+		 - *6114Fs*
+		 - *8192Fs*
 
 **9.3) Defining a Streaming port**
 
@@ -704,23 +717,23 @@ Following two Attributes are mandatory to define a valid streaming port:
 	 - This is an enumeration.
 	 - Refer 5.3 to see the meaning.
 	 - Those values are allowed (Case Sensitive):
-		 - Left16Bit
-		 - Right16Bit
-		 - TDM16Bit
-		 - Left24Bit
-		 - Right24it
-		 - TDM24Bit
-		 - Seq
+		 - *Left16Bit*
+		 - *Right16Bit*
+		 - *TDM16Bit*
+		 - *Left24Bit*
+		 - *Right24it*
+		 - *TDM24Bit*
+		 - *Seq*
  - ClockConfig=".."
 	 - The value is a multiple of the network frame rate Fs (48kHz); this means the
 streaming port can only be frequency locked to the network’s system clock.
  	 - This is an enumeration.
 	 - Refer 5.3 to see the meaning.
 	 - Those values are allowed (Case Sensitive):
-		 - 64Fs
-		 - 128Fs
-		 - 256Fs
-		 - 512Fs
+		 - *64Fs*
+		 - *128Fs*
+		 - *256Fs*
+		 - *512Fs*
 
 **10.) Working with Scripts**
 
@@ -735,7 +748,7 @@ The content of the script is then embedded in a tag called \<Script>, which is a
 The \<Script> tag has only mandatory attribute called "Name":
  - Name=".."
 	 - This is the counter part of the Script attribute of the <\Node> tag
-	 - If the name of the names are identical, there are linked and the script will be executed once the device is found at network startup.
+	 - If the name of the attributes are identical, then they are linked and the script will be executed once the device is found at network startup.
 
 A **non** working example (because of missing parameters) would be:
 ```xml
@@ -755,15 +768,14 @@ The jobs will then declared as childs of the \<Script> tag. UNICENS will execute
 
 These are the possible jobs:
 
-| XML Tag            | Mandatory Attributes                                | Optional Attributes               | Usage                      |
-|--------------------|-----------------------------------------------------|-----------------------------------|----------------------------|
-| \<I2CPortCreate>   | Speed                                               |                                   | Creating Remote I2C port   |
-| \<I2CPortWrite>    | Address, Payload                                    | Mode, BlockCount, Length, Timeout | Writing to I2C             |
-| \<I2CPortRead>     | Length, Address                                     | Timeout                           | Reading from I2C           |
-| \<GPIOPortCreate>  | DebounceTime                                        |                                   | Creating Remote GPIO port  |
-| \<GPIOPortPinMode> | PinConfiguration                                    |                                   | Configuring GPIO port      |
-| \<GPIOPinState>    | Data, Mask                                          |                                   | Toggling GPIOs             |
-
+| XML Tag            | Mandatory Attributes | Optional Attributes               | Usage                      |
+|--------------------|----------------------|-----------------------------------|----------------------------|
+| \<I2CPortCreate>   | Speed                |                                   | Creating Remote I2C port   |
+| \<I2CPortWrite>    | Address, Payload     | Mode, BlockCount, Length, Timeout | Writing to I2C             |
+| \<I2CPortRead>     | Length, Address      | Timeout                           | Reading from I2C           |
+| \<GPIOPortCreate>  | DebounceTime         |                                   | Creating Remote GPIO port  |
+| \<GPIOPortPinMode> | PinConfiguration     |                                   | Configuring GPIO port      |
+| \<GPIOPinState>    | Data, Mask           |                                   | Toggling GPIOs             |
 
 **10.1) Defining a I2C port create job**
 In order to enable the usage of remote I2C, the ports need to be created first with the \<I2CPortCreate> tag. It only has one mandatory attribute called Speed:
@@ -772,10 +784,10 @@ In order to enable the usage of remote I2C, the ports need to be created first w
 	 - This is an enumeration.
 	 - Those values are allowed (Case Sensitive):
 
-| Value    | Mnemonic                          |
-|----------|-----------------------------------|
-| SlowMode | Port SCL clock operates at 100kHz |
-| FastMode | Port SCL clock operates at 400kHz |
+| Value      | Mnemonic                          |
+|------------|-----------------------------------|
+| *SlowMode* | Port SCL clock operates at 100kHz |
+| *FastMode* | Port SCL clock operates at 400kHz |
 
 Example, how to create I2C port with 400kHz:
 ```xml
@@ -811,11 +823,11 @@ In order to boost up the overall sending speed of I2C, multiple I2C write comman
 	 - This is an enumeration.
 	 - Those values are allowed (Case Sensitive):
 
-| Value             | Mnemonic                                                                                                  |
-|-------------------|-----------------------------------------------------------------------------------------------------------|
-| DefaultMode       | No optimization used (Default). After transaction a STOP condition is issued and the bus is released      |                                                                           |
-| BurstMode         | After transaction the STOP condition will be suppressed and further read or write sequences can be issued |
-| RepeatedStartMode | Enables writing multiple blocks of bytes of the same size                                                 |
+| Value             | Mnemonic                                                                                                    |
+|-------------------|-------------------------------------------------------------------------------------------------------------|
+| *DefaultMode*       | No optimization used (Default). After transaction a STOP condition is issued and the bus is released      |                                                                           |
+| *BurstMode*         | After transaction the STOP condition will be suppressed and further read or write sequences can be issued |
+| *RepeatedStartMode* | Enables writing multiple blocks of bytes of the same size                                                 |                                             |
 
  - BlockCount=".."
 	 - Specifies the number of blocks to be written to the I2C address.
@@ -979,4 +991,137 @@ It only has two mandatory attribute called Data and Mask:
 <GPIOPortPinMode Mask="0x100" Value="0x100"/>
 ```
 
-In the example above, the GPIO 8 is (0x100 == 1 << 8) is set to High state.
+In the example above, the GPIO 8 (0x100 == 1 << 8) is set to High state.
+
+**11.) Working with Drivers**
+
+The UNICENS daemon may use the UNICENS XML description to either configure the driver on the fly.
+Also the helper tool xml2stuct can generate an offline default configuration out of the UNICENS XML description, which then can be used to configure the driver in a static way. So it always come up with an already working configuration, once the INIC is detected.
+
+This feature is pure optional, but certainly helpful. 
+If the driver configuration does not align with the INIC configuration  (for Example FramesPerTransaction (see 5.1)), because doing the driver configuration manually, then awful audio artifacts will come out of the speakers. Having one configuration for all, will automatically keep both UNICENS and the driver domain linked.
+
+A driver configuration can be assigned for each Connection in the XML file. Therefor the \<SyncConnection> and the \<AVPConnection> tag have an optional attribute called Driver:
+ - Driver=".."
+	 - The value is any sort of user defined name, there is no syntax to be followed (other than to be XML complaint).
+	 - This driver name acts as a reference. 
+
+The content of the driver is then embedded in a tag called \<Driver>, which is a child of \<Unicens>, the same hierarchy level as \<Node>
+The \<Driver> tag has only mandatory attribute called "Name":
+ - Name=".."
+	 - This is the counter part of the Driver attribute of the <\SyncConnection> or \<AVPConnection> tag.
+	 - If the name of the attributes are identical, then they are linked and the driver settings will be applied.
+
+A **non** working example (because of missing parameters) would be:
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+	<Node Address="0x200">
+		<SyncConnection Driver="Driver_HeadUnitTx"/>
+	</Node>
+	<Driver Name="Driver_HeadUnitTx"/>
+</Unicens>
+```
+
+There can be child tags declared inside the Driver tag. They hold the actual information to setup the driver. Currently three kind of device drivers can be instanced and configured:
+
+| XML Tag  | Mandatory Attributes                                                     | Usage                           |
+|----------|--------------------------------------------------------------------------|---------------------------------|
+| \<Cdev>  | Name, BufferSize, BufferCount                                            | Character Device                |
+| \<V4l2>  | Name, BufferSize, BufferCount                                            | Video For Linux 2 video capture |
+| \<Alsa > | Name, BufferSize, BufferCount, AudioChannelCount, AudioChannelResolution | ALSA sound                      |
+
+**11.1) Defining a CDEV driver instance**
+
+In order to activate the character device driver the \<Cdev> tag is used. Once the driver is up and running, it will generate a virtual file in the */dev* folder of targets file system. This virtual file can be opened, read, write as any other file by an tool like *cat* or *dd* or in any programming language like C, C++, Java, Python.  However seeking inside the character device is not supported, as the data is getting streamed and therefor have no random access possibility. 
+If the file supports reading or writing is depending on the role of the current connection:
+if its a source it supports reading. If its a sink it supports writing.
+There is no protocol header involved. The first Byte written to the CDEV is the first Byte on the network. The same applies for the receive part.
+ It has three mandatory attributes:
+ 
+ - Name=".."
+	  - The given name will appear up in the /dev folder in the targets file system. UNICENS or the xml2struct tool will add the prefix "inic-" in front of the given name to make sure, that all INIC related character devices are listed grouped in the directory.
+	  - The Name="hello" would form the character device */dev/inic-hello*
+
+ - BufferSize="..."
+	 - Integer value, specifying the amount of Bytes for a single buffer element.
+	 - This buffer will allocated inside the driver and will temporary hold the streamed data.
+	 - Making this value bigger, makes the application more robust in that cases where the operating systems scheduler is slowly doing multitasking, due to heavy system load.
+	 - Reducing the buffer size may help to reduce the audio / video latency. But if the value is too small, you will face data loss (Buffer-Underrun). Which leads to audio and video artifacts.
+	 - If the latency does not matter, using 8 KB is usually safe.
+	 - If the latency is crucial, there is no general good buffer size. It is very depended on the used CPU, operating system, kernel configuration and the typical system load. The integrator needs to find a good compromise between good latency and good robustness for each new system to be build. 
+
+ - BufferCount="..."
+	 - Integer Value, specifying the amount of buffers (each with size defined in attribute BufferSize).
+	 - Having at least 2 buffers is recommend (double buffering).
+	 - If the latency does not matter, using 8 buffers is usually safe.
+	 - If the latency is crucial, the integrator needs also tweak this value.
+
+Example of creating an CDEV driver instance:
+```xml
+<Cdev Name="Sync-Tx" BufferSize="4096" BufferCount="4"/>
+```
+
+**11.2) Defining a Video for Linux driver instance**
+
+The usage of the Video for Linux (V4L2) driver is limited to video reception (sink) use cases only. 
+It emulates a video capture device, as known for webcams or TV tuners.
+Doing so will easily add support for standard video players like VLC. The isochronous video stream on INICnet will be shown along with all other available capture devices. The playback of the content can then start without any further configuration of the player.
+The V4L2-devices will appear also in the */dev* folder of the targets file system. But all V4L2-devices will start with the prefix *video* followed by an incrementing instance number.
+
+The mandatory attributes are identical to the ones used for the CDEV driver (see 11.1).
+The difference is only the name attribute. It is not reflected in the file name. Instead it can be accessed via the V4L2 ioctl API.
+
+Example of creating an V4L2 driver instance:
+```xml
+<V4l2 Name="RearView" BufferSize="7520" BufferCount="4"/>
+```
+
+As shown in the example above, a buffer size of 7520 Byte (40 * 188 Byte) is memory efficient and usually robust, when the IsocPacketSize is set to 188 Byte.
+
+**11.3) Defining an ALSA driver instance**
+
+Using the Advanced Linux Sound Architecture (ALSA) driver instance will form either an audio capture device or a playback device, depending if configured as source or sink.
+Any standard Linux audio enabled tool (such as Audacity, mplayer, aplay, arecord, speaker-test) can instantly access the synchronous audio data channel on INICnet without any further configuration.
+The ALSA subsystem also handles the sample rate conversion (if necessary), such as up-sampling from 16 Bit, 44,1kHz from the Bluetooth receiver to 24 Bit, 48kHz on INICnet.
+If PulseAudio is available on the target, the ALSA driver instance will be also usable from that audio subsystem.
+
+However, if the audio latency is crucial and the audio data shall not be influenced by the operation system, using CDEV (see 11.1) instead of ALSA should be considered.
+
+Three mandatory attributes are identical to the ones used for the CDEV driver (see 11.1).
+The difference is only the name attribute. It is not reflected in the file name. Instead it can be accessed via the ALSA ioctl API and is visible in the audio applications.
+But there are two additional mandatory attributes:
+
+ - AudioChannelCount=".."
+	 - Integer number, describing the amount of channels.
+	 - Must be at least *1*, meaning it is a mono channel.
+	 - Other well known numbers (not limited to) are:
+		 - *2* is stereo channel.
+		 - *6* is 5.1 surround sound channel
+		 - *8* is 7.1 surround sound channel
+		 - *9* is 7.2 surround sound channel
+ - AudioChannelResolution=".."
+	 - Following enumeration represents the allowed values: *8bit*, *16bit*, *24bit*, *32bit*
+
+An example, how to setup an ALSA driver:
+
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
+	<Node Address="0x200">
+		<SyncConnection Driver="Driver_HeadUnitTx">
+			<USBSocket EndpointAddress="0x1" FramesPerTransaction="128" />
+			<NetworkSocket Bandwidth="4" Route="Route_HeadUnit" />
+		</SyncConnection>
+	</Node>
+		<Driver Name="Driver_HeadUnitTx">
+		<!-- Uncomment the following line to use character device (located in /dev/inic*) -->
+		<!-- Cdev Name="HeadUnitTx" BufferSize="4096" BufferCount="4"/ -->
+
+		<!-- Comment the following line to disable ALSA (use arecord and aplay or Audacity) -->
+		<Alsa Name="HeadUnitTx" BufferSize="4096" BufferCount="4" AudioChannelCount="2" AudioChannelResolution="16bit" />
+	</Driver>
+</Unicens>
+```
+
+As shown in the example above, the API could theoretically provide multiple driver configurations inside the \<Driver> tag. However the driver is currently not ready for instancing multiple device emulations for a single connection. So make sure that only one configuration is enabled.
