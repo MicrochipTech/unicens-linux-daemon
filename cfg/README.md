@@ -939,7 +939,7 @@ It only has one mandatory attribute called PinConfiguration:
  Example, how to configure GPIO Pin Modes:
  
 ```xml
-<GPIOPortPinMode PinConfiguration="03 35 07 41 08 40" />
+<GPIOPortPinMode PinConfiguration="03 35 07 41 08 40"/>
 ```
 
 In the example above, there are 3 GPIO pins configured:
@@ -955,3 +955,28 @@ To get the result and use the received events from the input pins, the code of U
 void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t inicNetNodeAddress, uint8_t gpioPinId, bool isHighState)
 { }
 ```
+
+**10.5) Defining a GPIO Pin State job**
+
+In order to use this job, make sure that the I2C port has already been created by the  \<GPIOPortCreate>.
+The tag to be used is named \<GPIOPinState> tag.
+The purpose of this function is to set the state of GPIOs configured as output pin. For all other configurations, this function has no influence.
+It only has two mandatory attribute called Data and Mask:
+
+ - Mask =".."
+ 	 - This value is a bit mask (unsigned 16 Bit). 
+ 	 - Each bit addresses one GPIO pin (starting with Bit 0 for GPIO 0 and ending with Bit 15 for GPIO 15).
+ 	 - This attribute selects which GPIO output pin(s) shall be adjusted.
+ 	 - Each bit has the meaning: 0=Untouched; 1=Change state of Pin according to Data Attribute (see next attribute).
+
+ - Value=".."
+ 	 - This value is a bit mask (unsigned 16 Bit). 
+ 	 - Each bit addresses one GPIO pin (starting with Bit 0 for GPIO 0 and ending with Bit 15 for GPIO 15).
+ 	 - This attribute selects the new state of the GPIO output pin(s). Make sure this is also reflected by the corresponding Mask attribute, mentioned earlier.
+ 	 - Each bit has the meaning: 0=Set to Low state (if Mask matches); 1=Set to High state (if Mask matches).
+
+```xml
+<GPIOPortPinMode Mask="0x100" Value="0x100"/>
+```
+
+In the example above, the GPIO 8 is (0x100 == 1 << 8) is set to High state.
