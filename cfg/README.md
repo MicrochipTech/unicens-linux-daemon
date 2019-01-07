@@ -1043,7 +1043,7 @@ There is no protocol header involved. The first Byte written to the CDEV is the 
 	  - The given name will appear up in the /dev folder in the targets file system. UNICENS or the xml2struct tool will add the prefix "inic-" in front of the given name to make sure, that all INIC related character devices are listed grouped in the directory.
 	  - The Name="hello" would form the character device */dev/inic-hello*
 
- - BufferSize="..."
+ - BufferSize=".."
 	 - Integer value, specifying the amount of Bytes for a single buffer element.
 	 - This buffer will allocated inside the driver and will temporary hold the streamed data.
 	 - Making this value bigger, makes the application more robust in that cases where the operating systems scheduler is slowly doing multitasking, due to heavy system load.
@@ -1051,7 +1051,7 @@ There is no protocol header involved. The first Byte written to the CDEV is the 
 	 - If the latency does not matter, using 8 KB is usually safe.
 	 - If the latency is crucial, there is no general good buffer size. It is very depended on the used CPU, operating system, kernel configuration and the typical system load. The integrator needs to find a good compromise between good latency and good robustness for each new system to be build. 
 
- - BufferCount="..."
+ - BufferCount=".."
 	 - Integer Value, specifying the amount of buffers (each with size defined in attribute BufferSize).
 	 - Having at least 2 buffers is recommend (double buffering).
 	 - If the latency does not matter, using 8 buffers is usually safe.
@@ -1125,3 +1125,43 @@ An example, how to setup an ALSA driver:
 ```
 
 As shown in the example above, the API could theoretically provide multiple driver configurations inside the \<Driver> tag. However the driver is currently not ready for instancing multiple device emulations for a single connection. So make sure that only one configuration is enabled.
+
+**12.) Adding Documentation**
+
+Beside the possibility to place comment tags \<!-- --> anywhere in the XML document, there are several optional attributes for that purpose available.
+All of those attributes have no influence to UNICENS daemon nor to the xml2struct tool.
+But the UNICENS System Designer tool can apply additional checks, when those attributes are present. The tool also generate nice graphical representations of the configuration, when the documentation attributes are filled.
+
+These are the optional available documentation attributes:
+
+| Tag            | Attribute                | Mnemonic                                                                     |
+|----------------|--------------------------|------------------------------------------------------------------------------|
+| Unicens        | Network                  | Enum: *INICnet-50*, *INICnet-150*, *MOST150*, used for bandwidth calculation |
+| Unicens        | Name                     | Name of the XML document                                                     |
+| Unicens        | Description              | Short explanation of the system usage                                        |
+| Node           | Name                     | Name of the node, visible in tools graph                                     |
+| Node           | Role                     | Enum: *Root*, *Slim*, *Smart*                                                |
+| Node           | NetworkController        | Enum: *OS81118*, *OS81119*, *OS81210*, *OS81212*, *OS81214*, *OS81216*       |
+| Node           | NetworkControllerVersion | The firmware version string (like *V2.4.0-76_RELEASE*)                       |
+
+Additional to the attributes mentioned above, **all** tags have an optional attribute called Description.
+
+ - Description=".."
+	 - Any short string explaining the intention about that specific tag.
+
+Example showing commenting attributes:
+
+```xml
+<?xml version="1.0"?>
+<Unicens AsyncBandwidth="80" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:noNamespaceSchemaLocation="unicens.xsd"
+	Network="INICnet-150" Description="Sample Configuration">
+
+	<Node Address="0x200" Name="HeadUnit" 
+		  Role="Root" 
+		  NetworkController="OS81118" 
+		  NetworkControllerVersion="V2.4.0-76_RELEASE" 
+		  Description="Vendor specific"/>
+</Unicens>
+```
