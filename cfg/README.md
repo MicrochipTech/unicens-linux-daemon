@@ -306,7 +306,7 @@ Following two Attributes are mandatory to define a valid USB Socket:
 	- To achieve low latency, the integrator can choose to not fill the the micro frame entirely with data. This means, that the transmission is started earlier, with less then 512 Bytes of valid streaming data. The software driver (for EHC TX) or the INIC hardware for (EHC RX) automatically appends invalid stuffing data to fill the USB micro frame and keep the signaling overhead as less as possible. The invalid stuffing data is never transported on the INICnet, so no bandwidth on the network is wasted.
 	-  The FramesPerTransaction value describes how many samples (PCM, PDM or TS-Packets) are put into one USB micro frame.
 	- For instance, if the there is an stereo 16 bit PCM audio stream (2x2Byte = 4 Byte) to be transported, the maximum possible value for FramesPerTransaction would be 128 (128 x 4 Byte = 512 Byte). Setting an value of 64 in that particular case would leave the micro frame half filled, improving the latency and downgrade the efficiency of USB.
-	- For synchronous sockets the **minimum** value for FramesPerTransaction is **7**! This is due to the different timing of USB and INICnet.
+	- For synchronous sockets the **minimum** value for FramesPerTransaction is **7**. This is due to the different timing of USB and INICnet.
 	- For isochronous sockets there are only two possibilities: FramesPerTransaction set to 2, in that case two transport stream packets (2 x 188/192 Byte) will be stored in one USB micro frame. The second option is to set the FramesPerTransaction value to 0xFF. In that case, the USB micro frame is always completely filled. But as 512 Byte of the micro frame is not dividable by 188/192 Byte, the fractional rest of the streaming data is put into the next micro frame. This means, that on the receiver side the integrator can not rely any longer on the fact, that the first Byte which is received will be the first Byte of the transport stream packet. In that case he need to search for 0x47 inside the payload of the stream, which marks the start of a transport stream packet.
 	- In contrast to other sockets, the USB socket bandwidth must not be specified. It automatically adjusts its speed to the corresponding network socket.
 
@@ -320,7 +320,7 @@ Of cause the operating system needs to have a scheduler, which is fast enough to
 Following two Attributes are mandatory to define a valid MLB Socket:
  - ChannelAddress=".."
 	 - Integer value between 10 .. 64.
-	 - Value must be even!
+	 - Value must be even.
 	 - Channel address 0 is unused.
 	 - Channel addresses 2 & 4 are reserved for control channel.
 	 - Channel addresses 6 & 8 are reserved for asynchronous Ethernet channel.
@@ -401,7 +401,7 @@ An example, routing a microphone to a head unit and an additional slave device:
 
 In the example above, the node 0x210 is acting as audio source, because the \<NetworkSocket> is the second entry in the \<SyncConnection>.
 It defines the route name "Route_Microphone", as mentioned earlier, any name would be valid here.
-You will find exactly the same name (case and space sensitive!) in node 0x200 and 0x2B0.
+You will find exactly the same name (Case and space sensitive) in node 0x200 and 0x2B0.
 This time \<NetworkSocket> is the first entry within \<SyncConnection>, meaning those connections are the sinks.
 
 So both devices are getting the audio data from the microphone in parallel and with the same latency and phase.
@@ -586,7 +586,7 @@ An example, routing a SyncConnection back to the same device (0x200):
 	</Node>
 </Unicens>
 ```
-Unfortunately it is not possible to use a loopback with connections where a Splitter or a Combiner is used!
+Unfortunately it is not possible to use a loopback with connections where a Splitter or a Combiner is used.
 
 **8.) Switching Connections**
 
@@ -674,6 +674,7 @@ Error cases can be handled by inspecting the callback "UCSI_CB_OnRouteResult".
 
 So far only sockets where used. They also configured the ports of the INIC. But the attributes used there, configured only the specific parameters for that connection. There are more parameters, which are shared for all connections using a port. Those parameters can be stored in port tags in the XML file or saved persistent into the INIC Configuration String (Flash / OTP) memory. Those parameters are mandatory, not configuring them in the XML nor configuring them in the Configuration String will lead to a lot of run time errors and may leave the entire setup unusable.
 Port tags are defined as a child of a \<Node> tag.
+
 This are the possible port types:
 
 | XML Tag        | Mandatory Attributes                                                         | Usage                      |
@@ -699,8 +700,8 @@ Following four Attributes are mandatory to define a valid USB port:
 
  - PhysicalLayer=".."
 	 - For this attribute only two values are valid.
-		 - "Standard" will configure the USB port to be used external as norm USB device
-		 - "HSIC" will configure the USB port to be used for PCB connections only. This reduces cost, when the INIC is on the same PCB as the CPU, because the analog front end is less complex.
+		 - "Standard" will configure the USB port to be used as external standard USB device
+		 - "HSIC" will configure the USB port to be used for internal PCB connections only. This reduces cost, when the INIC is on the same PCB as the CPU, because the analog front end is less complex.
  - StreamingIfEpOutCount=".."
 	 - The amount of streaming channels going out of the INIC (RX for CPU), starting with 0x81. The maximum number is 5.
  - StreamingIfEpInCount=".."
@@ -715,7 +716,7 @@ This tag has only one attribute:
 MediaLB port can only be frequency locked to the network’s system clock.
 	 - This is an enumeration.
 	 - Refer 5.2 to see the meaning.
-	 - Those values are allowed (Case Sensitive):
+	 - This are the allowed values (Case and space sensitive):
 		 - *256Fs*
 		 - *512Fs*
 		 - *1024Fs*
@@ -732,7 +733,7 @@ Following two Attributes are mandatory to define a valid streaming port:
 	 - Defines the alignment of the data bytes within the Streaming Port frame.
 	 - This is an enumeration.
 	 - Refer 5.3 to see the meaning.
-	 - Those values are allowed (Case Sensitive):
+	 - This are the allowed values (Case and space sensitive):
 		 - *Left16Bit*
 		 - *Right16Bit*
 		 - *TDM16Bit*
@@ -745,7 +746,7 @@ Following two Attributes are mandatory to define a valid streaming port:
 streaming port can only be frequency locked to the network’s system clock.
  	 - This is an enumeration.
 	 - Refer 5.3 to see the meaning.
-	 - Those values are allowed (Case Sensitive):
+	 - This are the allowed values (Case and space sensitive):
 		 - *64Fs*
 		 - *128Fs*
 		 - *256Fs*
@@ -753,14 +754,15 @@ streaming port can only be frequency locked to the network’s system clock.
 
 **10.) Working with Scripts**
 
-The INIC on Slim and Smart nodes can remote control peripheral like audio codecs, camera sensors, INIC companions, port expander, LEDs and Buttons. Therefor it provides an I2C master interface and GPIO pins, which are controllable via network.
+The INIC on a Slim or a Smart node can remote control peripheral like audio codecs, camera sensors, INIC companions, port expander, LEDs and Buttons. Therefor it provides an I2C master interface and GPIO pins, which are controllable via network.
 UNICENS provides the capability to execute a list of jobs, when a device first time enters the network.  This list is called script.
 Those scripts can be assigned for each node in the XML file. Therefor the \<Node> tag has an optional attribute called Script:
  - Script=".."
 	 - The value is any sort of user defined name, there is no syntax to be followed (other than to be XML complaint).
 	 - This script name acts as a reference. 
 
-The content of the script is then embedded in a tag called \<Script>, which is a child of \<Unicens>, the same hierarchy level as \<Node>
+The content of the script is then embedded in a tag called \<Script>, which is a child of \<Unicens>, the same hierarchy level as \<Node>.
+
 The \<Script> tag has only mandatory attribute called "Name":
  - Name=".."
 	 - This is the counter part of the Script attribute of the <\Node> tag
@@ -779,7 +781,7 @@ A **non** working example (because of missing parameters) would be:
 ```
 
 In the example above, the node with the address 0x240 references to the script named "Script_AUX_IO". 
-In the next line the script is getting declared, with exact the same name (Case sensitive!). 
+In the next line the script is getting declared, with exact the same name (Case and space sensitive). 
 The jobs will then declared as childs of the \<Script> tag. UNICENS will execute the jobs in the same order as they appear in the XML file.
 
 These are the possible jobs:
@@ -794,11 +796,12 @@ These are the possible jobs:
 | \<GPIOPinState>    | Data, Mask           |                                   | Toggling GPIOs             |
 
 **10.1) Defining a I2C port create job**
+
 In order to enable the usage of remote I2C, the ports need to be created first with the \<I2CPortCreate> tag. It only has one mandatory attribute called Speed:
 
  - Speed=".."
 	 - This is an enumeration.
-	 - Those values are allowed (Case Sensitive):
+	 - This are the allowed values (Case and space sensitive):
 
 | Value      | Mnemonic                          |
 |------------|-----------------------------------|
@@ -822,7 +825,7 @@ When only the two mandatory attributes are given, then a single message is sent:
 	- The lowest Bit (Read/Write) is not part of this address (so shift right by one Bit).
 	- If addressing in hexadecimal notation is intended, add leading 0x before the value. Otherwise it will be interpreted in decimal notation. 
  - Payload=".."
- - 	 - Bytes will be sent to the remote I2C slave, in the same order as written in this string.
+	 - Bytes will be sent to the remote I2C slave, in the same order as written in this string.
 	 - Hexadecimal array of Bytes.
 	 - The notation is without leading 0x.
 	 - Each Byte is represented by two nibbles [0..F].
@@ -837,13 +840,13 @@ In order to boost up the overall sending speed of I2C, multiple I2C write comman
 
  - Mode=".."
 	 - This is an enumeration.
-	 - Those values are allowed (Case Sensitive):
+	 - This are the allowed values (Case and space sensitive):
 
 | Value             | Mnemonic                                                                                                    |
 |-------------------|-------------------------------------------------------------------------------------------------------------|
 | *DefaultMode*       | No optimization used (Default). After transaction a STOP condition is issued and the bus is released      |                                                                           |
 | *BurstMode*         | After transaction the STOP condition will be suppressed and further read or write sequences can be issued |
-| *RepeatedStartMode* | Enables writing multiple blocks of bytes of the same size                                                 |                                             |
+| *RepeatedStartMode* | Enables writing of multiple blocks with the same size                                                 |                                             |
 
  - BlockCount=".."
 	 - Specifies the number of blocks to be written to the I2C address.
@@ -853,7 +856,7 @@ In order to boost up the overall sending speed of I2C, multiple I2C write comman
  - Length
 	 - Number of bytes to be written to the I2C address. 
 	 - If parameter Mode is set to BurstMode, the valid range of this parameter goes from 1 to 30
-	 - For all other modes, the length is automatically taken from the Byte array length given with the Payload attribute.
+	 - For all other modes, the length is automatically taken from the Byte array length, given with the Payload attribute.
 
 Example, how to write 5 blocks with each 3 Bytes to I2C slave with address 0x10:
 ```xml
@@ -868,18 +871,19 @@ With the example above, the following I2C write commands will be issued to slave
  -  0x13, 0x00, 0x00, STOP
  -  0x14, 0x00, 0x00, STOP
 
-Another attribute is the Timeout:
+Another optional attribute is the Timeout:
 
  - Timeout=".."
 	 - Time in milliseconds.
 	 - If not set, 1000 ms is used as default.
-	 - Reduce this value, if an I2C device is optional and the system does not want to wait for it to appear.
+	 - Reduce this value, if an I2C device is optional and the system shall not wait for it to appear.
 
 **10.3) Defining a I2C read job**
 
 In order to use this job, make sure that the I2C port has already been created by the  \<I2CPortCreate>.
-The tag to be used is named \<I2CPortRead> tag.
+The tag to be used is named \<I2CPortRead>.
 With this job a single I2C read commands can be triggered.
+
 This are the two mandatory attributes:
 
  - Length=".."
@@ -893,9 +897,9 @@ This is an optional attribute:
  - Timeout=".."
 	 - Time in milliseconds.
 	 - If not set, 1000 ms is used as default.
-	 - Reduce this value, if an I2C device is optional and the system does not want to wait for it to appear.
+	 - Reduce this value, if an I2C device is optional and the system shall not wait for it to appear.
 
- Example, how to read 8 Bytes to I2C slave with address 0x10:
+ Example, how to read 8 Bytes from I2C slave with address 0x10:
 ```xml
 <I2CPortRead Length="8" Address="0x10"/>
 ```
@@ -909,7 +913,8 @@ void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t inicNetNodeAddress, ui
 
 **10.4) Defining a GPIO create job**
 
-In order to enable the usage of remote GPIO, the ports need to be created first with the \<GPIOPortCreate> tag.
+In order to enable the usage of remote GPIO, the ports need to be created first with the \<GPIOPortCreate>.
+
 It only has one mandatory attribute called DebounceTime:
 
  - DebounceTime=".."
@@ -936,7 +941,7 @@ It only has one mandatory attribute called PinConfiguration:
 	 - Each Byte (except the last one) is separated by a trailing space.
 	 - For every GPIO pin to be defined (just skip unused pins) add two bytes to the array:
 		 - First Byte: The GPIO pin number (from 0 for GPIO0 to 8 for GPIO 8)
-		 - Second Byte: The pin configuration byte, which is must be chosen from this table:
+		 - Second Byte: The pin configuration byte, which must be chosen from this table:
 
 | Valid Values | Mnemonic                               |
 |--------------|----------------------------------------|
@@ -972,7 +977,7 @@ It only has one mandatory attribute called PinConfiguration:
 
 In the example above, there are 3 GPIO pins configured:
 
- - GPIO Pin 3 is set to InputDebouncedTriggerRisingFallingEdge: It is debounced input and will report network events on rising and falling edges.
+ - GPIO Pin 3 is set to InputDebouncedTriggerRisingFallingEdge: It is a debounced input and will report network events on rising and falling edges.
  - GPIO Pin 7 is set to OutputDefaultHigh: It is an output, the initial state of the output is high level.
  -  GPIO Pin 8 is set to OutputDefaultLow: It is an output, the initial state of the output is low level.
  - GPIO Pins 0, 1, 2, 4, 5, 6 will remain in an unused state.
@@ -987,15 +992,16 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t inicNetNodeAddress, uint8_t 
 **10.5) Defining a GPIO Pin State job**
 
 In order to use this job, make sure that the I2C port has already been created by the  \<GPIOPortCreate>.
-The tag to be used is named \<GPIOPinState> tag.
+The tag to be used is named \<GPIOPinState>.
 The purpose of this function is to set the state of GPIOs configured as output pin. For all other configurations, this function has no influence.
-It only has two mandatory attribute called Data and Mask:
+
+It has two mandatory attribute called Data and Mask:
 
  - Mask =".."
  	 - This value is a bit mask (unsigned 16 Bit). 
  	 - Each bit addresses one GPIO pin (starting with Bit 0 for GPIO 0 and ending with Bit 15 for GPIO 15).
  	 - This attribute selects which GPIO output pin(s) shall be adjusted.
- 	 - Each bit has the meaning: 0=Untouched; 1=Change state of Pin according to Data Attribute (see next attribute).
+ 	 - Each bit has the meaning: 0=Untouched; 1=Change the state of the Pin according to the Value attribute (see next).
 
  - Value=".."
  	 - This value is a bit mask (unsigned 16 Bit). 
@@ -1012,17 +1018,17 @@ In the example above, the GPIO 8 (0x100 == 1 << 8) is set to High state.
 **11.) Working with Drivers**
 
 The UNICENS daemon may use the UNICENS XML description to either configure the driver on the fly.
-Also the helper tool xml2stuct can generate an offline default configuration out of the UNICENS XML description, which then can be used to configure the driver in a static way. So it always come up with an already working configuration, once the INIC is detected.
+Or the helper tool xml2stuct can generate an offline default configuration out of the UNICENS XML description, which is then used for configuring the driver in a static way. So it always come up with an already working configuration, once the INIC is detected.
 
-This feature is pure optional, but certainly helpful. 
-If the driver configuration does not align with the INIC configuration  (for Example FramesPerTransaction (see 5.1)), because doing the driver configuration manually, then awful audio artifacts will come out of the speakers. Having one configuration for all, will automatically keep both UNICENS and the driver domain linked.
+Having one configuration for all, will automatically keep both UNICENS and the driver domain linked together. Otherwise, if the driver configuration does not align with the INIC configuration (for Example FramesPerTransaction (See 5.1)), because doing the driver configuration manually, awful audio artifacts will come out of the speakers. 
 
 A driver configuration can be assigned for each Connection in the XML file. Therefor the \<SyncConnection> and the \<AVPConnection> tag have an optional attribute called Driver:
  - Driver=".."
 	 - The value is any sort of user defined name, there is no syntax to be followed (other than to be XML complaint).
 	 - This driver name acts as a reference. 
 
-The content of the driver is then embedded in a tag called \<Driver>, which is a child of \<Unicens>, the same hierarchy level as \<Node>
+The content of the driver is then embedded in a tag called \<Driver>, which is a child of \<Unicens>, the same hierarchy level as \<Node>.
+
 The \<Driver> tag has only mandatory attribute called "Name":
  - Name=".."
 	 - This is the counter part of the Driver attribute of the <\SyncConnection> or \<AVPConnection> tag.
@@ -1049,29 +1055,30 @@ There can be child tags declared inside the Driver tag. They hold the actual inf
 
 **11.1) Defining a CDEV driver instance**
 
-In order to activate the character device driver the \<Cdev> tag is used. Once the driver is up and running, it will generate a virtual file in the */dev* folder of targets file system. This virtual file can be opened, read, write as any other file by an tool like *cat* or *dd* or in any programming language like C, C++, Java, Python.  However seeking inside the character device is not supported, as the data is getting streamed and therefor have no random access possibility. 
-If the file supports reading or writing is depending on the role of the current connection:
+In order to activate the character device driver the \<Cdev> tag is used. Once the driver is up and running, it will generate a virtual file in the */dev* folder in the target file system. This virtual file can be opened, read, written as any other file by a tool like *cat* or *dd* or in any programming language like C, C++, Java, Python.  However seeking inside the character device is not supported, as the data is getting streamed and therefor has no random access possibility. 
+If the file supports reading or writing, is depending on the role of the current connection:
 if its a source it supports reading. If its a sink it supports writing.
 There is no protocol header involved. The first Byte written to the CDEV is the first Byte on the network. The same applies for the receive part.
- It has three mandatory attributes:
+
+It has three mandatory attributes:
  
  - Name=".."
-	  - The given name will appear up in the /dev folder in the targets file system. UNICENS or the xml2struct tool will add the prefix "inic-" in front of the given name to make sure, that all INIC related character devices are listed grouped in the directory.
-	  - The Name="hello" would form the character device */dev/inic-hello*
+	  - The given name will appear up in the /dev folder in the target file system. UNICENS or the xml2struct tool will add the prefix "inic-" in front of the given name to make sure, that all INIC related character devices are grouped in the directory.
+	  - The Name="hello" would form the character device */dev/inic-hello*.
 
  - BufferSize=".."
 	 - Integer value, specifying the amount of Bytes for a single buffer element.
-	 - This buffer will allocated inside the driver and will temporary hold the streamed data.
-	 - Making this value bigger, makes the application more robust in that cases where the operating systems scheduler is slowly doing multitasking, due to heavy system load.
-	 - Reducing the buffer size may help to reduce the audio / video latency. But if the value is too small, you will face data loss (Buffer-Underrun). Which leads to audio and video artifacts.
+	 - This buffer will be allocated inside the driver and will temporary hold the streamed data.
+	 - Making this value bigger, makes the application more robust, in cases where the operating systems scheduler is slowly doing task switching, due to the heavy system load.
+	 - Reducing the buffer size may help to reduce the audio / video latency. But if the value is too small, the risk of data loss (Buffer-Underrun) increases, which may result in audio and video artifacts.
 	 - If the latency does not matter, using 8 KB is usually safe.
-	 - If the latency is crucial, there is no general good buffer size. It is very depended on the used CPU, operating system, kernel configuration and the typical system load. The integrator needs to find a good compromise between good latency and good robustness for each new system to be build. 
+	 - If the latency is crucial, there is no general good buffer size. It is very depended on the used CPU, operating system, kernel configuration and the typical system load. The integrator needs to find a good compromise between good latency and good robustness.
 
  - BufferCount=".."
-	 - Integer Value, specifying the amount of buffers (each with size defined in attribute BufferSize).
+	 - Integer Value, specifying the amount of buffers (each with the size defined in attribute BufferSize).
 	 - Having at least 2 buffers is recommend (double buffering).
 	 - If the latency does not matter, using 8 buffers is usually safe.
-	 - If the latency is crucial, the integrator needs also tweak this value.
+	 - If the latency is crucial, the integrator needs to tweak this value also.
 
 Example of creating an CDEV driver instance:
 ```xml
@@ -1081,11 +1088,12 @@ Example of creating an CDEV driver instance:
 **11.2) Defining a Video for Linux driver instance**
 
 The usage of the Video for Linux (V4L2) driver is limited to video reception (sink) use cases only. 
-It emulates a video capture device, as known for webcams or TV tuners.
-Doing so will easily add support for standard video players like VLC. The isochronous video stream on INICnet will be shown along with all other available capture devices. The playback of the content can then start without any further configuration of the player.
-The V4L2-devices will appear also in the */dev* folder of the targets file system. But all V4L2-devices will start with the prefix *video* followed by an incrementing instance number.
+It provides a video capture device, as known for webcams or TV tuners.
+Doing so will add support for standard video players like VLC. The isochronous video stream on INICnet will be shown along with all other available capture devices. The playback of the content can then start without any further configuration of the player.
+The V4L2-devices will also appear in the */dev* folder of the target file system. But all V4L2-devices will start with the prefix *video*, followed by an incrementing instance number.
 
 The mandatory attributes are identical to the ones used for the CDEV driver (see 11.1).
+
 The difference is only the name attribute. It is not reflected in the file name. Instead it can be accessed via the V4L2 ioctl API.
 
 Example of creating an V4L2 driver instance:
@@ -1093,13 +1101,14 @@ Example of creating an V4L2 driver instance:
 <V4l2 Name="RearView" BufferSize="7520" BufferCount="4"/>
 ```
 
-As shown in the example above, a buffer size of 7520 Byte (40 * 188 Byte) is memory efficient and usually robust, when the IsocPacketSize is set to 188 Byte.
+As shown in the example above, a buffer size of 7520 Byte (40 * 188 Byte) is memory efficient and usually robust (If IsocPacketSize is set to 188 Byte).
 
 **11.3) Defining an ALSA driver instance**
 
-Using the Advanced Linux Sound Architecture (ALSA) driver instance will form either an audio capture device or a playback device, depending if configured as source or sink.
+Using the Advanced Linux Sound Architecture (ALSA) driver instance will form either an audio capture device or an audio playback device, depending if it is configured as a source or a sink.
 Any standard Linux audio enabled tool (such as Audacity, mplayer, aplay, arecord, speaker-test) can instantly access the synchronous audio data channel on INICnet without any further configuration.
-The ALSA subsystem also handles the sample rate conversion (if necessary), such as up-sampling from 16 Bit, 44,1kHz from the Bluetooth receiver to 24 Bit, 48kHz on INICnet.
+The ALSA subsystem also handles the sample rate conversion (if necessary), such as up-sampling from PCM 16 Bit 44,1kHz from the Bluetooth receiver to PCM 24 Bit 48kHz on INICnet.
+
 If PulseAudio is available on the target, the ALSA driver instance will be also usable from that audio subsystem.
 
 However, if the audio latency is crucial and the audio data shall not be influenced by the operation system, using CDEV (see 11.1) instead of ALSA should be considered.
@@ -1112,12 +1121,12 @@ But there are two additional mandatory attributes:
 	 - Integer number, describing the amount of channels.
 	 - Must be at least *1*, meaning it is a mono channel.
 	 - Other well known numbers (not limited to) are:
-		 - *2* is stereo channel.
-		 - *6* is 5.1 surround sound channel
-		 - *8* is 7.1 surround sound channel
-		 - *9* is 7.2 surround sound channel
+		 - *2* is a stereo channel.
+		 - *6* is a 5.1 surround sound channel
+		 - *8* is a 7.1 surround sound channel
+		 - *9* is a 7.2 surround sound channel
  - AudioChannelResolution=".."
-	 - Following enumeration represents the allowed values: *8bit*, *16bit*, *24bit*, *32bit*
+	 - This are the allowed values (Case and space sensitive): *8bit*, *16bit*, *24bit*, *32bit*
 
 An example, how to setup an ALSA driver:
 
@@ -1140,13 +1149,13 @@ An example, how to setup an ALSA driver:
 </Unicens>
 ```
 
-As shown in the example above, the API could theoretically provide multiple driver configurations inside the \<Driver> tag. However the driver is currently not ready for instancing multiple device emulations for a single connection. So make sure that only one configuration is enabled.
+As shown in the example above, the API could theoretically provide multiple driver configurations inside the \<Driver> tag. However the driver is currently not ready for handling multiple device instances for a single connection. So make sure that only one configuration is enabled.
 
 **12.) Adding Documentation**
 
 Beside the possibility to place comment tags \<!-- --> anywhere in the XML document, there are several optional attributes for that purpose available.
-All of those attributes have no influence to UNICENS daemon nor to the xml2struct tool.
-But the UNICENS System Designer tool can apply additional checks, when those attributes are present. The tool also generate nice graphical representations of the configuration, when the documentation attributes are filled.
+All of those attributes have no influence to the UNICENS daemon nor to the xml2struct tool.
+But the UNICENS System Designer tool can apply additional checks, when those attributes are present. The tool also generate better graphical representations of the configuration, when the documentation attributes are filled.
 
 These are the optional available documentation attributes:
 
@@ -1154,7 +1163,6 @@ These are the optional available documentation attributes:
 |----------------|--------------------------|------------------------------------------------------------------------------|
 | Unicens        | Network                  | Enum: *INICnet-50*, *INICnet-150*, *MOST150*, used for bandwidth calculation |
 | Unicens        | Name                     | Name of the XML document                                                     |
-| Unicens        | Description              | Short explanation of the system usage                                        |
 | Node           | Name                     | Name of the node, visible in tools graph                                     |
 | Node           | Role                     | Enum: *Root*, *Slim*, *Smart*                                                |
 | Node           | NetworkController        | Enum: *OS81118*, *OS81119*, *OS81210*, *OS81212*, *OS81214*, *OS81216*       |
