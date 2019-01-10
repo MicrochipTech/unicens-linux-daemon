@@ -1,4 +1,3 @@
-
 # UNICENS XML Description
 
 This file describes how to write a valid UNICENS XML configuration file.
@@ -94,9 +93,9 @@ The attribute _AsyncBandwidth_ in the example above is mandatory.
 It specifies the bandwidth of the asynchronous channel on INICnet which can be used for e.g. ethernet communication.
 The value specified is in Bytes within 48 kHz. So in the example above, this would mean
 
-> 80 Bytes \* 48000 1/s = 3,84 MByte/s
+> 80 Bytes \* 48000 1/s = 3.84 MByte/s
 
-> 3,84 MByte/s \* 8 Bit/Byte = 30,72 MBit/s
+> 3.84 MByte/s \* 8 Bit/Byte = 30.72 MBit/s
 
 Note the total network bandwidth limit for both INICnet speed grades:
 
@@ -117,16 +116,16 @@ The table below shows different use-cases for audio data transmission and the co
 
 | Use Case                  | Data Type | Bytes Within 48 kHz | Bandwidth in MBit/s |
 |---------------------------|-----------|---------------------|---------------------|
-| Mono 16 Bit               | Synchron  | 2                   | 0,768               |
-| Mono 24 Bit               | Synchron  | 3                   | 1,152               |
-| Stereo 16 Bit             | Synchron  | 4                   | 1,536               |
-| Stereo 24 Bit             | Synchron  | 6                   | 2,304               |
-| 5.1 channels 16 Bit       | Synchron  | 12                  | 4,608               |
-| 5.1 channels 24 Bit       | Synchron  | 18                  | 6,912               |
-| 7.1 channels 16 Bit       | Synchron  | 16                  | 6,144               |
-| 7.1 channels 24 Bit       | Synchron  | 24                  | 9,216               |
-| Low Quality H264 Video    | Isochron  | 8                   | 3,072               |
-| Superb Quality H264 Video | Isochron  | 80                  | 30,72               |
+| Mono 16 Bit               | Synchron  | 2                   | 0.768               |
+| Mono 24 Bit               | Synchron  | 3                   | 1.152               |
+| Stereo 16 Bit             | Synchron  | 4                   | 1.536               |
+| Stereo 24 Bit             | Synchron  | 6                   | 2.304               |
+| 5.1 channels 16 Bit       | Synchron  | 12                  | 4.608               |
+| 5.1 channels 24 Bit       | Synchron  | 18                  | 6.912               |
+| 7.1 channels 16 Bit       | Synchron  | 16                  | 6.144               |
+| 7.1 channels 24 Bit       | Synchron  | 24                  | 9.216               |
+| Low Quality H264 Video    | Isochron  | 8                   | 3.072               |
+| Superb Quality H264 Video | Isochron  | 80                  | 30.72               |
 
 **3.) Defining the nodes**
 
@@ -166,7 +165,7 @@ This table can be used as an example starting point for a system integrator:
 | 0x2B0 .. 0x2DF | Entertainment System     | 1 .. 64          |
 | 0x2E0 .. 0x2EF | Camera Instance          | 1 .. 16          |
 
-Specifying a node is done with the `\<Node>` tag. All Node tags are children from the `Unicens` tag.
+Specifying a node is done with the `<Node>` tag. All Node tags are children from the `<Unicens>` tag.
 It's important to know, that all devices need to be specified in the document.
 If a device with an unknown Node address tries to enter the network it will be ignored.
 
@@ -193,8 +192,8 @@ These connections use reserved network bandwidth, which is guaranteed for that p
 For transportation of uncompressed audio data, the synchronous data channel of INICnet is optimal.
 It always streams with a constant data rate which is by design synchronous on every device.
 This means, there are no offset, no drift and no jitter problems to deal with.
-To define a synchronous connection the \<SyncConnection> tag is used.
-It is a child of the `\<Node>` tag described in Chapter 3. Every node may have more than one synchronous connection.
+To define a synchronous connection the `<SyncConnection>` tag is used.
+It is a child of the `<Node>` tag described in Chapter 3. Every node may have more than one synchronous connection.
 
 A **non** working example (because of missing parameters) would be:
 ```xml
@@ -222,10 +221,10 @@ Therefore, a single data chunk is always a multiple of 188 Byte if the data is u
 For encrypted data, each data chunk is always a multiple of 192 Byte.
 Please refer to [MPEG transport stream](https://en.wikipedia.org/wiki/MPEG_transport_stream) for more information.
 
-To define an isochronous connection the `\<AVPConnection>` tag is used (AVP: Audio Video Packetized).
-It is a child of the `\<Node>` tag described in Chapter 3.
+To define an isochronous connection the `<AVPConnection>` tag is used (AVP: Audio Video Packetized).
+It is a child of the `<Node>` tag described in Chapter 3.
 Every node may have more than one isochronous connection.
-There is only one mandatory attribute for the `\<AVPConnection>` called `IsocPacketSize`.
+There is only one mandatory attribute for the `<AVPConnection>` called _IsocPacketSize_.
 
  - IsocPacketSize=".."
 	 - Enumeration of three integers, choose one:
@@ -252,17 +251,17 @@ A **non** working example (because of missing tags) would be:
 A socket represents a way into the INIC or out of the INIC. It references the used INIC port and specifies how the data shall be formatted on that port.
 The following table lists the possible socket types:
 
-| XML Tag          | Mandatory Attributes                  | Usage                      |
-|------------------|---------------------------------------|----------------------------|
-| \<USBSocket>     | EndpointAddress, FramesPerTransaction | Universal Serial Bus (USB) |
-| \<MediaLBSocket> | ChannelAddress, Bandwidth             | Media Local Bus (MLB)      |
-| \<StreamSocket>  | StreamPinID, Bandwidth                | I2S/TDM/PDM port           |
-| \<NetworkSocket> | Bandwidth, Route                      | INICnet channel            |
+| XML Tag           | Mandatory Attributes                  | Usage                      |
+|-------------------|---------------------------------------|----------------------------|
+| `<USBSocket>`     | EndpointAddress, FramesPerTransaction | Universal Serial Bus (USB) |
+| `<MediaLBSocket>` | ChannelAddress, Bandwidth             | Media Local Bus (MLB)      |
+| `<StreamSocket>`  | StreamPinID, Bandwidth                | I2S/TDM/PDM port           |
+| `<NetworkSocket>` | Bandwidth, Route                      | INICnet channel            |
 
-Always two sockets exist inside a connection (applies to \<SyncConnection> and \<AVPConnection>).
+Always two sockets exist inside a connection (applies to `<SyncConnection>` and `<AVPConnection>`).
 The order of the socket tag inside the connection tag is crucial.
 The first socket is the input socket, whereas the second socket is the output socket. The direction is always given from the INIC point of view.
-In any case, the `\<NetworkSocket>` tag must be either in the first or the second entry.
+In any case, the `<NetworkSocket>` tag must be either in the first or the second entry.
 And the input and output sockets must be from a different kind.
 
 A **non** working example (because of missing parameters) of routing isochronous data from the USB port to the INICnet channel  would be:
@@ -402,10 +401,10 @@ An example, routing a microphone to a head unit and an additional slave device:
 </Unicens>
 ```
 
-In the example above, the node 0x210 is acting as audio source, because the \<NetworkSocket> is the second entry in the \<SyncConnection>.
+In the example above, the node 0x210 is acting as audio source, because the `<NetworkSocket>` is the second entry in the `<SyncConnection>`.
 It defines the route name "Route_Microphone", as mentioned earlier, any name would be valid here.
 You will find exactly the same name (Case and space sensitive) in node 0x200 and 0x2B0.
-This time \<NetworkSocket> is the first entry within \<SyncConnection>, meaning those connections are the sinks.
+This time `<NetworkSocket>` is the first entry within `<SyncConnection>`, meaning those connections are the sinks.
 
 So both devices are getting the audio data from the microphone in parallel and with the same latency and phase.
 The node 0x200 is streaming to USB endpoint address 0x81 and the node 0x2B0 to MLB channel address 0x10.
@@ -424,23 +423,23 @@ Doing so has multiple benefits:
  - It keeps multiple channels in the correct phase relation. Especially important for beam forming and noise canceling applications.
  - It helps to improve the efficiency of the sink port in low latency use cases. Especially the USB bus becomes inefficient, if it must transport very small data chunks (See 5.1, FramesPerTransaction attribute).
 
-A Combiner resists in  inside a \<SyncConnection> as first entry, meaning it is an input to the INIC. It has one mandatory attribute:
+A Combiner resists in  inside a `<SyncConnection>` as first entry, meaning it is an input to the INIC. It has one mandatory attribute:
  - BytesPerFrame=".."
 	 - The combined amount of Bytes within 48kHz for all streams together.
 	 - For example, combining three stereo microphones would need a value of 6.
-	 - This value is then the same as the corresponding Bandwidth attribute of the opposite \<MediaLBSocket> or \<StreamSocket> tag.
-	 - This value needs to be considered also in the calculation for the FramesPerTransaction attribute, if the opposite socket is an \<USBSocket>
+	 - This value is then the same as the corresponding Bandwidth attribute of the opposite `<MediaLBSocket>` or `<StreamSocket>` tag.
+	 - This value needs to be considered also in the calculation for the FramesPerTransaction attribute, if the opposite socket is an `<USBSocket>`
 
-The childs of the Combiner are then multiple \<NetworkSocket> tags with additional mandatory attributes:
+The childs of the Combiner are then multiple `<NetworkSocket>` tags with additional mandatory attributes:
  - Offset=".."
-	 - This attribute declares the start position inside of the combined TDM stream for that particular \<NetworkSocket>.
+	 - This attribute declares the start position inside of the combined TDM stream for that particular `<NetworkSocket>`.
 	 - A value of 0 means that it shall be routed to begin of the TDM stream.
-	 - This value must be smaller than the attribute BytesPerFrame of the \<SyncConnection> tag
+	 - This value must be smaller than the attribute BytesPerFrame of the `<SyncConnection>` tag
  - Bandwidth
 	 - This attribute was already marked as mandatory in (See 5.4). But in the Combiner context it is also used to define indirect the end position inside of the combined TDM stream:
 *End = Bandwidth + Offset*
 
-Each \<NetworkSocket> forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping each other.
+Each `<NetworkSocket>` forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping each other.
 
 An example, routing three mono microphones to a head unit using a Combiner:
 
@@ -489,22 +488,22 @@ Doing so has one benefits:
  - It helps to arrange the audio channels in different orders.
 	- For instance, the integrator can choose to have only mono channels on the network using a Splitter. On the sink side he can then combine various mono channels (also from different source devices) for that particular use case using a Combiner (See 6.1).
 
-A Splitter resists in  inside a \<SyncConnection> as second entry, meaning it is an output of the INIC. It has one mandatory attribute:
+A Splitter resists in  inside a `<SyncConnection>` as second entry, meaning it is an output of the INIC. It has one mandatory attribute:
  - BytesPerFrame=".."
 	 - The amount of Bytes within 48kHz of the source stream.
-	 - This value is then the same as the corresponding Bandwidth attribute of the opposite \<MediaLBSocket> or \<StreamSocket> tag.
-	 - This value needs to be considered also in the calculation for the FramesPerTransaction attribute, if the opposite socket is an \<USBSocket>
+	 - This value is then the same as the corresponding Bandwidth attribute of the opposite `<MediaLBSocket>` or `<StreamSocket>` tag.
+	 - This value needs to be considered also in the calculation for the FramesPerTransaction attribute, if the opposite socket is an `<USBSocket>`
 
-The childs of the Splitter are then multiple \<NetworkSocket> tags with additional mandatory attributes:
+The childs of the Splitter are then multiple `<NetworkSocket>` tags with additional mandatory attributes:
  - Offset=".."
-	 - This attribute declares the cutting start position inside of the source TDM stream for that particular \<NetworkSocket>.
+	 - This attribute declares the cutting start position inside of the source TDM stream for that particular `<NetworkSocket>`.
 	 - A value of 0 means that it shall be cutted at the begin of the TDM stream.
-	 - This value must be smaller than the attribute BytesPerFrame of the \<SyncConnection> tag
+	 - This value must be smaller than the attribute BytesPerFrame of the `<SyncConnection>` tag
  - Bandwidth
 	 - This attribute was already marked as mandatory in (See 5.4). But in the Splitter context it is also used to define indirect the cutting end position inside of the combined TDM stream:
 *End = Bandwidth + Offset*
 
-Each \<NetworkSocket> forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping each other.
+Each `<NetworkSocket>` forms with those two information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping each other.
 
 Here is An example, cutting a 5.1 multi channel stream from a head unit into three stereo streams using a Splitter. The sinks are three stereo slim amplifier.
 
@@ -548,7 +547,7 @@ Here is An example, cutting a 5.1 multi channel stream from a head unit into thr
 **7.) Defining an Audio Loopback**
 
 In certain cases it may be helpful to route the audio from the source back to it self (looping back). This may be the case, where the radio tuner shall not accidental activate the head units wake word (like "Alexa" or "Hey Siri").
-To achieve this simply add two \<SyncConnection> to the same Node. Ensure that the Route name of the  \<NetworkSocket> is the same for both.
+To achieve this simply add two `<SyncConnection>` to the same Node. Ensure that the Route name of the  `<NetworkSocket>` is the same for both.
 The target bus (USB, MediaLB, Streaming Port) may be different for both connections.
 
 An example, routing a SyncConnection back to the same device (0x200):
@@ -593,13 +592,13 @@ Unfortunately it is not possible to use a loopback with connections where a Spli
 
 **8.) Switching Connections**
 
-It may be very useful to activate / deactivate certain connections (applies to \<SyncConnection> and \<AVPConnection>).
+It may be very useful to activate / deactivate certain connections (applies to `<SyncConnection>` and `<AVPConnection>`).
 Reasons to do so are:
  - Save Network bandwidth. If all connections together consume more bandwidth as the network can handle, switching off unused streams can free the needed space.
 - Having multiple sources. Connections can only be established, if there is exactly one source available. However, if a source is switched off, another source may be activated instead.
 - Safely shut down audio connections to avoid plopping sound.
 
-In order to prepare a connection to be switched, the integrator needs to add two optional attributes to the \<NetworkSocket> tag (valid for source and sink):
+In order to prepare a connection to be switched, the integrator needs to add two optional attributes to the `<NetworkSocket>` tag (valid for source and sink):
  - RouteId=".."
 	 - The RouteId  value must be an unsigned 16 bit value (0x0 .. 0xFFFF). The RouteId value must be unique over the complete XML file. It acts as a handle, which can be used later in the C-code to address this connection.
  - IsActive=".."
@@ -676,15 +675,15 @@ Error cases can be handled by inspecting the callback "UCSI_CB_OnRouteResult".
 **9.) Working with Ports**
 
 So far only sockets where used. They also configured the ports of the INIC. But the attributes used there, configured only the specific parameters for that connection. There are more parameters, which are shared for all connections using a port. Those parameters can be stored in port tags in the XML file or saved persistent into the INIC Configuration String (Flash / OTP) memory. Those parameters are mandatory, not configuring them in the XML nor configuring them in the Configuration String will lead to a lot of run time errors and may leave the entire setup unusable.
-Port tags are defined as a child of a \<Node> tag.
+Port tags are defined as a child of a `<Node>` tag.
 
 This are the possible port types:
 
-| XML Tag        | Mandatory Attributes                                                         | Usage                      |
-|----------------|------------------------------------------------------------------------------|----------------------------|
-| \<USBPort>     | DeviceInterfaces, PhysicalLayer, StreamingIfEpOutCount, StreamingIfEpInCount | Universal Serial Bus (USB) |
-| \<MediaLBPort> | ClockConfig                                                                  | Media Local Bus (MLB)      |
-| \<StreamPort>  | DataAlignment, ClockConfig                                                   | I2S/TDM/PDM port           |
+| XML Tag         | Mandatory Attributes                                                         | Usage                      |
+|-----------------|------------------------------------------------------------------------------|----------------------------|
+| `<USBPort>`     | DeviceInterfaces, PhysicalLayer, StreamingIfEpOutCount, StreamingIfEpInCount | Universal Serial Bus (USB) |
+| `<MediaLBPort>` | ClockConfig                                                                  | Media Local Bus (MLB)      |
+| `<StreamPort>`  | DataAlignment, ClockConfig                                                   | I2S/TDM/PDM port           |
 
 **9.1) Defining an USB port**
 
@@ -758,17 +757,17 @@ streaming port can only be frequency locked to the network’s system clock.
 **10.) Working with Scripts**
 
 The INIC on a Slim or a Smart Node can remote control peripherals like audio codecs, camera sensors, INIC companions, port expander, LEDs and Buttons. Therefor it provides an I2C master interface and GPIO pins which are controllable via network.
-UNICENS provides the capability to execute a list of jobs when a device connects to the network the first time.  This list is called script.
-Those scripts can be assigned for each node in the XML file. Therefore, the `\<Node>` tag has an optional attribute called Script:
+UNICENS provides the capability to execute a list of jobs when a device connects to the network the first time.
+Those scripts can be assigned for each node in the XML file. Therefore, the `<Node>` tag has an optional attribute called _Script_:
  - Script=".."
 	 - This value is any sort of user defined name, there is no syntax to be followed (other than to be XML complaint).
 	 - This script name acts as a reference.
 
-The content of the script is then embedded in a tag called `\<Script>`, which is a child of `\<Unicens>`, the same hierarchy level as `\<Node>`.
+The content of the script is then embedded in a tag called `<Script>`, which is a child of `<Unicens>`, the same hierarchy level as `<Node>`.
 
-The `\<Script>` tag has only mandatory attribute called "Name":
+The `<Script>` tag has only mandatory attribute called _Name_:
  - Name=".."
-	 - This is the counter part of the Script attribute of the `<\Node>` tag
+	 - This is the counter part of the Script attribute of the `<Node>` tag
 	 - If the name of the attributes are identical, they are linked and the script will be executed once the device is found at network startup.
 
 A **non** working example (because of missing parameters) would be:
@@ -785,7 +784,7 @@ A **non** working example (because of missing parameters) would be:
 
 In the example above, the node with the address 0x240 references to the script named "Script_AUX_IO".
 In the next line the script is getting declared, with exact the same name (case and space sensitive).
-The jobs will then be declared as children of the `\<Script>` tag. UNICENS will execute the jobs in the same order as they appear in the XML file.
+The jobs will then be declared as children of the `<Script>` tag. UNICENS will execute the jobs in the same order as they appear in the XML file.
 
 These are the possible jobs:
 
@@ -800,7 +799,7 @@ These are the possible jobs:
 
 **10.1) Defining a I2C port create job**
 
-In order to enable the usage of remote I2C, the ports need to be created first with the `\<I2CPortCreate>` tag. It has only one mandatory attribute called Speed:
+In order to enable the usage of remote I2C, the ports need to be created first with the `<I2CPortCreate>` tag. It has only one mandatory attribute called _Speed_:
 
  - Speed=".."
 	 - This is an enumeration.
@@ -818,8 +817,8 @@ Example, how to create I2C port with 400kHz:
 
 **10.2) Defining a I2C write job**
 
-In order to use this job, make sure that the I2C port has already been created by the  `\<I2CPortCreate>` tag.
-The tag to to create a I2C write job is named `\<I2CPortWrite>`.
+In order to use this job, make sure that the I2C port has already been created by the  `<I2CPortCreate>` tag.
+The tag to to create a I2C write job is named `<I2CPortWrite>`.
 With this job a single or multiple I2C write commands can be sent.
 If only the two mandatory attributes are given, a single message is sent:
 
@@ -883,8 +882,8 @@ Another optional attribute is the Timeout:
 
 **10.3) Defining a I2C read job**
 
-In order to use this job, make sure that the I2C port has already been created by the  `\<I2CPortCreate>` tag.
-The tag to create a I2C read job is named `\<I2CPortRead>`.
+In order to use this job, make sure that the I2C port has already been created by the  `<I2CPortCreate>` tag.
+The tag to create a I2C read job is named `<I2CPortRead>`.
 With this job a single I2C read command can be triggered.
 
 These are the two mandatory attributes:
@@ -916,7 +915,7 @@ void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t inicNetNodeAddress, ui
 
 **10.4) Defining a GPIO create job**
 
-In order to enable the usage of remote GPIO, the ports need to be created first with the `\<GPIOPortCreate>` tag.
+In order to enable the usage of remote GPIO, the ports need to be created first with the `<GPIOPortCreate>` tag.
 
 It only has one mandatory attribute called _DebounceTime_:
 
@@ -933,8 +932,8 @@ It only has one mandatory attribute called _DebounceTime_:
 
 **10.4) Defining a GPIO Pin Mode job**
 
-In order to use this job, make sure that the I2C port has already been created by the  `\<GPIOPortCreate>` tag.
-The tag to be used is named `\<GPIOPortPinMode>`.
+In order to use this job, make sure that the I2C port has already been created by the  `<GPIOPortCreate>` tag.
+The tag to be used is named `<GPIOPortPinMode>`.
 It only has one mandatory attribute called _PinConfiguration_:
 
  - PinConfiguration=".."
@@ -994,8 +993,8 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t inicNetNodeAddress, uint8_t 
 
 **10.5) Defining a GPIO Pin State job**
 
-In order to use this job, make sure that the I2C port has already been created by the  `\<GPIOPortCreate>`.
-The tag to be used is named \<GPIOPinState>.
+In order to use this job, make sure that the I2C port has already been created by the  `<GPIOPortCreate>`.
+The tag to be used is named `<GPIOPinState>`.
 The purpose of this function is to set the state of GPIOs configured as output pin. For all other configurations, this function has no influence.
 
 It has two mandatory attributes:
@@ -1025,16 +1024,16 @@ Or the helper tool `xml2struct` can generate an offline default configuration ou
 
 Having one configuration for all will automatically keep both UNICENS and the driver domain linked together. Otherwise, if the driver configuration does not align with the INIC configuration (for example FramesPerTransaction (See 5.1)), because doing the driver configuration manually, awful audio artifacts will come out of the speakers.
 
-A driver configuration can be assigned for each connection in the XML file. Therefor the `\<SyncConnection>` and the `\<AVPConnection>` tag have an optional attribute called Driver:
+A driver configuration can be assigned for each connection in the XML file. Therefor the `<SyncConnection>` and the `<AVPConnection>` tag have an optional attribute called _Driver_:
  - Driver=".."
 	 - The value is any sort of user defined name, there is no syntax to be followed (other than to be XML complaint).
 	 - This driver name acts as a reference.
 
-The content of the driver is then embedded in a tag called `\<Driver>`, which is a child of `\<Unicens>`, the same hierarchy level as `\<Node>`.
+The content of the driver is then embedded in a tag called `<Driver>`, which is a child of `<Unicens>`, the same hierarchy level as `<Node>`.
 
-The `\<Driver>` tag has only mandatory attribute called _Name_:
+The `<Driver>` tag has only mandatory attribute called _Name_:
  - Name=".."
-	 - This is the counter part of the Driver attribute of the `\<SyncConnection>` or `\<AVPConnection>` tag.
+	 - This is the counter part of the Driver attribute of the `<SyncConnection>` or `<AVPConnection>` tag.
 	 - If the name of the attributes are identical, then they are linked and the driver settings will be applied.
 
 A **non** working example (because of missing parameters) would be:
@@ -1050,15 +1049,15 @@ A **non** working example (because of missing parameters) would be:
 
 There can be child tags declared inside the Driver tag. They hold the actual information to setup the driver. Currently three kind of device drivers can be instanced and configured:
 
-| XML Tag  | Mandatory Attributes                                                     | Usage                           |
-|----------|--------------------------------------------------------------------------|---------------------------------|
-| \<Cdev>  | Name, BufferSize, BufferCount                                            | Character Device                |
-| \<V4l2>  | Name, BufferSize, BufferCount                                            | Video For Linux 2 video capture |
-| \<Alsa > | Name, BufferSize, BufferCount, AudioChannelCount, AudioChannelResolution | ALSA sound                      |
+| XML Tag   | Mandatory Attributes                                                     | Usage                           |
+|-----------|--------------------------------------------------------------------------|---------------------------------|
+| `<Cdev>`  | Name, BufferSize, BufferCount                                            | Character Device                |
+| `<V4l2>`  | Name, BufferSize, BufferCount                                            | Video For Linux 2 video capture |
+| `<Alsa>` | Name, BufferSize, BufferCount, AudioChannelCount, AudioChannelResolution | ALSA sound                      |
 
 **11.1) Defining a CDEV driver instance**
 
-In order to activate the character device driver the `\<Cdev>` tag is used. Once the driver is up and running, it will generate a virtual file in the */dev* folder in the target file system. This virtual file can be opened, read and written as any other file by a tool like *cat* or *dd* or in any programming language like C, C++, Java, Python.  However, seeking inside the character device is not supported, as the data is getting streamed and therefore has no random access possibility.
+In order to activate the character device driver the `<Cdev>` tag is used. Once the driver is up and running, it will generate a virtual file in the */dev* folder in the target file system. This virtual file can be opened, read and written as any other file by a tool like *cat* or *dd* or in any programming language like C, C++, Java, Python.  However, seeking inside the character device is not supported, as the data is getting streamed and therefore has no random access possibility.
 If the file supports reading or writing depends on the role of the current connection:
 if it's a source, it supports reading. If it's a sink, it supports writing.
 There is no protocol header involved. The first Byte written to the CDEV is the first Byte on the network. The same applies for the receive part.
@@ -1090,7 +1089,7 @@ Example of creating a CDEV driver instance:
 
 **11.2) Defining a Video for Linux driver instance**
 
-The usage of the Video for Linux 2 (V4L2) driver is limited to video reception (sink) use cases only.
+In order to activate the Video for Linux 2 (V4L2) driver, the `<V4l2>` tag is used. It is limited to video reception (sink) use cases only.
 It provides a video capture device, as known for webcams or TV tuners.
 Doing so will add support for standard video players like VLC. The isochronous video stream on INICnet will be shown along with all other available capture devices. The playback of the content can then start without any further configuration of the player.
 The V4L2 devices will also appear in the */dev* folder of the target file system. But all V4L2 devices will start with the prefix *video*, followed by an incrementing instance number.
@@ -1108,7 +1107,7 @@ As shown in the example above, a buffer size of 7520 Byte (40 * 188 Byte) is mem
 
 **11.3) Defining an ALSA driver instance**
 
-Using the Advanced Linux Sound Architecture (ALSA) driver instance will either form an audio capture device or an audio playback device, depending if it is configured as a source or a sink.
+In order to activate the Advanced Linux Sound Architecture (ALSA) driver, the `<Alsa>` tag is used. It will will either form an audio capture device or an audio playback device, depending if it is configured as a source or a sink.
 Any standard Linux audio enabled tool (such as Audacity, mplayer, aplay, arecord, speaker-test) can instantly access the synchronous audio data channel on INICnet without any further configuration.
 The ALSA subsystem also handles the sample rate conversion (if necessary), such as up-sampling from PCM 16 Bit 44,1 kHz from the Bluetooth receiver to PCM 24 Bit 48 kHz on INICnet.
 
@@ -1152,11 +1151,11 @@ An example, how to setup an ALSA driver:
 </Unicens>
 ```
 
-As shown in the example above, the API could theoretically provide multiple driver configurations inside the '\<Driver>' tag. However, the driver is currently not ready for handling multiple device instances for a single connection. So make sure that only one configuration is enabled.
+As shown in the example above, the API could theoretically provide multiple driver configurations inside the `<Driver>` tag. However, the driver is currently not ready for handling multiple device instances for a single connection. So make sure that only one configuration is enabled.
 
 **12.) Adding Documentation**
 
-Beside the possibility to place comment tags (`\<!-- -->`) anywhere in the XML document, there are several optional attributes for that purpose available.
+Beside the possibility to place comment tags (`<!-- -->`) anywhere in the XML document, there are several optional attributes for that purpose available.
 All of those attributes have no influence neither to the UNICENS daemon nor to the xml2struct tool.
 But the UNICENS System Designer tool can apply additional checks if those attributes are present. The tool also generates better graphical representations of the configuration, when the documentation attributes are filled.
 
@@ -1171,7 +1170,7 @@ These are the optional available documentation attributes:
 | Node           | NetworkController        | Enum: *OS81118*, *OS81119*, *OS81210*, *OS81212*, *OS81214*, *OS81216*       |
 | Node           | NetworkControllerVersion | The firmware version string (like *V2.4.0-76_RELEASE*)                       |
 
-Additional to the attributes mentioned above, **all** tags have an optional attribute called Description.
+Additional to the attributes mentioned above, **all** tags have an optional attribute called _Description_.
 
  - Description=".."
 	 - Any short string explaining the intention about that specific tag.
