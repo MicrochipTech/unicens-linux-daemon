@@ -27,6 +27,7 @@ $ ./build.sh
 ```
 
 > **Android:**
+>
 > See this [tutorial](ANDROID.md), how to build unicensd (or any other application) for Android.
 > After performing all steps from the tutorial, you also may use the crossAndroid.sh script.
 
@@ -68,3 +69,7 @@ $ ./xml2struct cfg/config_multichannel_audio_kit.xml > src/default_config.c
 $ ./build.sh
 $ ./unicensd -default &
 ```
+
+> **UNICENS XML Description:**
+>
+> See this [tutorial](cfg/README.md), how to write a valid UNICENS XML configuration file.
