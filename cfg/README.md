@@ -979,7 +979,7 @@ It only has one mandatory attribute called _PinConfiguration_:
 
 In the example above, there are three GPIO pins configured:
 
- - GPIO Pin 3 is set to ``InputDebouncedTriggerRisingFallingEdge: It is a debounced input and will report network events on rising and falling edges.
+ - GPIO Pin 3 is set to `InputDebouncedTriggerRisingFallingEdge`: It is a debounced input and will report network events on rising and falling edges.
  - GPIO Pin 7 is set to `OutputDefaultHigh`: It is an output. The initial state of the output is high level.
  - GPIO Pin 8 is set to `OutputDefaultLow`: It is an output. The initial state of the output is low level.
  - GPIO Pins 0, 1, 2, 4, 5, 6 will remain in an unused state.
