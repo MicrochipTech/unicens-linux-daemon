@@ -8,7 +8,7 @@ Note that the rules of XML enforce that the document is well formed.
 This means it is zero tolerant, a single typo will invalidate the whole document and any application using it must not continue.
 Therefore, it is useful in any case to use an IDE to check the document.
 This can be the UNICENS<sup>TM</sup> System Designer, which covers a deep rule set related to UNICENS, INIC and drivers.
-But any other IDE will work too, however, with less functionality(Atmel Studio, MPLAB-X, Eclipse, NetBeans, Visual Studio).
+But any other IDE will work too, however, with less functionality (Atmel Studio, MPLAB-X, Eclipse, NetBeans, Visual Studio).
 
 **The XML provides the following terminology: *(partly from Wikipedia)***
 
@@ -47,6 +47,7 @@ Parent
 **Element**
 
 An _element_ is a construct that begins with a start-tag and ends with a matching end-tag.
+
 An example is `<greeting>Hello, world!</greeting>`
 
 > NOTE: Currently the UNICENS schema is not using elements.
@@ -54,6 +55,7 @@ An example is `<greeting>Hello, world!</greeting>`
 **Attribute**
 
 An _attribute_ is a construct consisting of a name–value pair that exists within a start-tag or empty-element tag.
+
 An example is `<img src="madonna.jpg" alt="Madonna" />`, where the names of the attributes are "src" and "alt",
 and their values are "madonna.jpg" and "Madonna" respectively.
 
@@ -75,6 +77,7 @@ The linkage between the document and its Schema is done in the first tag (Root T
 **Comments**
 
 _Comments_ may appear anywhere in a document. Comments begin with `<!--` and end with `-->`
+
 An example of a valid comment: `<!--this is a comment -->`
 
 **2.) Start with an empty document**
@@ -979,7 +982,7 @@ It only has one mandatory attribute called _PinConfiguration_:
 
 In the example above, there are three GPIO pins configured:
 
- - GPIO Pin 3 is set to ``InputDebouncedTriggerRisingFallingEdge: It is a debounced input and will report network events on rising and falling edges.
+ - GPIO Pin 3 is set to `InputDebouncedTriggerRisingFallingEdge`: It is a debounced input and will report network events on rising and falling edges.
  - GPIO Pin 7 is set to `OutputDefaultHigh`: It is an output. The initial state of the output is high level.
  - GPIO Pin 8 is set to `OutputDefaultLow`: It is an output. The initial state of the output is low level.
  - GPIO Pins 0, 1, 2, 4, 5, 6 will remain in an unused state.
