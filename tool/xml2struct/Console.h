@@ -105,7 +105,7 @@ extern "C"
      */
     /*----------------------------------------------------------*/
     void ConsolePrintfExit( const char *statement, ... ) __attribute__ ((format (gnu_printf, 1, 2)));
-    
+
     /*----------------------------------------------------------*/
     /*! \brief Prints an ERROR formated string, which is understood by most common IDEs like Eclipse or Netbeans
      * \param filePath - Name of the file containing the error
