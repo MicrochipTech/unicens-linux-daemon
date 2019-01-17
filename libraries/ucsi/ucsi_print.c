@@ -165,8 +165,8 @@ void UCSIPrint_SetNetworkAvailable(bool available, uint8_t maxPos)
     if (available) {
         RequestTrigger();
     } else {
-       m.triggerService = false;
-       m.nextService = 0;
+        m.triggerService = false;
+        m.nextService = 0;
         memset(m.rList, 0, sizeof(m.rList));
         memset(m.cList, 0, sizeof(m.cList));
         memset(m.nList, 0, sizeof(m.nList));

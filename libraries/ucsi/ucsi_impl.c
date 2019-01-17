@@ -82,7 +82,7 @@ static void OnLldCtrlTxTransmitC( Ucs_Lld_TxMsg_t *msg_ptr, void *lld_user_ptr )
 static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_t route_infos, void *user_ptr);
 static void OnUnicensNetworkStatus(uint16_t change_mask, uint16_t events, Ucs_Network_Availability_t availability,
     Ucs_Network_AvailInfo_t avail_info,Ucs_Network_AvailTransCause_t avail_trans_cause, uint16_t node_address,
-    uint8_t max_position, uint16_t packet_bw, void *user_ptr );
+    uint8_t max_position, uint16_t packet_bw, void *user_ptr);
 static void OnUnicensDebugXrmResources(Ucs_Xrm_ResourceType_t resource_type,
     Ucs_Xrm_ResObject_t *resource_ptr, Ucs_Xrm_ResourceInfos_t resource_infos,
     Ucs_Rm_EndPoint_t *endpoint_inst_ptr, void *user_ptr);
@@ -785,7 +785,7 @@ static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_
 
 static void OnUnicensNetworkStatus(uint16_t change_mask, uint16_t events, Ucs_Network_Availability_t availability,
     Ucs_Network_AvailInfo_t avail_info,Ucs_Network_AvailTransCause_t avail_trans_cause, uint16_t node_address,
-    uint8_t max_position, uint16_t packet_bw, void *user_ptr )
+    uint8_t max_position, uint16_t packet_bw, void *user_ptr)
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
