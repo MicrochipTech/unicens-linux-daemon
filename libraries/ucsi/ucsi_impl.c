@@ -766,10 +766,14 @@ static void OnUnicensRoutingResult(Ucs_Rm_Route_t* route_ptr, Ucs_Rm_RouteInfos_
     assert(MAGIC == my->magic);
     if (route_ptr == my->pendingRoutePtr)
     {
-        OnCommandExecuted(my, UnicensCmd_RmSetRoute, (UCS_RM_ROUTE_INFOS_BUILT == route_infos));
+        if (my->currentCmd->val.RmSetRoute.isActive) {
+            OnCommandExecuted(my, UnicensCmd_RmSetRoute, (UCS_RM_ROUTE_INFOS_BUILT == route_infos));
+        } else {
+            OnCommandExecuted(my, UnicensCmd_RmSetRoute, (UCS_RM_ROUTE_INFOS_DESTROYED == route_infos));
+        }
         my->pendingRoutePtr = NULL;
     }
-    if (NULL == route_ptr || 
+    if (NULL == route_ptr ||
         UCS_RM_ROUTE_INFOS_ATD_UPDATE == route_infos ||
         UCS_RM_ROUTE_INFOS_ATD_ERROR == route_infos)
         return;
