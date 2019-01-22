@@ -5,6 +5,10 @@ UNICENS Daemon (unicensd) & UNICENS Client (unicensc)
 !!! Control Channel default mapping: /dev/inic-control-rx  and  /dev/inic-control-tx   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+V04.03.01
+=========
+- Allow usage of driver setting feature, even if XML contains no driver informations
+
 V04.03.00
 =========
 - Integrated UNICENS library V2.2.0

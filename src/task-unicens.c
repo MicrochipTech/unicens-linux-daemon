@@ -137,27 +137,22 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     {
         if (0 != pVar->drv1LocalNodeAddr)
         {
-            if (NULL != m.cfg->ppDriver && 0 != m.cfg->driverSize)
+            struct timespec t;
+            t.tv_sec = 0;
+            t.tv_nsec = 300000000l;
+            if (!MldConfigV1_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drv1LocalNodeAddr, pVar->drv1Filter, 1000))
             {
-                struct timespec t;
-                t.tv_sec = 0;
-                t.tv_nsec = 300000000l;
-                if (!MldConfigV1_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drv1LocalNodeAddr, pVar->drv1Filter, 1000))
+                ConsolePrintf(PRIO_ERROR, RED"Could not start driver configuration service"RESETCOLOR"\r\n");
+                return false;
+            }
+            if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
+            {
+                nanosleep(&t, NULL);
+                while(!MldConfigV1_GetControlCdevName(m.controlTxCdev, m.controlRxCdev))
                 {
-                    ConsolePrintf(PRIO_ERROR, RED"Could not start driver configuration service"RESETCOLOR"\r\n");
-                    return false;
-                }
-                if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
-                {
+                    ConsolePrintf(PRIO_ERROR, YELLOW"Wait for INICs control channel to appear"RESETCOLOR"\r\n");
                     nanosleep(&t, NULL);
-                    while(!MldConfigV1_GetControlCdevName(m.controlTxCdev, m.controlRxCdev))
-                    {
-                        ConsolePrintf(PRIO_ERROR, YELLOW"Wait for INICs control channel to appear"RESETCOLOR"\r\n");
-                        nanosleep(&t, NULL);
-                    }
                 }
-            } else {
-                ConsolePrintf(PRIO_ERROR, RED"Linux Driver Configurator V1 is enabled, but the XML does not provide any information"RESETCOLOR"\r\n");
             }
         }
         if (!UCSI_NewConfig(&m.unicens, m.cfg->packetBw, m.cfg->pRoutes, m.cfg->routesSize, m.cfg->pNod, m.cfg->nodSize))

@@ -78,7 +78,7 @@ static bool LinkNetwork(const char* channelName, const char* deviceName, DriverI
 
 bool MldConfigV1_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint16_t localNodeAddress, const char *descriptionFilter, uint16_t pollTime)
 {
-    if (NULL == pConfig || 0 == driverSize || 0 == pollTime) 
+    if (0 == pollTime) 
         return false;
     if (m.started)
         MldConfigV1_Stop();
@@ -267,8 +267,6 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     DriverPhysicalLayer_t curPhy = DriverPhyUnknown;
     DriverInformation_t *drv = NULL;
     DriverInformation_t localDrv = { 0 };
-    if (NULL == m.pConfig || 0 == m.driverSize)
-        return;
     if ('\0' != *m.descriptionFilter && NULL != descr && NULL == strstr(descr, m.descriptionFilter))
         return;
 
@@ -341,7 +339,7 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
             localDrv.drv.LinuxNetwork.direction = DriverCfgDirection_Rx;
         }
     }
-    for (i = 0; NULL == drv && i < m.driverSize; i++)
+    for (i = 0; NULL != m.pConfig && NULL == drv && i < m.driverSize; i++)
     {
         DriverInformation_t *tmp = m.pConfig[i];
         if (m.localNodeAddress != tmp->nodeAddress)
