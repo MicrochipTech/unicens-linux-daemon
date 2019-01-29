@@ -1,6 +1,5 @@
 FILE(GLOB MyCSources *.c)
 add_executable (unicensd ${MyCSources})
-add_definitions(" -std=gnu99")
 target_include_directories (unicensd 
 	PUBLIC 
 	${CMAKE_CURRENT_SOURCE_DIR}
