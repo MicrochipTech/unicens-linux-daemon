@@ -315,7 +315,7 @@ The following two attributes are mandatory to define a valid USB socket:
 	- For isochronous sockets, there are only two possibilities: FramesPerTransaction set to 2 - in this case two transport stream packets (2 \* 188/192 bytes) will be stored in one USB micro frame. The second option is to set the FramesPerTransaction value to 0xFF. In this case, the USB micro frame is always completely filled. Since 512 bytes of the micro frame are not dividable by 188/192 bytes, the fractional rest of the streaming data is put into the next micro frame. This means, that on the receiver side the integrator cannot rely any longer on the fact that the first received byte of a micro frame will be the first byte of the transport stream packet. In that case integrator needs to search for 0x47 inside the payload of the stream, which marks the start of a transport stream packet.
 	- In contrast to other sockets, the USB socket bandwidth must not be specified. It automatically adjusts its speed to the corresponding network socket.
 
-**5.2) Defining a MLB<sup>&reg;</sup> Socket**
+**5.2) Defining a MediaLB<sup>&reg;</sup> Socket**
 
 The Media Local Bus (MLB) is a dedicated bus for interfacing the INIC and I/O Companion chips.
 It is adopted by many vendor products, such as Atmel SAM V71, NXP i.MX6, Renesas RCAR H3/M3.
