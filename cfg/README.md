@@ -93,14 +93,14 @@ Make sure that the file unicens.xsd is in the same folder as your current docume
 **2.1) Bandwidth Calculation**
 
 The attribute _AsyncBandwidth_ in the example above is mandatory.
-It specifies the bandwidth of the asynchronous channel on INICnet<sup>TM</sup> technology 50utp network which can be used for e.g. ethernet communication.
+It specifies the bandwidth of the asynchronous channel on INICnet<sup>TM</sup> technology 50utp network which can be used for e.g. Ethernet communication.
 The value specified is in Bytes within 48 kHz. So, in the example above, this would mean
 
 > 80 Byte \* 48000 1/s = 3.84 MByte/s
 
 > 3.84 MByte/s \* 8 Bit/Byte = 30.72 MBit/s
 
-Note the total network bandwidth limit for both network speed grades:
+Note the total network bandwidth limits for both network speed grades:
 
 | Speed grade | Bytes Within 48 kHz    |
 |-------------|------------------------|
@@ -110,7 +110,7 @@ Note the total network bandwidth limit for both network speed grades:
 This means for the example above, that the remaining bandwidth for audio/ video streaming on an INICnet technology 50utp network is 36 bytes (116 bytes - 80 bytes).
 
 Setting the _AsyncBandwidth_ to 0 is allowed. In this case no Ethernet communication is possible, and all bandwidth is available for audio and video streaming.
-Setting  the _AsyncBandwidth_ to the maximum possible value (here 116 bytes) is allowed. In this case the Ethernet channel is running with the full speed, but no streaming is possible.
+Setting  the _AsyncBandwidth_ to the maximum possible value (here 116 bytes or 372 bytes) is allowed. In this case the asynchronous channel (also called Packet Channel of the INICnet) is running with the full speed, but no streaming is possible.
 
 Beside of using the asynchronous channel, there are dedicated streaming channels to transport audio and video data.
 They also use the same metric "bytes within 48 kHz" as their bandwidth configuration.
@@ -327,8 +327,8 @@ The following two attributes are mandatory to define a valid MediaLB socket:
 	 - Integer value between 10 ... 64.
 	 - Value must be even.
 	 - Channel address 0 is unused.
-	 - Channel addresses 2 & 4 are reserved for control channel.
-	 - Channel addresses 6 & 8 are reserved for asynchronous Ethernet channel.
+	 - Channel addresses 2 & 4 are reserved for the control channel.
+	 - Channel addresses 6 & 8 are reserved for the asynchronous channel.
  - Bandwidth="..."
 	 - The number of bytes transferred within 48 kHz (See 2.1).
 	 - The MediaLB Port can be configured with different speed rates (See 9.2). Depending on the chosen speed, the bandwidth must be in a certain range:
@@ -410,7 +410,7 @@ You will find exactly the same name (case- and space sensitive) in node 0x200 an
 This time `<NetworkSocket>` is the first entry within `<SyncConnection>`, meaning those connections are the sinks.
 
 Both devices are getting the audio data from the microphone in parallel and with the same latency and phase.
-The node 0x200 is streaming to USB endpoint address 0x81 and the node 0x2B0 to MediaLB channel address 0x10.
+The node 0x200 is streaming to its USB endpoint address 0x81 and the node 0x2B0 to its MediaLB channel address 0x10.
 
 **6.) Working with Combiner and Splitter**
 
@@ -433,7 +433,7 @@ A Combiner resides inside a `<SyncConnection>` as first entry, meaning it is an 
 	 - This value is then the same as the corresponding Bandwidth attribute of the opposite `<MediaLBSocket>` or `<StreamSocket>` tag.
 	 - This value needs to be considered also in the calculation for the FramesPerTransaction attribute if the opposite socket is an `<USBSocket>`
 
-The childs of the Combiner are then multiple `<NetworkSocket>` tags with additional mandatory attributes:
+The children of the Combiner are then multiple `<NetworkSocket>` tags with additional mandatory attributes:
  - Offset=".."
 	 - This attribute declares the start position inside of the combined TDM stream for that particular `<NetworkSocket>`.
 	 - A value of 0 means that it shall be routed to begin of the TDM stream.
@@ -497,7 +497,7 @@ A Splitter resides inside a `<SyncConnection>` as second entry, meaning it is an
 	 - This value is then the same as the corresponding Bandwidth attribute of the opposite `<MediaLBSocket>` or `<StreamSocket>` tag.
 	 - This value needs to be considered also in the calculation for the FramesPerTransaction attribute if the opposite socket is a `<USBSocket>`.
 
-The childs of the Splitter are then multiple `<NetworkSocket>` tags with additional mandatory attributes:
+The children of the Splitter are then multiple `<NetworkSocket>` tags with additional mandatory attributes:
  - Offset=".."
 	 - This attribute declares the cutting start position inside of the source TDM stream for that particular `<NetworkSocket>`.
 	 - A value of 0 means that it shall be cut at the beginning of the TDM stream.
@@ -508,7 +508,7 @@ The childs of the Splitter are then multiple `<NetworkSocket>` tags with additio
 
 Each `<NetworkSocket>` forms with this information a block inside the TDM stream. The integrator must ensure that the blocks are not overlapping each other.
 
-Here is an example, cutting a 5.1 multi-channel stream from a head unit into three stereo streams using a Splitter. The sinks are three stereo slim amplifiers.
+Here is an example, cutting a 5.1 multi-channel stream from a head unit into three stereo streams using a Splitter. The sinks are three stereo amplifiers.
 
 ```xml
 <?xml version="1.0"?>
@@ -549,8 +549,8 @@ Here is an example, cutting a 5.1 multi-channel stream from a head unit into thr
 
 **7.) Defining an Audio Loopback**
 
-In certain cases, it may be helpful to route the audio from the source back to itself (looping back). This may be the case in which the radio tuner shall not accidental activate the head unit´s wake word (like "Alexa" or "Hey Siri").
-To achieve this, simply add two `<SyncConnection>` to the same Node. Ensure that the Route name of the  `<NetworkSocket>` is the same for both.
+In certain cases, it may be helpful to route the audio from the source back to itself (looping back). This may be the case in which the radio tuner shall not accidentally activate the head unit´s wake word (like "Alexa" or "Hey Siri").
+To achieve this, simply add two `<SyncConnection>` to the same Node. Ensure that the Route name of the `<NetworkSocket>` is the same for both.
 The target peripheral interface (USB, MediaLB, Streaming Port) may be different for both connections.
 
 An example, routing a SyncConnection back to the same device (0x200):
@@ -597,7 +597,7 @@ Unfortunately, it is not possible to use a loopback with connections in which a 
 
 It may be very useful to activate/deactivate certain connections (applies to `<SyncConnection>` and `<AVPConnection>`).
 Reasons to do so are:
-- Save network bandwidth - If all connections together consume more bandwidth as the network can handle, switching off unused streams can free the needed space.
+- Save network bandwidth - If all connections together consume more bandwidth than the network supports, switching off unused streams can free up the needed space.
 - Having multiple sources - Connections can only be established, if there is exactly one source available. However, if a source is switched off, another source may be activated instead.
 - Safely shut down audio connections to avoid plopping sound.
 
@@ -655,7 +655,7 @@ In the example above three sources are available:
  - 0x1003: The auxiliary boards "Line In"-jacket will be routed to its own headphone jacket (Loopback (See 7)), by default deactivated.
 
 Once the XML is prepared, the source code of the UNICENS daemon can be modified.
-A solution might be the C-code snippet below (can be put everywhere in the project):
+A solution might be the C-code snippet below (can be put anywhere in the project):
 
 ```C
 #include "ucsi_api.h"
@@ -677,7 +677,7 @@ Error cases can be handled by inspecting the callback "UCSI_CB_OnRouteResult".
 
 **9.) Working With Ports**
 
-So far only sockets where used. They also configured the ports of the INIC. But the attributes used there, configured only the specific parameters for that connection. There are more parameters, which are shared for all connections using a port. Those parameters can be stored in port tags in the XML file or saved persistently into the INIC Configuration String (Flash/OTP) memory. Those parameters are mandatory. Not configuring them in the XML or in the Configuration String will lead to a lot of run time errors and may leave the entire setup unusable.
+So far only sockets where used for configuration of the data routing in the above examples. However, the socket attributes only configure specific parameters for one specific socket/connection. Parameters which are common for all sockets/connections at a specific port of the INIC can be set in so-called port tags in the XML configuration file or saved persistently into the INIC Configuration String (Flash/OTP) memory. Those parameters are mandatory. Not configuring them in the XML or in the Configuration String will lead to a lot of run time errors and may leave the entire setup unusable.
 Port tags are defined as a child of a `<Node>` tag.
 
 The following are possible port types:
