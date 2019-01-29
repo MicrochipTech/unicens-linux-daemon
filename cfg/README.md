@@ -865,7 +865,7 @@ In order to boost up the overall sending speed of I2C, multiple I2C write comman
 
 Example: Write five blocks, each with three bytes, to an I2C slave with address 0x10:
 ```xml
-<I2CPortWrite Mode="BurstMode" BlockCount="5" Length="3" Address="0x18"
+<I2CPortWrite Mode="BurstMode" BlockCount="5" Length="3" Address="0x10"
               Payload="10 50 50 11 00 00 12 00 00 13 00 00 14 00 00" />
 ```
 With the example above, the following I2C write commands will be issued to slave address 0x18:
