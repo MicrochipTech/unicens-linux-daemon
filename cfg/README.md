@@ -854,12 +854,12 @@ In order to boost up the overall sending speed of I2C, multiple I2C write comman
 | *BurstMode*         | Enables writing of multiple blocks with the same size.                                                      |                                             |
 
  - BlockCount="..."
-	 - Specifies the number of blocks to be written to the I2C address
+	 - Specifies the number of blocks to be written to the I2C address.
 	 - If parameter Mode is not set to BurstMode, the value of BlockCount must be set to 0 (default).
 	 -  Otherwise, the valid range for this parameter goes from 1 to 30.
 
  - Length=".."
-	 - Number of bytes to be written to the I2C address.
+	 - Number of bytes to be written within one block.
 	 - If parameter Mode is set to BurstMode, the valid range of this parameter goes from 1 to 30.
 	 - For all other modes, the length is automatically taken from the byte array length, given with the Payload attribute.
 
