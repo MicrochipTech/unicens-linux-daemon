@@ -514,7 +514,7 @@ Here is an example, cutting a 5.1 multi-channel stream from a head unit into thr
 ```xml
 <?xml version="1.0"?>
 <Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
-	<Node Address="0x200">
+    <Node Address="0x200">
         <SyncConnection>
             <USBSocket EndpointAddress="0x1" FramesPerTransaction="42"/>
             <Splitter BytesPerFrame="12">
@@ -779,8 +779,8 @@ A **non** working example (because of missing parameters) would be:
 <Unicens AsyncBandwidth="80" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unicens.xsd">
 	<Node Address="0x240" Script="Script_AUX_IO"/>
 	<Script Name="Script_AUX_IO">
-		<!-- Job 1 goes here ->
-		<!-- Job 2 goes here ->
+		<!-- Job 1 goes here -->
+		<!-- Job 2 goes here -->
 	</Script>
 </Unicens>
 ```
