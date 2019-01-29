@@ -850,8 +850,8 @@ In order to boost up the overall sending speed of I2C, multiple I2C write comman
 | Value               | Mnemonic                                                                                                    |
 |---------------------|-------------------------------------------------------------------------------------------------------------|
 | *DefaultMode*       | No optimization used (default). After transaction a STOP condition is issued, and the bus is released.      |                                                                           |
-| *BurstMode*         | After transaction the STOP condition will be suppressed and further read or write sequences can be issued.  |
-| *RepeatedStartMode* | Enables writing of multiple blocks with the same size.                                                      |                                             |
+| *RepeatedStartMode* | After transaction the STOP condition will be suppressed and further read or write sequences can be issued.  |
+| *BurstMode*         | Enables writing of multiple blocks with the same size.                                                      |                                             |
 
  - BlockCount="..."
 	 - Specifies the number of blocks to be written to the I2C address
