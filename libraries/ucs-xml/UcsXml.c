@@ -1819,6 +1819,7 @@ static ParseResult_t ParseDriver(mxml_node_t *drv, UcsXmlVal_t *ucs, PrivateData
     const char *driverLink;
     const char *driverType;
     struct UcsXmlDriverInfoList *head = priv->drvInfLst;
+    if (!head) return Parse_XmlError;
     if (!GetString(drv, L_DRIVER_NAME, &driverLink, true))  return Parse_XmlError;
     /*Iterate all drivers in driver list*/
     do
