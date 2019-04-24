@@ -131,16 +131,17 @@ static void *Worker(void *tag)
 
 static char *ExtendControlCdevName(char *out, char * in)
 {
+    static const char EXTENSION[] = "/dev/inic-control-";
     if (NULL == out || NULL == in)
         return NULL;
-    strcpy(out, "/dev/inic-control-");
+    strncpy(out, EXTENSION, sizeof(EXTENSION));
     if ('\0' != m.descriptionFilter[0])
     {
-        strcat(out, m.descriptionFilter);
-        strcat(out, "-");
+        strncat(out, m.descriptionFilter, VAL_LEN);
+        strncat(out, "-", 1);
     }
     ReplaceCharsInString(out, " .:;|!", '_');
-    strcat(out, in);
+    strncat(out, in, 32);
     return out;
 }
 
@@ -166,7 +167,7 @@ static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLe
     /* Eliminate carriage return */
     if (success)
     {
-        int32_t len = strlen(pString);
+        int32_t len = strnlen(pString, bufferLen);
         if (0 != len && '\n' == pString[len -1])
             pString[len -1] = '\0';
     }
@@ -434,8 +435,8 @@ static bool LinkCdev(const char* channelName, const char* deviceName, DriverInfo
         strncpy(aimName, drv->aimName, sizeof(aimName));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(aimName, "-", (sizeof(aimName) - strlen(aimName) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
+        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
@@ -477,8 +478,8 @@ static bool LinkAlsa(const char* channelName, const char* deviceName, DriverInfo
         strncpy(aimName, drv->aimName, sizeof(aimName));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(aimName, "-", (sizeof(aimName) - strlen(aimName) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
+        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s.%dx%d", deviceName, channelName, 
@@ -524,8 +525,8 @@ static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInfo
         strncpy(aimName, drv->aimName, sizeof(aimName));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(aimName, "-", (sizeof(aimName) - strlen(aimName) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
+        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
@@ -558,8 +559,8 @@ static bool LinkNetwork(const char* channelName, const char* deviceName, DriverI
         strncpy(aimName, drv->aimName, sizeof(aimName));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(aimName, "-", (sizeof(aimName) - strlen(aimName) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strlen(aimName) - 1));
+        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
