@@ -351,7 +351,7 @@ UcsXmlVal_t *UcsXml_ParseFile(const char *fileName)
     char *content = ReadFile(fileName);
     if (NULL == content)
     {
-        UcsXml_CB_OnError("UcsXml_ParseFile:Could not read file:'%s', Reason:'%s'", 1, fileName);
+        UcsXml_CB_OnError("UcsXml_ParseFile:Could not read file:'%s'", 1, fileName);
         return NULL;
     }
     val = UcsXml_Parse(content);

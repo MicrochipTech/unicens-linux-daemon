@@ -86,6 +86,7 @@ typedef struct
 } LocalVar_t;
 
 static LocalVar_t m;
+static char m_outbuf[300];
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                     PRIVATE FUNCTION PROTOTYPES                      */
@@ -257,11 +258,10 @@ void TaskUnicens_Service(void)
 void UcsXml_CB_OnError(const char format[], uint16_t vargsCnt, ...)
 {
     va_list argptr;
-    char outbuf[300];
     va_start(argptr, vargsCnt);
-    vsprintf(outbuf, format, argptr);
+    vsnprintf(m_outbuf, sizeof(m_outbuf), format, argptr);
     va_end(argptr);
-    ConsolePrintf(PRIO_ERROR, RED"XML-Parser error: '%s'"RESETCOLOR"\r\n", outbuf);
+    ConsolePrintf(PRIO_ERROR, RED "XML-Parser error: '%s'" RESETCOLOR "\r\n", m_outbuf);
 }
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
