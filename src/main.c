@@ -40,7 +40,7 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSD_VERSION    ("V4.3.1")
+#define UNICENSD_VERSION    ("V5.0.0")
 
 /* Character device to INIC control channel */
 #define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-control-tx")
@@ -64,12 +64,12 @@ int main(int argc, char *argv[])
     ConsolePrintf(PRIO_HIGH, YELLOW "------|UNICENS daemon %s (BUILD %s %s)|------" RESETCOLOR "\r\n", UNICENSD_VERSION, __DATE__, __TIME__);
     if (!ParseCommandLine(argc, argv, &taskVars))
     {
-        ConsolePrintf(PRIO_ERROR, RED"Parsing command line failed"RESETCOLOR"\r\n");
+        ConsolePrintf(PRIO_ERROR, RED "Parsing command line failed" RESETCOLOR "\r\n");
         return -1;
     }
     if (!TaskUnicens_Init(&taskVars))
     {
-        ConsolePrintf(PRIO_ERROR, RED"Initialization of UNICENS task failed"RESETCOLOR"\r\n");
+        ConsolePrintf(PRIO_ERROR, RED "Initialization of UNICENS task failed" RESETCOLOR "\r\n");
         return -1;
     }
     while(true)
@@ -99,7 +99,7 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         {
             if (pVar->cfgFileName)
             {
-                ConsolePrintf(PRIO_ERROR, RED"Filename is already set. Wrong parameter='%s'"RESETCOLOR"\r\n", argv[i]);
+                ConsolePrintf(PRIO_ERROR, RED "Filename is already set. Wrong parameter='%s'" RESETCOLOR "\r\n", argv[i]);
                 return false;
             }
             pVar->cfgFileName = argv[i];
@@ -132,7 +132,7 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
             char *token;
             if (argc <= (i+1))
             {
-                ConsolePrintf(PRIO_ERROR, RED"-drv1 parameter needs additional node address of the local network controller"RESETCOLOR"\r\n");
+                ConsolePrintf(PRIO_ERROR, RED "-drv1 parameter needs additional node address of the local network controller" RESETCOLOR "\r\n");
                 return false;
             }
             token = strtok_r( argv[i + 1], ":", &tkPtr );
@@ -149,7 +149,7 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         }
         else if (0 == strcmp("-drv2", argv[i]))
         {
-            ConsolePrintf(PRIO_ERROR, RED"-drv2 is currently reserved"RESETCOLOR"\r\n");
+            ConsolePrintf(PRIO_ERROR, RED "-drv2 is currently reserved" RESETCOLOR "\r\n");
             return false;
         }
         else if (0 == strcmp("-lld", argv[i]))
@@ -165,7 +165,7 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         {
             if (argc <= (i+1))
             {
-                ConsolePrintf(PRIO_ERROR, RED"-crx parameter needs additional path to RX character device"RESETCOLOR"\r\n");
+                ConsolePrintf(PRIO_ERROR, RED "-crx parameter needs additional path to RX character device" RESETCOLOR "\r\n");
                 return false;
             }
             pVar->controlRxCdev = argv[i + 1];
@@ -175,7 +175,7 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         {
             if (argc <= (i+1))
             {
-                ConsolePrintf(PRIO_ERROR, RED"-ctx parameter needs additional path to TX character device"RESETCOLOR"\r\n");
+                ConsolePrintf(PRIO_ERROR, RED "-ctx parameter needs additional path to TX character device" RESETCOLOR "\r\n");
                 return false;
             }
             pVar->controlTxCdev = argv[i + 1];
@@ -183,7 +183,7 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         }
         else
         {
-            ConsolePrintf(PRIO_ERROR, RED"Invalid command line parameter='%s'"RESETCOLOR"\r\n", argv[i]);
+            ConsolePrintf(PRIO_ERROR, RED "Invalid command line parameter='%s'" RESETCOLOR "\r\n", argv[i]);
             return false;
         }
     }
@@ -191,7 +191,7 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         ConsolePrintf(PRIO_HIGH, YELLOW "No filename was provided, executing default configuration (default_config.c).\r\nUse \"--help\" for details. Use \"-default\" to suppress this waring." RESETCOLOR "\r\n");
     if (!pVar->cfgFileName && 0 != pVar->drv1LocalNodeAddr)
     {
-        ConsolePrintf(PRIO_ERROR, RED"-drv1 and -drv2 option only allowed, when specified an path to UNICENS XML file" RESETCOLOR "\r\n");
+        ConsolePrintf(PRIO_ERROR, RED "-drv1 and -drv2 option only allowed, when specified an path to UNICENS XML file" RESETCOLOR "\r\n");
         return false;
     }
     if (0 == pVar->drv1LocalNodeAddr && (NULL == pVar->controlRxCdev || NULL == pVar->controlTxCdev))

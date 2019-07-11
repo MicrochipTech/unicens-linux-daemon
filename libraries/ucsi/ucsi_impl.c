@@ -36,15 +36,15 @@
 /* Private Definitions and variables                                    */
 /************************************************************************/
 
-#define TRACE_BUFFER_SZ 100
-#define MAGIC (0xA144BEAF)
-#define LOCAL_NODE_ADDR (0x1)
-#define UNKNOWN_NODE_ADDR (0xFFFF)
+#define TRACE_BUFFER_SZ     (100)
+#define MAGIC               (0xA144BEAF)
+#define LOCAL_NODE_ADDR     (0x1)
+#define UNKNOWN_NODE_ADDR   (0xFFFF)
 
 #define LIB_VERSION_MAJOR   (2)
-#define LIB_VERSION_MINOR   (2)
+#define LIB_VERSION_MINOR   (3)
 #define LIB_VERSION_RELEASE (0)
-#define LIB_VERSION_BUILD   (4073)
+#define LIB_VERSION_BUILD   (4567)
 
 static char m_traceBuffer[TRACE_BUFFER_SZ];
 
@@ -90,7 +90,7 @@ static void OnUcsInitResult(Ucs_InitResult_t result, void *user_ptr);
 static void OnUcsStopResult(Ucs_StdResult_t result, void *user_ptr);
 static void OnUcsGpioPortCreate(uint16_t node_address, uint16_t gpio_port_handle, Ucs_Gpio_Result_t result, void *user_ptr);
 static void OnUcsGpioPortWrite(uint16_t node_address, uint16_t gpio_port_handle, uint16_t current_state, uint16_t sticky_state, Ucs_Gpio_Result_t result, void *user_ptr);
-static void OnUcsMgrReport(Ucs_MgrReport_t code, Ucs_Signature_t *signature_ptr, Ucs_Rm_Node_t *node_ptr, void *user_ptr);
+static void OnUcsSupvReport(Ucs_Supv_Report_t code, Ucs_Signature_t *signature_ptr, Ucs_Rm_Node_t *node_ptr, void *user_ptr);
 static void OnUcsNsRun(uint16_t node_address, Ucs_Ns_ResultCode_t result, Ucs_Ns_ErrorInfo_t error_info, void *ucs_user_ptr);
 static void OnUcsAmsRxMsgReceived(void *user_ptr);
 static void OnUcsGpioTriggerEventStatus(uint16_t node_address, uint16_t gpio_port_handle,
@@ -100,9 +100,11 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
 static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
             uint8_t i2c_slave_address, uint8_t data_len, uint8_t data_ptr[], Ucs_I2c_Result_t result, void *user_ptr);
 static void OnUcsPacketFilterMode(uint16_t node_address, Ucs_StdResult_t result, void *user_ptr);
+static void OnSupvModeReport(Ucs_Supv_Mode_t mode, Ucs_Supv_State_t state, void *user_ptr);
 #if ENABLE_AMS_LIB
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
 #endif
+static const char *GetSupervisorModeString(Ucs_Supv_Mode_t mode);
 
 /************************************************************************/
 /* Public Function Implementations                                      */
@@ -131,7 +133,8 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
         return;
     }
     my->uniInitData.user_ptr = my;
-    my->uniInitData.mgr.report_fptr = OnUcsMgrReport;
+    my->uniInitData.supv.report_fptr = OnUcsSupvReport;
+    my->uniInitData.supv.report_mode_fptr = OnSupvModeReport;
 
     my->uniInitData.general.inic_watchdog_enabled = ENABLE_INIC_WATCHDOG;
     my->uniInitData.general.get_tick_count_fptr = &OnUnicensGetTime;
@@ -173,12 +176,13 @@ bool UCSI_NewConfig(UCSI_Data_t *my,
         e->cmd = UnicensCmd_Stop;
         RB_PopWritePtr(&my->rb);
     }
-    my->uniInitData.mgr.packet_bw = packetBw;
-    my->uniInitData.mgr.routes_list_ptr = pRoutesList;
-    my->uniInitData.mgr.routes_list_size = routesListSize;
-    my->uniInitData.mgr.nodes_list_ptr = pNodesList;
-    my->uniInitData.mgr.nodes_list_size = nodesListSize;
-    my->uniInitData.mgr.enabled = true;
+    my->uniInitData.supv.packet_bw = packetBw;
+    my->uniInitData.supv.routes_list_ptr = pRoutesList;
+    my->uniInitData.supv.routes_list_size = routesListSize;
+    my->uniInitData.supv.nodes_list_ptr = pNodesList;
+    my->uniInitData.supv.nodes_list_size = nodesListSize;
+    my->supvShallMode = UCS_SUPV_MODE_NORMAL;
+    my->uniInitData.supv.mode = UCS_SUPV_MODE_NORMAL;
     e = (UnicensCmdEntry_t *)RB_GetWritePtr(&my->rb);
     if (NULL == e) return false;
     e->cmd =  UnicensCmd_Init;
@@ -194,8 +198,8 @@ bool UCSI_ExecuteScript(UCSI_Data_t *my, uint16_t targetAddress, Ucs_Ns_Script_t
     UnicensCmdEntry_t e;
     assert(MAGIC == my->magic);
     if (NULL == my) return false;
-    if (!my->initialized || !my->uniInitData.mgr.enabled
-        || NULL == my->uniInitData.mgr.nodes_list_ptr || 0 == my->uniInitData.mgr.nodes_list_size
+    if (!my->initialized || (UCS_SUPV_MODE_NORMAL != my->uniInitData.supv.mode)
+        || NULL == my->uniInitData.supv.nodes_list_ptr || 0 == my->uniInitData.supv.nodes_list_size
         || NULL == pScriptList || 0 == scriptListLength)
     {
         return false;
@@ -361,6 +365,15 @@ void UCSI_Service(UCSI_Data_t *my)
                 UCSI_CB_OnCommandResult(my->tag, UnicensCmd_PacketFilterMode, false, e->val.PacketFilterMode.destination_address);
             }
             break;
+        case UnicensCmd_SupvSetMode:
+            UCSI_CB_OnUserMessage(my->tag, false, "Setting supervisor mode to '%s'", 1, GetSupervisorModeString(e->val.SupvMode.supvMode));
+            if (UCS_RET_SUCCESS == Ucs_Supv_SetMode(my->unicens, e->val.SupvMode.supvMode)) {
+                popEntry = false;
+            } else {
+                UCSI_CB_OnUserMessage(my->tag, true, "UnicensCmd_SupvSetMode failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_SupvSetMode, false, UNKNOWN_NODE_ADDR);
+            }
+            break;
         default:
             assert(false);
             break;
@@ -432,10 +445,10 @@ bool UCSI_SetRouteActive(UCSI_Data_t *my, uint16_t routeId, bool isActive)
     uint16_t i;
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
-    if (NULL == my || NULL == my->uniInitData.mgr.routes_list_ptr) return false;
-    for (i = 0; i < my->uniInitData.mgr.routes_list_size; i++)
+    if (NULL == my || NULL == my->uniInitData.supv.routes_list_ptr) return false;
+    for (i = 0; i < my->uniInitData.supv.routes_list_size; i++)
     {
-        Ucs_Rm_Route_t *route = &my->uniInitData.mgr.routes_list_ptr[i];
+        Ucs_Rm_Route_t *route = &my->uniInitData.supv.routes_list_ptr[i];
         if (route->route_id != routeId)
             continue;
         entry.cmd = UnicensCmd_RmSetRoute;
@@ -788,9 +801,10 @@ static void OnUnicensNetworkStatus(uint16_t change_mask, uint16_t events, Ucs_Ne
     uint8_t max_position, uint16_t packet_bw, void *user_ptr)
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    bool available = UCS_NW_AVAILABLE == availability;
     assert(MAGIC == my->magic);
-    UCSIPrint_SetNetworkAvailable(UCS_NW_AVAILABLE == availability, max_position);
-    UCSI_CB_OnNetworkState(my->tag, UCS_NW_AVAILABLE == availability, packet_bw, max_position);
+    UCSIPrint_SetNetworkAvailable(available, max_position);
+    UCSI_CB_OnNetworkState(my->tag, available, packet_bw, max_position);
 }
 
 static void OnUnicensDebugXrmResources(Ucs_Xrm_ResourceType_t resource_type,
@@ -976,7 +990,7 @@ static void OnUcsGpioPortWrite(uint16_t node_address, uint16_t gpio_port_handle,
     OnCommandExecuted(my, UnicensCmd_GpioWritePort, (UCS_GPIO_RES_SUCCESS == result.code));
 }
 
-static void OnUcsMgrReport(Ucs_MgrReport_t code, Ucs_Signature_t *signature_ptr, Ucs_Rm_Node_t *node_ptr, void *user_ptr)
+static void OnUcsSupvReport(Ucs_Supv_Report_t code, Ucs_Signature_t *signature_ptr, Ucs_Rm_Node_t *node_ptr, void *user_ptr)
 {
     uint16_t node_address;
     uint16_t node_pos_addr;
@@ -987,31 +1001,31 @@ static void OnUcsMgrReport(Ucs_MgrReport_t code, Ucs_Signature_t *signature_ptr,
     node_pos_addr = signature_ptr->node_pos_addr;
     switch (code)
     {
-    case UCS_MGR_REP_IGNORED_UNKNOWN:
+    case UCS_SUPV_REP_IGNORED_UNKNOWN:
         UCSIPrint_SetNodeAvailable(node_address, node_pos_addr, NodeState_Ignored);
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Ignored, because unknown", 2, node_address, node_pos_addr);
         break;
-    case UCS_MGR_REP_IGNORED_DUPLICATE:
+    case UCS_SUPV_REP_IGNORED_DUPLICATE:
         UCSIPrint_SetNodeAvailable(node_address, node_pos_addr, NodeState_Ignored);
         UCSI_CB_OnUserMessage(my->tag, true, "Node=%X(%X): Ignored, because duplicated", 2, node_address, node_pos_addr);
         break;
-    case UCS_MGR_REP_NOT_AVAILABLE:
+    case UCS_SUPV_REP_NOT_AVAILABLE:
         UCSIPrint_SetNodeAvailable(node_address, node_pos_addr, NodeState_NotAvailable);
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Not available", 2, node_address, node_pos_addr);
         break;
-    case UCS_MGR_REP_WELCOMED:
+    case UCS_SUPV_REP_WELCOMED:
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Welcomed", 2, node_address, node_pos_addr);
         break;
-    case UCS_MGR_REP_SCRIPT_FAILURE:
+    case UCS_SUPV_REP_SCRIPT_FAILURE:
         UCSI_CB_OnUserMessage(my->tag, true, "Node=%X(%X): Script failure", 2, node_address, node_pos_addr);
         break;
-    case UCS_MGR_REP_IRRECOVERABLE:
+    case UCS_SUPV_REP_IRRECOVERABLE:
         UCSI_CB_OnUserMessage(my->tag, true, "Node=%X(%X): IRRECOVERABLE ERROR!!", 2, node_address, node_pos_addr);
         break;
-    case UCS_MGR_REP_SCRIPT_SUCCESS:
+    case UCS_SUPV_REP_SCRIPT_SUCCESS:
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Script ok", 2, node_address, node_pos_addr);
         break;
-    case UCS_MGR_REP_AVAILABLE:
+    case UCS_SUPV_REP_AVAILABLE:
         UCSIPrint_SetNodeAvailable(node_address, node_pos_addr, NodeState_Available);
         UCSI_CB_OnUserMessage(my->tag, false, "Node=%X(%X): Available", 2, node_address, node_pos_addr);
         break;
@@ -1092,6 +1106,76 @@ static void OnUcsPacketFilterMode(uint16_t node_address, Ucs_StdResult_t result,
     OnCommandExecuted(my, UnicensCmd_PacketFilterMode, (UCS_RES_SUCCESS == result.code));
     if (UCS_RES_SUCCESS != result.code)
         UCSI_CB_OnUserMessage(my->tag, true, "Set promiscuous mode failed with error code %d", 1, result.code);
+}
+
+static void OnSupvModeReport(Ucs_Supv_Mode_t mode, Ucs_Supv_State_t state, void *user_ptr)
+{
+    const char *pModeString = "Unknown mode";
+    const char *pStateString = "Unknown state";
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(MAGIC == my->magic);
+    pModeString = GetSupervisorModeString(mode);
+    switch(state)
+    {
+        case UCS_SUPV_STATE_BUSY:
+            pStateString = "UCS_SUPV_STATE_BUSY";
+            break;
+        case UCS_SUPV_STATE_READY:
+            pStateString = "UCS_SUPV_STATE_READY";
+            break;
+        default:
+            assert(false);
+    }
+    UCSI_CB_OnUserMessage(my->tag, false, "Supervisor mode='%s', state='%s'", 2, pModeString, pStateString);
+    if (UCS_SUPV_STATE_READY == state)
+    {
+        if (NULL != my->currentCmd && UnicensCmd_SupvSetMode == my->currentCmd->cmd)
+        {
+            OnCommandExecuted(my, UnicensCmd_SupvSetMode, true);
+        }
+        if (my->supvShallMode != mode)
+        {
+            UnicensCmdEntry_t *entry;
+            entry = RB_GetWritePtr(&my->rb);
+            if (NULL == entry)
+            {
+                UCSI_CB_OnUserMessage(my->tag, true, "Could not enqueue SupvMode command. Increase CMD_QUEUE_LEN define", 0);
+                return;
+            }
+            entry->cmd = UnicensCmd_SupvSetMode;
+            entry->val.SupvMode.supvMode = my->supvShallMode;
+            RB_PopWritePtr(&my->rb);
+            UCSI_CB_OnServiceRequired(my->tag);
+            UCSIPrint_UnicensActivity();
+        }
+    }
+}
+
+static const char *GetSupervisorModeString(Ucs_Supv_Mode_t mode)
+{
+    const char *pModeString = "Unknown mode";
+    switch(mode)
+    {
+        case UCS_SUPV_MODE_NORMAL:
+            pModeString = "UCS_SUPV_MODE_NORMAL";
+            break;
+        case UCS_SUPV_MODE_INACTIVE:
+            pModeString = "UCS_SUPV_MODE_INACTIVE";
+            break;
+        case UCS_SUPV_MODE_FALLBACK:
+            pModeString = "UCS_SUPV_MODE_FALLBACK";
+            break;
+        case UCS_SUPV_MODE_DIAGNOSIS:
+            pModeString = "UCS_SUPV_MODE_DIAGNOSIS";
+            break;
+        case UCS_SUPV_MODE_PROGRAMMING:
+            pModeString = "UCS_SUPV_MODE_PROGRAMMING";
+            break;
+        default:
+            assert(false);
+            break;
+    }
+    return pModeString;
 }
 
 /************************************************************************/

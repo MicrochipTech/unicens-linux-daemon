@@ -38,7 +38,7 @@
 #include "Console.h"
 #include "Xml2Struct.h"
 
-static const char *VERSION_STR = "V4.4.0";
+static const char *VERSION_STR = "V5.0.0";
 
 #define CASE(X) case X: { return #X; }
 #define CHECK_ASSERT(X) { \
@@ -115,6 +115,7 @@ static void PrintScripts(UCS_NS_CONST Ucs_Ns_Script_t *scripts, uint8_t len, uin
 static void PrintNodes(Ucs_Rm_Node_t *nodes, uint8_t len);
 static const char*GetEndpointTypeString(Ucs_Rm_EndPointType_t eptyp);
 static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routePos);
+static const char*GetClockConfigString(Ucs_Stream_PortClockConfig_t clk_config);
 static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len);
 
 static struct LocalVar m;
@@ -434,9 +435,7 @@ static const char*GetStrmClkString(Ucs_Stream_PortClockConfig_t clk)
 {
     switch(clk)
     {
-        CASE(UCS_STREAM_PORT_CLK_CFG_8FS);
-        CASE(UCS_STREAM_PORT_CLK_CFG_16FS);
-        CASE(UCS_STREAM_PORT_CLK_CFG_32FS);
+        CASE(UCS_STREAM_PORT_CLK_CFG_NONE);
         CASE(UCS_STREAM_PORT_CLK_CFG_64FS);
         CASE(UCS_STREAM_PORT_CLK_CFG_128FS);
         CASE(UCS_STREAM_PORT_CLK_CFG_256FS);
@@ -928,6 +927,22 @@ static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routeP
     ConsolePrintfExit(" };\n");
 }
 
+static const char*GetClockConfigString(Ucs_Stream_PortClockConfig_t clk_config)
+{
+    switch(clk_config)
+    {
+        CASE(UCS_STREAM_PORT_CLK_CFG_NONE);
+        CASE(UCS_STREAM_PORT_CLK_CFG_64FS);
+        CASE(UCS_STREAM_PORT_CLK_CFG_128FS);
+        CASE(UCS_STREAM_PORT_CLK_CFG_256FS);
+        CASE(UCS_STREAM_PORT_CLK_CFG_512FS);
+        CASE(UCS_STREAM_PORT_CLK_CFG_WILD);
+        default:
+            ConsolePrintf(PRIO_ERROR, "GetClockConfigString type:%d not implemented\n", clk_config);
+            exit(-1);
+    }
+}
+
 static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len)
 {
     uint8_t i;
@@ -949,7 +964,13 @@ static void PrintRoutes(Ucs_Rm_Route_t *routes, uint8_t len)
         ConsolePrintfContinue(TAB C99(".source_endpoint_ptr = ")"&%s,\n"TAB, GetNameFromTable(route->source_endpoint_ptr));
         ConsolePrintfContinue(TAB C99(".sink_endpoint_ptr = ")"&%s,\n"TAB, GetNameFromTable(route->sink_endpoint_ptr));
         ConsolePrintfContinue(TAB C99(".active = ")"%u,\n"TAB, route->active);
-        ConsolePrintfContinue(TAB C99(".route_id = ")"0x%04X", route->route_id);
+        ConsolePrintfContinue(TAB C99(".route_id = ")"0x%04X,\n"TAB, route->route_id);
+        ConsolePrintfContinue(TAB C99(".atd = ")"{ \n"TAB);
+        ConsolePrintfContinue(TAB TAB C99(".enabled = ")"%u,\n"TAB, route->atd.enabled);
+        ConsolePrintfContinue(TAB TAB C99(".clk_config = ")"%s\n"TAB TAB"},\n"TAB, GetClockConfigString(route->atd.clk_config));
+        ConsolePrintfContinue(TAB C99(".static_connection = ")"{ \n"TAB);
+        ConsolePrintfContinue(TAB TAB C99(".static_con_label = ")"0x%X,\n"TAB, route->static_connection.static_con_label);
+        ConsolePrintfContinue(TAB TAB C99(".fallback_enabled = ")"%d\n"TAB TAB"}"TAB, route->static_connection.fallback_enabled);
         ConsolePrintfContinue("\n"TAB"}");
     }
     ConsolePrintfExit(" };\n");

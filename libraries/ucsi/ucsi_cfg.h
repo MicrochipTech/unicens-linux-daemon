@@ -85,7 +85,8 @@ typedef enum
     UnicensCmd_I2CWrite,
     UnicensCmd_I2CRead,
     UnicensCmd_SendAmsMessage,
-    UnicensCmd_PacketFilterMode
+    UnicensCmd_PacketFilterMode,
+    UnicensCmd_SupvSetMode
 } UnicensCmd_t;
 
 /**
@@ -184,6 +185,14 @@ typedef struct
  */
 typedef struct
 {
+    Ucs_Supv_Mode_t supvMode;
+} UnicensCmdSupvMode_t;
+
+/**
+ * \brief Internal struct for UNICENS Integration
+ */
+typedef struct
+{
     UnicensCmd_t cmd;
     union
     {
@@ -195,6 +204,7 @@ typedef struct
         UnicensCmdI2CWrite_t I2CWrite;
         UnicensCmdI2CRead_t I2CRead;
         UnicensCmdPacketFilterMode_t PacketFilterMode;
+        UnicensCmdSupvMode_t SupvMode;
 #if (ENABLE_AMS_LIB)
         UnicensCmdSendAmsMessage_t SendAms;
 #endif
@@ -224,18 +234,19 @@ typedef struct {
 typedef struct
 {
     uint32_t magic;
-    void *tag;
-    bool initialized;
-    Ucs_Rm_Route_t *pendingRoutePtr;
-    RB_t rb;
     uint8_t rbBuf[(CMD_QUEUE_LEN * sizeof(UnicensCmdEntry_t))];
-    Ucs_Inst_t *unicens;
     Ucs_InitData_t uniInitData;
-    bool triggerService;
-    Ucs_Lld_Api_t *uniLld;
+    Ucs_Supv_Mode_t supvShallMode;
+    RB_t rb;
+    void *tag;
     void *uniLldHPtr;
+    Ucs_Rm_Route_t *pendingRoutePtr;
+    Ucs_Inst_t *unicens;
+    Ucs_Lld_Api_t *uniLld;
     UnicensCmdEntry_t *currentCmd;
+    bool initialized;
     bool printTrigger;
+    bool triggerService;
 } UCSI_Data_t;
 
 #endif /* UNICENSINTEGRATION_H_ */

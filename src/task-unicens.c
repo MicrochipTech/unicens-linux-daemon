@@ -120,7 +120,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     m.promiscuousMode = pVar->promiscuousMode;
     if (!TimerInitialize() || !SemInitialize())
     {
-        ConsolePrintf(PRIO_ERROR, RED"Failed to initialize timer/threading resources"RESETCOLOR"\r\n");
+        ConsolePrintf(PRIO_ERROR, RED "Failed to initialize timer/threading resources" RESETCOLOR "\r\n");
         return false;
     }
     if (NULL != pVar->cfgFileName)
@@ -128,7 +128,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
         m.cfg = UcsXml_ParseFile(pVar->cfgFileName);
         if (NULL == m.cfg)
         {
-            ConsolePrintf(PRIO_ERROR, RED"XML Parser error"RESETCOLOR"\r\n");
+            ConsolePrintf(PRIO_ERROR, RED "XML Parser error" RESETCOLOR "\r\n");
             return false;
         }
     }
@@ -143,7 +143,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
             t.tv_nsec = 300000000l;
             if (!MldConfigV1_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drv1LocalNodeAddr, pVar->drv1Filter, 1000))
             {
-                ConsolePrintf(PRIO_ERROR, RED"Could not start driver configuration service"RESETCOLOR"\r\n");
+                ConsolePrintf(PRIO_ERROR, RED "Could not start driver configuration service" RESETCOLOR "\r\n");
                 return false;
             }
             if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
@@ -151,14 +151,14 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
                 nanosleep(&t, NULL);
                 while(!MldConfigV1_GetControlCdevName(m.controlTxCdev, m.controlRxCdev))
                 {
-                    ConsolePrintf(PRIO_ERROR, YELLOW"Wait for INICs control channel to appear"RESETCOLOR"\r\n");
+                    ConsolePrintf(PRIO_ERROR, YELLOW "Wait for INICs control channel to appear" RESETCOLOR "\r\n");
                     nanosleep(&t, NULL);
                 }
             }
         }
         if (!UCSI_NewConfig(&m.unicens, m.cfg->packetBw, m.cfg->pRoutes, m.cfg->routesSize, m.cfg->pNod, m.cfg->nodSize))
         {
-            ConsolePrintf(PRIO_ERROR, RED"Could not enqueue XML generated UNICENS config"RESETCOLOR"\r\n");
+            ConsolePrintf(PRIO_ERROR, RED "Could not enqueue XML generated UNICENS config" RESETCOLOR "\r\n");
             assert(false);
             return false;
         }
@@ -167,14 +167,14 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     {
         if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize))
         {
-            ConsolePrintf(PRIO_ERROR, RED"Could not enqueue default UNICENS config"RESETCOLOR"\r\n");
+            ConsolePrintf(PRIO_ERROR, RED "Could not enqueue default UNICENS config" RESETCOLOR "\r\n");
             assert(false);
             return false;
         }
     }
     if (!InitializeCdevs())
     {
-        ConsolePrintf(PRIO_ERROR, RED"Failed to initialize Control CDEVs"RESETCOLOR"\r\n");
+        ConsolePrintf(PRIO_ERROR, RED "Failed to initialize Control CDEVs" RESETCOLOR "\r\n");
         return false;
     }
     m.allowRun = true;
@@ -211,7 +211,7 @@ void TaskUnicens_Service(void)
                 if (m.lldTrace)
                 {
                     uint32_t i;
-                    ConsolePrintfStart( PRIO_HIGH, YELLOW"%08d: MSG_RX: ", GetTicks());
+                    ConsolePrintfStart( PRIO_HIGH, YELLOW "%08d: MSG_RX: ", GetTicks());
                     for ( i = 0; i < len; i++ )
                     {
                         ConsolePrintfContinue( "%02X ", pData[i] );
@@ -301,7 +301,7 @@ void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout)
 void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwidth, uint8_t amountOfNodes)
 {
     pTag = pTag;
-    ConsolePrintf(PRIO_HIGH, YELLOW"Network isAvailable=%s, packetBW=%d, nodeCount=%d"RESETCOLOR"\r\n",
+    ConsolePrintf(PRIO_HIGH, YELLOW "Network isAvailable=%s, packetBW=%d, nodeCount=%d" RESETCOLOR "\r\n",
                   isAvailable ? "yes" : "no",
                   packetBandwidth,
                   amountOfNodes);
@@ -316,7 +316,7 @@ void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16
     vsnprintf(outbuf, sizeof(outbuf), format, argptr);
     va_end(argptr);
     if (isError)
-        ConsolePrintf(PRIO_ERROR, RED"%s"RESETCOLOR"\r\n", outbuf);
+        ConsolePrintf(PRIO_ERROR, RED "%s" RESETCOLOR "\r\n", outbuf);
     else
         ConsolePrintf(PRIO_LOW, "%s\r\n", outbuf);
 }
@@ -346,7 +346,7 @@ void UCSI_CB_OnTxRequest(void *pTag,
     if (m.lldTrace)
     {
         uint32_t i;
-        ConsolePrintfStart( PRIO_HIGH, BLUE"%08d: MSG_TX: ", GetTicks());
+        ConsolePrintfStart( PRIO_HIGH, BLUE "%08d: MSG_TX: ", GetTicks());
         for ( i = 0; i < payloadLen; i++ )
         {
             ConsolePrintfContinue( "%02X ", pPayload[i] );
@@ -358,14 +358,14 @@ void UCSI_CB_OnTxRequest(void *pTag,
         if (m.txErrorState)
         {
             m.txErrorState = false;
-            ConsolePrintf(PRIO_ERROR, GREEN"CDEV TX (%s) opened"RESETCOLOR"\r\n",
+            ConsolePrintf(PRIO_ERROR, GREEN "CDEV TX (%s) opened" RESETCOLOR "\r\n",
                     m.controlTxCdev);
         }
     }
     else if (!m.txErrorState)
     {
         m.txErrorState = true;
-        ConsolePrintf(PRIO_ERROR, RED"CDEV TX error (%s), reason='%s'"RESETCOLOR"\r\n",
+        ConsolePrintf(PRIO_ERROR, RED "CDEV TX error (%s), reason='%s'" RESETCOLOR "\r\n",
             m.controlTxCdev, GetErrnoString());
     }
 }
@@ -406,10 +406,10 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPin
                   nodeAddress, gpioPinId, isHighState ? "yes" : "no");
 }
 
-void UCSI_CB_OnMgrReport(void *pTag, Ucs_MgrReport_t code, Ucs_Signature_t *signature, Ucs_Rm_Node_t *pNode)
+void UCSI_CB_OnMgrReport(void *pTag, Ucs_Supv_Report_t code, Ucs_Signature_t *signature, Ucs_Rm_Node_t *pNode)
 {
     pTag = pTag;
-    if (m.promiscuousMode && NULL != signature && UCS_MGR_REP_AVAILABLE == code) 
+    if (m.promiscuousMode && NULL != signature && UCS_SUPV_REP_AVAILABLE == code) 
     {
         UCSI_EnablePromiscuousMode(&m.unicens, signature->node_address, true);
     }
@@ -433,7 +433,7 @@ void MldConfigV1_CB_OnMessage(bool isError, const char format[], uint16_t vargsC
     vsprintf(outbuf, format, argptr);
     va_end(argptr);
     if (isError)
-        ConsolePrintf(PRIO_ERROR, RED"Driver config error: %s"RESETCOLOR"\r\n", outbuf);
+        ConsolePrintf(PRIO_ERROR, RED "Driver config error: %s" RESETCOLOR "\r\n", outbuf);
     else
         ConsolePrintf(PRIO_LOW, "Driver config: %s\r\n", outbuf);
 }
