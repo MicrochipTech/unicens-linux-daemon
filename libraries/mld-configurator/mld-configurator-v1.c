@@ -67,6 +67,7 @@ static bool WriteIntegerToFile( const char *path, const char *pFileName, int int
 static void ReplaceCharsInString(char *target, const char *pWrongChars, char replaceBy);
 static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, char *descr, uint32_t descrLen, const char *parent, const char *grandParent);
 static void CheckDriverSettings(const char* channelName, const char* deviceName, const char *fullPath, const char *intf, const char *descr);
+static void WriteDriverConfig(const char* channelName, const char* deviceName, const char *fullPath, DriverInformation_t *drv);
 static bool ConfigureCdev(const char *fullPath, DriverInformation_t *drv);
 static bool LinkCdev(const char* channelName, const char* deviceName, DriverInformation_t *driver);
 static bool ConfigureAlsa(const char *fullPath, DriverInformation_t *drv);
@@ -270,6 +271,12 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     DriverInformation_t localDrv = { 0 };
     if ('\0' != *m.descriptionFilter && NULL != descr && NULL == strstr(descr, m.descriptionFilter))
         return;
+    /* Check if channel is already configured */
+    snprintf(path, sizeof(path), "%s/%s", fullPath, "set_buffer_size");
+    if (!ReadFromFile(path, val, sizeof(val)))
+        return;
+    if (0 != strcmp("0", val))
+        return; /* Already configured */
 
     if (0 == strcmp("usb", intf))
         curPhy = DriverPhyUsb;
@@ -335,46 +342,42 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
         {
             localDrv.drv.LinuxNetwork.direction = DriverCfgDirection_Tx;
         }
-        if (0 == strcmp("ep8e", channelName) || 0 == strcmp("ep86", channelName) || 0 == strcmp("ca6", channelName))
+        else if (0 == strcmp("ep8e", channelName) || 0 == strcmp("ep86", channelName) || 0 == strcmp("ca6", channelName))
         {
             localDrv.drv.LinuxNetwork.direction = DriverCfgDirection_Rx;
         }
+        WriteDriverConfig(channelName, deviceName, fullPath, drv);
     }
-    for (i = 0; NULL != m.pConfig && NULL == drv && i < m.driverSize; i++)
+    for (i = 0; NULL != m.pConfig && i < m.driverSize; i++)
     {
-        DriverInformation_t *tmp = m.pConfig[i];
-        if (m.localNodeAddress != tmp->nodeAddress)
-            continue;
-        if (curPhy != tmp->phy)
-            continue;
-        switch(tmp->driverType)
+        drv = m.pConfig[i];
+        if (!drv) continue;
+        if (m.localNodeAddress != drv->nodeAddress) continue;
+        if (curPhy != drv->phy) continue;
+        switch(drv->driverType)
         {
         case Driver_LinuxCdev:
-            if (0 != strcmp(channelName, tmp->drv.LinuxCdev.channelName))
+            if (0 != strcmp(channelName, drv->drv.LinuxCdev.channelName))
                 continue;
             break;
         case Driver_LinuxAlsa:
-            if (0 != strcmp(channelName, tmp->drv.LinuxAlsa.channelName))
+            if (0 != strcmp(channelName, drv->drv.LinuxAlsa.channelName))
                 continue;
             break;
         case Driver_LinuxV4l2:
-            if (0 != strcmp(channelName, tmp->drv.LinuxV4l2.channelName))
+            if (0 != strcmp(channelName, drv->drv.LinuxV4l2.channelName))
                 continue;
             break;
         default:
             continue;
         }
-        drv = tmp;
-        break;
+        WriteDriverConfig(channelName, deviceName, fullPath, drv);
     }
-    if (NULL == drv)
-        return;
-    /* Check if channel is already configured */
-    snprintf(path, sizeof(path), "%s/%s", fullPath, "set_buffer_size");
-    if (!ReadFromFile(path, val, sizeof(val)))
-        return;
-    if (0 != strcmp("0", val))
-        return; /* Already configured */
+}
+
+static void WriteDriverConfig(const char* channelName, const char* deviceName, const char *fullPath, DriverInformation_t *drv)
+{
+    if (!channelName || !deviceName || !fullPath || !drv) return;
     switch(drv->driverType)
     {
     case Driver_LinuxCdev:

@@ -8,6 +8,7 @@ UNICENS Daemon (unicensd) & UNICENS Client (unicensc)
 V05.00.00
 =========
 - Intgegrated UNICENS library V2.3.0
+- Add support for ALSA and CDEV linkage at the same time
 
 V04.03.01
 =========
