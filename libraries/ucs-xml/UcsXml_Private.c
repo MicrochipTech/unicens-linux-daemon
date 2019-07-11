@@ -37,9 +37,6 @@
 static const char* USB_PHY_STANDARD =       "Standard";
 static const char* USB_PHY_HSIC =           "HSIC";
 
-static const char* CLOCK_8FS =              "8Fs";
-static const char* CLOCK_16FS =             "16Fs";
-static const char* CLOCK_32FS =             "32Fs";
 static const char* CLOCK_64FS =             "64Fs";
 static const char* CLOCK_128FS =            "128Fs";
 static const char* CLOCK_256FS =            "256Fs";
@@ -326,13 +323,7 @@ bool GetStrmPort(Ucs_Xrm_StrmPort_t **strmPort, struct StrmPortParameters *param
     port->index = param->index;
     if (0 == port->index)
     {
-        if (0 == strcmp(param->clockConfig, CLOCK_8FS))
-            port->clock_config = UCS_STREAM_PORT_CLK_CFG_8FS;
-        else if (0 == strcmp(param->clockConfig, CLOCK_16FS))
-            port->clock_config = UCS_STREAM_PORT_CLK_CFG_16FS;
-        else if (0 == strcmp(param->clockConfig, CLOCK_32FS))
-            port->clock_config = UCS_STREAM_PORT_CLK_CFG_32FS;
-        else if (0 == strcmp(param->clockConfig, CLOCK_64FS))
+        if (0 == strcmp(param->clockConfig, CLOCK_64FS))
             port->clock_config = UCS_STREAM_PORT_CLK_CFG_64FS;
         else if (0 == strcmp(param->clockConfig, CLOCK_128FS))
             port->clock_config = UCS_STREAM_PORT_CLK_CFG_128FS;
@@ -362,6 +353,20 @@ bool GetStrmPort(Ucs_Xrm_StrmPort_t **strmPort, struct StrmPortParameters *param
     else if (0 == strcmp(param->dataAlignment, STRM_ALIGN_TDM24))
         port->data_alignment = UCS_STREAM_PORT_ALGN_TDM24BIT;
     else ASSERT_FALSE("GetStrmPort->dataAlignment", param->dataAlignment);
+    return true;
+}
+
+bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, struct UcsXmlObjectList *list)
+{
+    Ucs_Xrm_DefaultCreatedPort_t *p;
+    CHECK_POINTER(streamPort);
+    CHECK_POINTER(list)
+    p = MCalloc(list, 1, sizeof(Ucs_Xrm_DefaultCreatedPort_t));
+    CHECK_POINTER(p);
+    p->resource_type = UCS_XRM_RC_TYPE_DC_PORT;
+    p->port_type = UCS_XRM_PORT_TYPE_STRM;
+    p->index = 0;
+    *streamPort = (Ucs_Xrm_ResObject_t *)p;
     return true;
 }
 

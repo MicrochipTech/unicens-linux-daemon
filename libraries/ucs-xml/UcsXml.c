@@ -1177,10 +1177,17 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         p.dataType = priv->conData.dataType;
         p.streamPortA = priv->nodeData.strmPortA;
         p.streamPortB = priv->nodeData.strmPortB;
-        if (NULL == p.streamPortA || NULL == p.streamPortB)
+        if (NULL == p.streamPortA)
         {
-            UcsXml_CB_OnError("Node 0x%X uses StreamSocket without creating a StreamPort", 1, priv->nodeData.nod->signature_ptr->node_address);
-            RETURN_ASSERT(Parse_XmlError, "No StreamPort");
+            if (!GetStrmPortDefaultCreated(&p.streamPortA, &priv->objList))
+                RETURN_ASSERT(Parse_XmlError, "Can not get default created stream port A");
+            priv->nodeData.strmPortA = (Ucs_Xrm_StrmPort_t *)p.streamPortA;
+        }
+        if (NULL == p.streamPortB)
+        {
+            if (!GetStrmPortDefaultCreated(&p.streamPortB, &priv->objList))
+                RETURN_ASSERT(Parse_XmlError, "Can not get default created stream port B");
+            priv->nodeData.strmPortB = (Ucs_Xrm_StrmPort_t *)p.streamPortB;
         }
         if (!AddJob(jobList, p.streamPortA, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
         if (!AddJob(jobList, p.streamPortB, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
@@ -1849,6 +1856,7 @@ static ParseResult_t ParseDriver(mxml_node_t *drv, UcsXmlVal_t *ucs, PrivateData
                     copyList->driverInfo = copyInfo;
                     head->next = copyList;
                     head = copyList;
+                    drvInf = head->driverInfo;
                 }
                 if(0 == strcmp(driverType, L_DRIVER_CDEV))
                 {

@@ -375,7 +375,7 @@ extern void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t 
  * \param signature - Signature of the found device. Maybe NULL in error cases
  * \param pNode - Reference to the node structure found in nodes list. Maybe NULL.
  */
-extern void UCSI_CB_OnMgrReport(void *pTag, Ucs_MgrReport_t code, Ucs_Signature_t *signature, Ucs_Rm_Node_t *pNode);
+extern void UCSI_CB_OnMgrReport(void *pTag, Ucs_Supv_Report_t code, Ucs_Signature_t *signature, Ucs_Rm_Node_t *pNode);
 
 /**
  * \brief Callback when an I2C Read (triggered by UCSI_I2CRead) command has been executed

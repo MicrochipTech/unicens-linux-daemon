@@ -115,6 +115,7 @@ struct StrmPortParameters
     const char *dataAlignment;
 };
 bool GetStrmPort(Ucs_Xrm_StrmPort_t **strmPort, struct StrmPortParameters *param);
+bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, struct UcsXmlObjectList *list);
 
 struct StrmSocketParameters
 {
@@ -123,8 +124,8 @@ struct StrmSocketParameters
     MDataType_t dataType;
     uint16_t bandwidth;
     const char *streamPin;
-    Ucs_Xrm_StrmPort_t *streamPortA; /* Mandatory, set with index 0 */
-    Ucs_Xrm_StrmPort_t *streamPortB; /* Mandatory, set with index 1 */
+    Ucs_Xrm_ResObject_t *streamPortA; /* Index 0, must be either Ucs_Xrm_StrmPort_t or Ucs_Xrm_DefaultCreatedPort_t */
+    Ucs_Xrm_ResObject_t *streamPortB; /* index 1, must be either Ucs_Xrm_StrmPort_t or Ucs_Xrm_DefaultCreatedPort_t */
 };
 bool GetStrmSocket(Ucs_Xrm_StrmSocket_t **strmSoc, struct StrmSocketParameters *param);
 
