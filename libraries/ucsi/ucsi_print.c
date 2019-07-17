@@ -162,6 +162,7 @@ void UCSIPrint_SetNetworkAvailable(bool available, uint8_t maxPos)
     m.networkAvailable = available;
     m.mpr = maxPos;
     m.waitForMprRetries = 0;
+    m.timeOut = 0;
     if (available) {
         RequestTrigger();
     } else {
@@ -300,6 +301,11 @@ static void PrintTable(void)
         const char *sinkReset = "";
         const char *routeAvail = " ";
         const char *routeReset = "";
+        char sourceAddr[20];
+        char sinkAddr[20];
+        char conLabel[20];
+        Ucs_Xrm_ResObject_t **inJobs = m.pRoutes[i].source_endpoint_ptr->jobs_list_ptr;
+        Ucs_Xrm_ResObject_t **outJobs = m.pRoutes[i].sink_endpoint_ptr->jobs_list_ptr;
         uint16_t srcAddr = m.pRoutes[i].source_endpoint_ptr->node_obj_ptr->signature_ptr->node_address;
         uint16_t snkAddr = m.pRoutes[i].sink_endpoint_ptr->node_obj_ptr->signature_ptr->node_address;
         uint8_t shallActive = m.pRoutes[i].active;
@@ -309,8 +315,8 @@ static void PrintTable(void)
         UCSIPrint_NodeState_t srcState = GetNodeState(srcAddr);
         UCSIPrint_NodeState_t snkState = GetNodeState(snkAddr);
         GetRouteState(id, &isActive, &label);
-        ParseResources(m.pRoutes[i].source_endpoint_ptr->jobs_list_ptr, inRes, sizeof(inRes));
-        ParseResources(m.pRoutes[i].sink_endpoint_ptr->jobs_list_ptr, outRes, sizeof(outRes));
+        ParseResources(inJobs, inRes, sizeof(inRes));
+        ParseResources(outJobs, outRes, sizeof(outRes));
         if (NodeState_Available == srcState)
         {
             sourceAvail = GREEN "^";
@@ -339,9 +345,24 @@ static void PrintTable(void)
                 routeAvail = RED "!";
             routeReset = RESETCOLOR;
         }
-        snprintf(strBuf, STR_BUF_LEN, "%s0x%03X%s  | %s0x%03X%s | S:%d I:%s%d%s | 0x%04X | 0x%04X | Src:%s  Snk:%s",
-            sourceAvail, srcAddr, sourceReset, sinkAvail, snkAddr, sinkReset, 
-            shallActive, routeAvail, isActive, routeReset, id, label, inRes, outRes);
+        if (inJobs) {
+            snprintf(sourceAddr, sizeof(sourceAddr), "%s0x%03X%s  ", sourceAvail, srcAddr, sourceReset);
+        } else {
+            snprintf(sourceAddr, sizeof(sourceAddr), "        ");
+        }
+        if (outJobs) {
+            snprintf(sinkAddr, sizeof(sinkAddr), "%s0x%03X%s  ", sinkAvail, snkAddr, sinkReset);
+        } else {
+            snprintf(sinkAddr, sizeof(sinkAddr), "        ");
+        }
+        if (INVALID_CON_LABEL == label || 0 == label)
+        {
+            snprintf(conLabel, sizeof(conLabel), "      ");
+        } else {
+            snprintf(conLabel, sizeof(conLabel), "0x%04X", label);
+        }
+        snprintf(strBuf, STR_BUF_LEN, "%s|%s| S:%d I:%s%d%s | 0x%04X | %s | Src:%s  Snk:%s",
+            sourceAddr, sinkAddr, shallActive, routeAvail, isActive, routeReset, id, conLabel, inRes, outRes);
         UCSIPrint_CB_OnUserMessage(m.tag, strBuf);
     }
     UCSIPrint_CB_OnUserMessage(m.tag, "---------------------------------------------------------------------------------------");
@@ -516,7 +537,7 @@ static void RequestTrigger(void)
 void UCSIPrint_Init(Ucs_Rm_Route_t *pRoutes, uint16_t routesSize, void *tag) {}
 void UCSIPrint_Service(uint32_t timestamp) {}
 void UCSIPrint_SetNetworkAvailable(bool available, uint8_t maxPos) {}
-void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, UCSIPrint_NodeState_t nodeState) {}
+void UCSIPrint_SetNodeAvailable(uint16_t nodeAddress, uint16_t nodePosAddr, UCSIPrint_NodeState_t nodeState) {}
 void UCSIPrint_SetRouteState(uint16_t routeId, bool isActive, uint16_t connectionLabel) {}
 void UCSIPrint_SetObjectState(Ucs_Xrm_ResObject_t *element, UCSIPrint_ObjectState_t state) {}
 void UCSIPrint_UnicensActivity(void) {}

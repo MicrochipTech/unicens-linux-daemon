@@ -36,12 +36,12 @@ Example:
 The tree view looks as follows:
 ```
 Parent
-│
-└───Child
-│
-└───Child
-    │
-    └─── GrandChild
+�
++---Child
+�
++---Child
+    �
+    +--- GrandChild
 ```
 
 **Element**
