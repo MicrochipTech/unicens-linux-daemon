@@ -195,7 +195,6 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
             }
             pVar->programNodeCnt = strtol( argv[i + 1], NULL, 0 );
             ++i;
-            ConsoleSetPrio(PRIO_LOW);
             ConsolePrintf(PRIO_HIGH, YELLOW "Programming is enabled. Target node count is=%d" RESETCOLOR "\r\n", pVar->programNodeCnt);
         }
         else if (0 == strcmp("--persistent", argv[i]))
