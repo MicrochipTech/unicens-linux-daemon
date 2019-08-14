@@ -48,8 +48,9 @@ extern "C" {
  *                instance (static allocated or allocated with malloc)
  * \param pTag - Pointer given by the integrator. This pointer will be
  *               returned by any callback function of this component
+ * \param debugLocalNode - true, if messages sent to local attached INIC should be copied to debug node address (for INICnet sniffer).
  */
-void UCSI_Init(UCSI_Data_t *pPriv, void *pTag);
+void UCSI_Init(UCSI_Data_t *pPriv, void *pTag, bool debugLocalNode);
 
 
 /**

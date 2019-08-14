@@ -135,7 +135,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
         }
     }
     /* Initialize UNICENS */
-    UCSI_Init(&m.unicens, &m);
+    UCSI_Init(&m.unicens, &m, pVar->debugLocalMsg);
     if (m.cfg)
     {
         if (0 != pVar->drv1LocalNodeAddr)

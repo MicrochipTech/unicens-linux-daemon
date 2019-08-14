@@ -11,6 +11,7 @@ V05.01.00
 - unicensd and xml2struct support static connection labels (on ProxyChannel)
 - unicensd and xml2struct support default created Streaming Ports
 - unicensd supports fallback root node (eCall use case)
+- unicensd added feature to debug local attached INIC with INICnet sniffer.
 - xml2struct tool generates UCS default config with ProxyBandwidth set
 
 V05.00.00

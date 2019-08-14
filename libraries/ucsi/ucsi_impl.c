@@ -111,7 +111,7 @@ static void OnHdxReport(Ucs_Hdx_Report_t *result, void *user_ptr);
 /* Public Function Implementations                                      */
 /************************************************************************/
 
-void UCSI_Init(UCSI_Data_t *my, void *pTag)
+void UCSI_Init(UCSI_Data_t *my, void *pTag, bool debugLocalNode)
 {
     Ucs_Return_t result;
     assert(NULL != my);
@@ -159,6 +159,7 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
 
     my->uniInitData.rm.report_fptr = &OnUnicensRoutingResult;
     my->uniInitData.rm.debug_resource_status_fptr = &OnUnicensDebugXrmResources;
+    my->uniInitData.rm.debug_message_enable = debugLocalNode;
 
     my->uniInitData.gpio.trigger_event_status_fptr = &OnUcsGpioTriggerEventStatus;
 

@@ -161,6 +161,11 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
             ConsolePrintf(PRIO_ERROR, YELLOW "Promiscuous Mode active for all nodes" RESETCOLOR "\r\n");
             pVar->promiscuousMode = true;
         }
+        else if (0 == strcmp("-local", argv[i]))
+        {
+            ConsolePrintf(PRIO_ERROR, YELLOW "Messages to local attached INIC will be copied to debug node address" RESETCOLOR "\r\n");
+            pVar->debugLocalMsg = true;
+        }
         else if (0 == strcmp("-crx", argv[i]))
         {
             if (argc <= (i+1))
@@ -219,6 +224,7 @@ static void PrintHelp(void)
     ConsolePrintfContinue("  -drv2                    Configures the Microchip MOST Linux Driver V2.X (reserved)\r\n");
     ConsolePrintfContinue("  -promisc                 Enable promiscuous mode on all INICs.\r\n" \
                           "                           Promiscuous mode disables packet filter in all INICS, so all Ethernet packets will be received by all nodes.\r\n");
+    ConsolePrintfContinue("  -local                   Special mode for INICnet sniffer. Messages sent to local attached INIC will be duplicated sent to debug node address.\r\n");
     ConsolePrintfContinue("  -lld                     Prints out the byte arrays send and received via Low Level Driver\r\n");
     ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
     ConsolePrintfContinue("Examples:\r\n");
