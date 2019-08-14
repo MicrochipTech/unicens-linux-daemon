@@ -50,6 +50,8 @@ typedef struct
     const char *drv1Filter;
     char *controlRxCdev;
     char *controlTxCdev;
+    uint8_t programNodeCnt;
+    bool programPersistent;
 } TaskUnicens_t;
 
 /**

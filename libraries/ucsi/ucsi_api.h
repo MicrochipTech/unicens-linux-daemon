@@ -75,11 +75,14 @@ bool UCSI_RunCableDiagnosis(UCSI_Data_t *pPriv);
  * \param routesListSize - Number of routes in the list
  * \param pNodesList - Reference to the list of nodes
  * \param nodesListSize - Reference to a list of routes
+ * \param programAmountOfNodes - 0, if programming is disabled. Otherwise the expected node count, when programming shall be started
+ * \param programPersistent - true, if OTP/Flash memory shall be programmed. false, use RAM only.
  * \return true, configuration successfully enqueued, false otherwise
  */
 bool UCSI_NewConfig(UCSI_Data_t *pPriv,
     uint16_t packetBw, uint16_t proxyBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
-    Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize);
+    Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize,
+    uint8_t programAmountOfNodes, bool programPersistent);
 
 /**
  * \brief Executes the given script. If already started, all
@@ -266,7 +269,6 @@ extern void UCSI_CB_OnCommandResult(void *pTag, UnicensCmd_t command, bool succe
  */
 extern uint16_t UCSI_CB_OnGetTime(void *pTag);
 
-
 /**
  * \brief Callback when the implementer needs to arm a timer.
  * \note This function must be implemented by the integrator
@@ -288,15 +290,25 @@ extern void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout);
 extern void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwidth, uint8_t amountOfNodes);
 
 /**
+ * \brief Enumeration specifying the urgency of the message
+ */ 
+typedef enum
+{
+    UCSI_MsgDebug,
+    UCSI_MsgError,
+    UCSI_MsgUrgent
+} UCSI_UserMessageUrgency_t;
+
+/**
  * \brief Callback when ever UNICENS forms a human readable message.
  *        This can be error events or when enabled also debug messages.
  * \note This function must be implemented by the integrator
  * \param pTag - Pointer given by the integrator by UCSI_Init
- * \param isError - true, if this message is an important error message. false, user/debug message, not important.
+ * \param urgency - Enumeration specifying the urgency of the message
  * \param format - Zero terminated format string (following printf rules)
  * \param vargsCnt - Amount of parameters stored in "..."
  */
-extern void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[],
+extern void UCSI_CB_OnUserMessage(void *pTag, UCSI_UserMessageUrgency_t urgency, const char format[],
     uint16_t vargsCnt, ...);
 
 /**
@@ -411,6 +423,19 @@ extern void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, 
  * \note The node array is sorted. So first the root node comes first, first slave, second slave and so on.
  */
 extern void UCSI_CB_OnCableDiagnosisResult(void *pTag, uint16_t *pNodeAddrArray, uint8_t arrayLen);
+
+/**
+ * \brief Callback when programming mode is active and the needed amount of devices where discovered in the network.
+
+ * \note This function must be implemented by the integrator
+ * \note With this callback, the user can trigger a reprogramming of the IdentString for one node. After programming of that node, this function will be called again. Until the integrator returns false.
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param pNodes - Array of signature pointers of all the discovered devices in the network.
+ * \param nodeArrayLen - The length of the array
+ * \param pNewIdentString - Valid pointer will be given to user. Specify the new values of the IdentString for one node.
+ * \return Signature of the node to be flashed. NULL in case no node shall be flashed and the programming mode shall be left.
+ */
+extern const Ucs_Signature_t *UCSI_CB_OnProgrammingModeDeviceDiscovery(void *pTag, const Ucs_Signature_t *pNodes, uint32_t nodeArrayLen, Ucs_IdentString_t *pNewIdentString);
 
 #ifdef __cplusplus
 }

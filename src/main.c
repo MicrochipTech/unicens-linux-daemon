@@ -186,6 +186,23 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
             pVar->controlTxCdev = argv[i + 1];
             ++i;
         }
+        else if (0 == strcmp("-program", argv[i]))
+        {
+            if (argc <= (i+1))
+            {
+                ConsolePrintf(PRIO_ERROR, RED "-program parameter needs additional amount of expected node count" RESETCOLOR "\r\n");
+                return -1;
+            }
+            pVar->programNodeCnt = strtol( argv[i + 1], NULL, 0 );
+            ++i;
+            ConsoleSetPrio(PRIO_LOW);
+            ConsolePrintf(PRIO_HIGH, YELLOW "Programming is enabled. Target node count is=%d" RESETCOLOR "\r\n", pVar->programNodeCnt);
+        }
+        else if (0 == strcmp("--persistent", argv[i]))
+        {
+            ConsolePrintf(PRIO_ERROR, YELLOW "Persistent programming mode chosen" RESETCOLOR "\r\n");
+            pVar->programPersistent = true;
+        }
         else
         {
             ConsolePrintf(PRIO_ERROR, RED "Invalid command line parameter='%s'" RESETCOLOR "\r\n", argv[i]);
@@ -226,6 +243,12 @@ static void PrintHelp(void)
                           "                           Promiscuous mode disables packet filter in all INICS, so all Ethernet packets will be received by all nodes.\r\n");
     ConsolePrintfContinue("  -local                   Special mode for INICnet sniffer. Messages sent to local attached INIC will be duplicated sent to debug node address.\r\n");
     ConsolePrintfContinue("  -lld                     Prints out the byte arrays send and received via Low Level Driver\r\n");
+    ConsolePrintfContinue("  -program [Node Count]    Enables automatic reprogramming mode. If there is a node address collision,\r\n");
+    ConsolePrintfContinue("                           the conflicting devices will get the next free node address assigned. By default the changes are\r\n");
+    ConsolePrintfContinue("                           written to RAM only (not persistent). The programming starts when the number of devices found reaches\r\n");
+    ConsolePrintfContinue("                           the given [Node Count] value.\r\n");
+    ConsolePrintfContinue("  --persistent             Only valid along with -program parameter. If set, the changes are written into persistent memory (Flash or OTP)\r\n");
+    ConsolePrintfContinue("                           !!WARNING: Use this parameter with care. On OS8121/0/2/4/6 you can only write changes two times!!\r\n");
     ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
     ConsolePrintfContinue("Examples:\r\n");
     ConsolePrintfExit("  unicensd -default\r\n");

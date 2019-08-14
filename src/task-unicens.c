@@ -85,6 +85,8 @@ typedef struct
     CdevData_t ctrlRx;
     char controlRxCdev[CDEV_PATH_LEN];
     char controlTxCdev[CDEV_PATH_LEN];
+    uint8_t programNodeCnt;
+    bool programPersistent;
 } LocalVar_t;
 
 static LocalVar_t m;
@@ -120,6 +122,8 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     m.noRouteTable = pVar->noRouteTable;
     m.lldTrace = pVar->lldTrace;
     m.promiscuousMode = pVar->promiscuousMode;
+    m.programNodeCnt = pVar->programNodeCnt;
+    m.programPersistent = pVar->programPersistent;
     if (!TimerInitialize() || !SemInitialize())
     {
         ConsolePrintf(PRIO_ERROR, RED "Failed to initialize timer/threading resources" RESETCOLOR "\r\n");
@@ -136,6 +140,11 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     }
     /* Initialize UNICENS */
     UCSI_Init(&m.unicens, &m, pVar->debugLocalMsg);
+    if (m.programPersistent && 0 == m.programNodeCnt)
+    {
+        ConsolePrintf(PRIO_ERROR, RED "Can not program persistent without setting amount of nodes (use additional -program)" RESETCOLOR "\r\n");
+        return false;
+    }
     if (m.cfg)
     {
         if (0 != pVar->drv1LocalNodeAddr)
@@ -158,7 +167,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
                 }
             }
         }
-        if (!UCSI_NewConfig(&m.unicens, m.cfg->packetBw, m.cfg->proxyBw, m.cfg->pRoutes, m.cfg->routesSize, m.cfg->pNod, m.cfg->nodSize))
+        if (!UCSI_NewConfig(&m.unicens, m.cfg->packetBw, m.cfg->proxyBw, m.cfg->pRoutes, m.cfg->routesSize, m.cfg->pNod, m.cfg->nodSize, m.programNodeCnt, m.programPersistent))
         {
             ConsolePrintf(PRIO_ERROR, RED "Could not enqueue XML generated UNICENS config" RESETCOLOR "\r\n");
             assert(false);
@@ -167,7 +176,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     }
     else
     {
-        if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, ProxyBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize))
+        if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, ProxyBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize, m.programNodeCnt, m.programPersistent))
         {
             ConsolePrintf(PRIO_ERROR, RED "Could not enqueue default UNICENS config" RESETCOLOR "\r\n");
             assert(false);
@@ -319,7 +328,7 @@ void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwid
     }
 }
 
-void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16_t vargsCnt, ...)
+void UCSI_CB_OnUserMessage(void *pTag, UCSI_UserMessageUrgency_t urgency, const char format[], uint16_t vargsCnt, ...)
 {
     va_list argptr;
     char outbuf[300];
@@ -327,10 +336,19 @@ void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16
     va_start(argptr, vargsCnt);
     vsnprintf(outbuf, sizeof(outbuf), format, argptr);
     va_end(argptr);
-    if (isError)
-        ConsolePrintf(PRIO_ERROR, RED "%s" RESETCOLOR "\r\n", outbuf);
-    else
-        ConsolePrintf(PRIO_LOW, "%s\r\n", outbuf);
+    switch(urgency)
+    {
+        case UCSI_MsgError:
+            ConsolePrintf(PRIO_ERROR, RED "%s" RESETCOLOR "\r\n", outbuf);
+            break;
+        case UCSI_MsgUrgent:
+            ConsolePrintf(PRIO_HIGH, YELLOW "%s" RESETCOLOR "\r\n", outbuf);
+            break;            
+        case UCSI_MsgDebug:
+        default:
+            ConsolePrintf(PRIO_LOW, "%s\r\n", outbuf);
+            break;
+    }
 }
 
 void UCSI_CB_OnPrintRouteTable(void *pTag, const char pString[])
