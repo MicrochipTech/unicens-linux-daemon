@@ -56,6 +56,8 @@ typedef struct
 {
     /** The amount of bytes assigned to the async channel*/
     uint16_t packetBw;
+    /** The amount of bytes assigned to the proxy channel*/
+    uint16_t proxyBw;
     /** Array of routes */
     Ucs_Rm_Route_t *pRoutes;
     /** Route array size */

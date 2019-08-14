@@ -58,7 +58,8 @@ void UCSI_Init(UCSI_Data_t *pPriv, void *pTag);
  *       raised: "UCSI_CB_OnStop"
  *
  * \param pPriv - private data section of this instance
- * \param packetBw - The amount of bytes per frame, reserved for Ethernet channel.
+ * \param packetBw - The amount of bytes per frame, reserved for the Ethernet channel.
+ * \param proxyBw - The amount of bytes per frame, reserved for the Proxy (static allocated synchronous) channel.
  * \param pRoutesList - Reference to a list of routes
  * \param routesListSize - Number of routes in the list
  * \param pNodesList - Reference to the list of nodes
@@ -66,7 +67,7 @@ void UCSI_Init(UCSI_Data_t *pPriv, void *pTag);
  * \return true, configuration successfully enqueued, false otherwise
  */
 bool UCSI_NewConfig(UCSI_Data_t *pPriv,
-    uint16_t packetBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
+    uint16_t packetBw, uint16_t proxyBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
     Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize);
 
 /**
@@ -110,7 +111,6 @@ bool UCSI_ProcessRxData(UCSI_Data_t *pPriv,
  */
 void UCSI_Service(UCSI_Data_t *pPriv);
 
-
 /**
  * \brief Call after timer set by UCSI_CB_OnSetServiceTimer
  *        expired.
@@ -133,7 +133,7 @@ void UCSI_Timeout(UCSI_Data_t *pPriv);
  *
  * \return true, if operation was successful. false if the message could not be sent.
  */
-bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen);
+bool UCSI_SendAmsMessage(UCSI_Data_t *pPriv, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen);
 
 /**
  * \brief Gets the queued AMS message from UNICENS stack
@@ -149,7 +149,7 @@ bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress
  *
  * \return true, if operation was successful. false if no message got be retrieved.
  */
-bool UCSI_GetAmsMessage(UCSI_Data_t *my, uint16_t *pMsgId, uint16_t *pSourceAddress, uint8_t **pPayload, uint32_t *pPayloadLen);
+bool UCSI_GetAmsMessage(UCSI_Data_t *pPriv, uint16_t *pMsgId, uint16_t *pSourceAddress, uint8_t **pPayload, uint32_t *pPayloadLen);
 
 /**
  * \brief Releases the message memory returned by UCSI_GetAmsMessage.
@@ -161,7 +161,7 @@ bool UCSI_GetAmsMessage(UCSI_Data_t *my, uint16_t *pMsgId, uint16_t *pSourceAddr
  *
  * \param pPriv - private data section of this instance
  */
-void UCSI_ReleaseAmsMessage(UCSI_Data_t *my);
+void UCSI_ReleaseAmsMessage(UCSI_Data_t *pPriv);
 
 /**
  * \brief Enables or disables a route by the given routeId

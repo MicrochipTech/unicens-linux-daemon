@@ -44,6 +44,7 @@ const char *GetXml2StructVersion(void);
 
 void PrintUcsStructures(
     uint16_t packetBw,
+    uint16_t proxyBw,
     Ucs_Rm_Route_t *pRoutes,
     uint16_t routesSize,
     Ucs_Rm_Node_t *pNod,

@@ -163,7 +163,7 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
 }
 
 bool UCSI_NewConfig(UCSI_Data_t *my,
-    uint16_t packetBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
+    uint16_t packetBw, uint16_t proxyBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
     Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize)
 {
     UnicensCmdEntry_t *e;
@@ -177,6 +177,7 @@ bool UCSI_NewConfig(UCSI_Data_t *my,
         RB_PopWritePtr(&my->rb);
     }
     my->uniInitData.supv.packet_bw = packetBw;
+    my->uniInitData.supv.proxy_channel_bw = proxyBw;
     my->uniInitData.supv.routes_list_ptr = pRoutesList;
     my->uniInitData.supv.routes_list_size = routesListSize;
     my->uniInitData.supv.nodes_list_ptr = pNodesList;

@@ -5,6 +5,13 @@ UNICENS Daemon (unicensd) & UNICENS Client (unicensc)
 !!! Control Channel default mapping: /dev/inic-control-rx  and  /dev/inic-control-tx   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+V05.01.00
+=========
+- unicensd and xml2struct support static connection labels (on ProxyChannel)
+- unicensd and xml2struct support default created Streaming Ports
+- unicensd supports fallback root node (eCall use case)
+- xml2struct tool generates UCS default config with ProxyBandwidth set
+
 V05.00.00
 =========
 - Intgegrated UNICENS library V2.3.0

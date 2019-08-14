@@ -156,7 +156,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
                 }
             }
         }
-        if (!UCSI_NewConfig(&m.unicens, m.cfg->packetBw, m.cfg->pRoutes, m.cfg->routesSize, m.cfg->pNod, m.cfg->nodSize))
+        if (!UCSI_NewConfig(&m.unicens, m.cfg->packetBw, m.cfg->proxyBw, m.cfg->pRoutes, m.cfg->routesSize, m.cfg->pNod, m.cfg->nodSize))
         {
             ConsolePrintf(PRIO_ERROR, RED "Could not enqueue XML generated UNICENS config" RESETCOLOR "\r\n");
             assert(false);
@@ -165,7 +165,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     }
     else
     {
-        if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize))
+        if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, ProxyBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize))
         {
             ConsolePrintf(PRIO_ERROR, RED "Could not enqueue default UNICENS config" RESETCOLOR "\r\n");
             assert(false);

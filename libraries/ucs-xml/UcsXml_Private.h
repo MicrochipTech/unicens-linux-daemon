@@ -33,6 +33,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "ucs_api.h"
+#include "UcsXml.h"
 
 typedef enum
 {
@@ -115,7 +116,7 @@ struct StrmPortParameters
     const char *dataAlignment;
 };
 bool GetStrmPort(Ucs_Xrm_StrmPort_t **strmPort, struct StrmPortParameters *param);
-bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, struct UcsXmlObjectList *list);
+bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, uint8_t portIndex, struct UcsXmlObjectList *list);
 
 struct StrmSocketParameters
 {
@@ -164,5 +165,25 @@ struct AvpConParameters
 };
 bool GetAvpCon(Ucs_Xrm_AvpCon_t **avpCon, struct AvpConParameters *param);
 
+struct DCEndpointParameters
+{
+    struct UcsXmlObjectList *list;
+    bool networkIsOutput;
+    Ucs_Rm_Node_t *someNode;
+};
+
+bool GetDefaultCreatedEndpoint(Ucs_Rm_EndPoint_t **dcEP, struct DCEndpointParameters *param);
+
+
+struct DCRouteParametes
+{
+    struct UcsXmlObjectList *list;
+    UcsXmlVal_t *ucs;
+    Ucs_Rm_EndPoint_t *ep;
+    bool isTalker;
+    uint16_t routeAmount;
+};
+
+bool GetDefaultCreatedRoute(Ucs_Rm_Route_t **dcRoute, struct DCRouteParametes *param);
 
 #endif /* UCSXML_PRIVATE_H_ */
