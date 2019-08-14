@@ -51,6 +51,16 @@ extern "C" {
  */
 void UCSI_Init(UCSI_Data_t *pPriv, void *pTag);
 
+
+/**
+ * \brief Executes cable diagnosis tests
+ *
+ * \param pPriv - private data section of this instance
+ * 
+ * \return true, cable diagnosis job is enqueued in to the job list. false, operation failed.
+ */
+bool UCSI_RunCableDiagnosis(UCSI_Data_t *pPriv);
+
 /**
  * \brief Executes the given configuration. If already started, all
  *        existing local and remote INIC resources will be destroyed

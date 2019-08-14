@@ -105,6 +105,7 @@ static void OnSupvModeReport(Ucs_Supv_Mode_t mode, Ucs_Supv_State_t state, void 
 static void OnUcsAmsWrite(Ucs_AmsTx_Msg_t* msg_ptr, Ucs_AmsTx_Result_t result, Ucs_AmsTx_Info_t info, void *user_ptr);
 #endif
 static const char *GetSupervisorModeString(Ucs_Supv_Mode_t mode);
+static void OnHdxReport(Ucs_Hdx_Report_t *result, void *user_ptr);
 
 /************************************************************************/
 /* Public Function Implementations                                      */
@@ -135,6 +136,8 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
     my->uniInitData.user_ptr = my;
     my->uniInitData.supv.report_fptr = OnUcsSupvReport;
     my->uniInitData.supv.report_mode_fptr = OnSupvModeReport;
+    my->uniInitData.supv.diag_hdx_fptr = OnHdxReport;
+    my->uniInitData.supv.diag_type = UCS_SUPV_DT_HDX;
 
     my->uniInitData.general.inic_watchdog_enabled = ENABLE_INIC_WATCHDOG;
     my->uniInitData.general.get_tick_count_fptr = &OnUnicensGetTime;
@@ -160,6 +163,19 @@ void UCSI_Init(UCSI_Data_t *my, void *pTag)
     my->uniInitData.gpio.trigger_event_status_fptr = &OnUcsGpioTriggerEventStatus;
 
     RB_Init(&my->rb, CMD_QUEUE_LEN, sizeof(UnicensCmdEntry_t), my->rbBuf);
+}
+
+bool UCSI_RunCableDiagnosis(UCSI_Data_t *my)
+{
+    UnicensCmdEntry_t *e;
+    assert(MAGIC == my->magic);
+    if (NULL == my) return false;
+    e = (UnicensCmdEntry_t *)RB_GetWritePtr(&my->rb);
+    if (NULL == e) return false;
+    my->supvShallMode = UCS_SUPV_MODE_DIAGNOSIS;
+    e->cmd = UnicensCmd_SupvSetMode;
+    e->val.SupvMode.supvMode = UCS_SUPV_MODE_INACTIVE;
+    return EnqueueCommand(my, e);
 }
 
 bool UCSI_NewConfig(UCSI_Data_t *my,
@@ -1177,6 +1193,56 @@ static const char *GetSupervisorModeString(Ucs_Supv_Mode_t mode)
             break;
     }
     return pModeString;
+}
+
+static void OnHdxReport(Ucs_Hdx_Report_t *result, void *user_ptr)
+{
+    const char *pCodeString = "unknown";
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(result);
+    assert(MAGIC == my->magic);
+    switch(result->code)
+    {
+        case UCS_HDX_RES_SUCCESS:
+            pCodeString = "UCS_HDX_RES_SUCCESS";
+            break;
+        case UCS_HDX_RES_SLAVE_WRONG_POS:
+            pCodeString = "UCS_HDX_RES_SLAVE_WRONG_POS";
+            break;
+        case UCS_HDX_RES_RING_BREAK:
+            pCodeString = "UCS_HDX_RES_RING_BREAK";
+            break;
+        case UCS_HDX_RES_NO_RING_BREAK:
+            pCodeString = "UCS_HDX_RES_NO_RING_BREAK";
+            break;
+        case UCS_HDX_RES_NO_RESULT:
+            pCodeString = "UCS_HDX_RES_NO_RESULT";
+            break;
+        case UCS_HDX_RES_TIMEOUT:
+            pCodeString = "UCS_HDX_RES_TIMEOUT";
+            break;
+        case UCS_HDX_RES_ERROR:
+            pCodeString = "UCS_HDX_RES_ERROR";
+            break;
+        case UCS_HDX_RES_END:
+            pCodeString = "UCS_HDX_RES_END";
+            break;
+        default:
+            assert(false);
+            break;
+    }
+    
+    if (result->signature_ptr) {
+        uint16_t nodeAddr = result->signature_ptr->node_address;
+        uint16_t posAddr = result->signature_ptr->node_pos_addr;
+        snprintf(m_traceBuffer, sizeof(m_traceBuffer), "HalfDuplex Report code='%s', result=0x%X pos=0x%X nodeAddr=0x%X posAddr=0x%X", 
+             pCodeString, result->cable_diag_result, result->position, nodeAddr, posAddr);
+    } else {
+        snprintf(m_traceBuffer, sizeof(m_traceBuffer), "HalfDuplex Report code='%s', result=0x%X pos=0x%X", 
+             pCodeString, result->cable_diag_result, result->position);
+    }
+    UCSI_CB_OnUserMessage(my->tag, false, m_traceBuffer, 0);
+    my->supvShallMode = UCS_SUPV_MODE_INACTIVE;
 }
 
 /************************************************************************/

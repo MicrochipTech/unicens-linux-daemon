@@ -7,6 +7,7 @@ UNICENS Daemon (unicensd) & UNICENS Client (unicensc)
 
 V05.01.00
 =========
+- unicensd supports cable diagnostics
 - unicensd and xml2struct support static connection labels (on ProxyChannel)
 - unicensd and xml2struct support default created Streaming Ports
 - unicensd supports fallback root node (eCall use case)
