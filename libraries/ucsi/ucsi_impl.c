@@ -1143,16 +1143,23 @@ static void OnSupvModeReport(Ucs_Supv_Mode_t mode, Ucs_Supv_State_t state, void 
         default:
             assert(false);
     }
+    if (UCS_SUPV_STATE_BUSY == state && UCS_SUPV_MODE_DIAGNOSIS == mode) {
+        memset(my->cableResult, 0, sizeof(my->cableResult));
+    }
     UCSI_CB_OnUserMessage(my->tag, false, "Supervisor mode='%s', state='%s'", 2, pModeString, pStateString);
     if (UCS_SUPV_STATE_READY == state)
     {
+        bool check;
         if (NULL != my->currentCmd && UnicensCmd_SupvSetMode == my->currentCmd->cmd)
         {
             OnCommandExecuted(my, UnicensCmd_SupvSetMode, true);
         }
-        if (my->supvShallMode != mode)
+        check = !my->switchOnlyInInactive;
+        check |= my->switchOnlyInInactive && UCS_SUPV_MODE_INACTIVE == mode;
+        if (check && my->supvShallMode != mode)
         {
             UnicensCmdEntry_t *entry;
+            my->switchOnlyInInactive = false;
             entry = RB_GetWritePtr(&my->rb);
             if (NULL == entry)
             {
@@ -1237,12 +1244,26 @@ static void OnHdxReport(Ucs_Hdx_Report_t *result, void *user_ptr)
         uint16_t posAddr = result->signature_ptr->node_pos_addr;
         snprintf(m_traceBuffer, sizeof(m_traceBuffer), "HalfDuplex Report code='%s', result=0x%X pos=0x%X nodeAddr=0x%X posAddr=0x%X", 
              pCodeString, result->cable_diag_result, result->position, nodeAddr, posAddr);
+        if (result->position <= MAX_NODES) {
+            my->cableResult[result->position - 1] = nodeAddr;
+        }
     } else {
+        uint8_t i = 0;
+        uint8_t len = 0;
         snprintf(m_traceBuffer, sizeof(m_traceBuffer), "HalfDuplex Report code='%s', result=0x%X pos=0x%X", 
              pCodeString, result->cable_diag_result, result->position);
+        for (i = 0; i < MAX_NODES; i++) {
+            if (my->cableResult[i]) {
+                len++;
+            } else {
+                break;
+            }
+        }
+        UCSI_CB_OnCableDiagnosisResult(my->tag, my->cableResult, len);
     }
     UCSI_CB_OnUserMessage(my->tag, false, m_traceBuffer, 0);
-    my->supvShallMode = UCS_SUPV_MODE_INACTIVE;
+    my->switchOnlyInInactive = true;
+    my->supvShallMode = UCS_SUPV_MODE_NORMAL;
 }
 
 /************************************************************************/

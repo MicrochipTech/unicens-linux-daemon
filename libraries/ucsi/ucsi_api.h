@@ -399,6 +399,18 @@ extern void UCSI_CB_OnMgrReport(void *pTag, Ucs_Supv_Report_t code, Ucs_Signatur
  */
 extern void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, uint8_t slaveAddr, const uint8_t *pBuffer, uint32_t bufLen);
 
+/**
+ * \brief Callback when nodes are discovered or disappear
+ * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param pNodeAddrArray - Array of integers holding the found node addresses (until the cable got broken)
+ * \param arrayLen - The length of pNodeAddrArray
+ * \param pNode - Reference to the node structure found in nodes list. Maybe NULL.
+ * 
+ * \note The node array is sorted. So first the root node comes first, first slave, second slave and so on.
+ */
+extern void UCSI_CB_OnCableDiagnosisResult(void *pTag, uint16_t *pNodeAddrArray, uint8_t arrayLen);
+
 #ifdef __cplusplus
 }
 #endif

@@ -58,6 +58,7 @@
 
 #define CDEV_PATH_LEN (64)
 #define DEBUG_TABLE_PRINT_TIME_MS  (250)
+#define CABLE_DIAGNOSYS_DELAY      (1000)
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                      DEFINES AND LOCAL VARIABLES                     */
@@ -77,6 +78,7 @@ typedef struct
     bool amsReceived;
     bool unicensDataAvailable;
     bool txErrorState;
+    uint32_t cableDiagnosisTimer;
     timer_t ucsTimer;
     sem_t serviceSem;
     CdevData_t ctrlTx;
@@ -248,6 +250,11 @@ void TaskUnicens_Service(void)
         }
         else assert(false);
     }
+    if (m.cableDiagnosisTimer && GetTicks() >= m.cableDiagnosisTimer) {
+        m.cableDiagnosisTimer = 0;
+        ConsolePrintf(PRIO_HIGH, "Starting network diagnosis..\r\n");
+        UCSI_RunCableDiagnosis(&m.unicens);
+    }
     SemWait();
 }
 
@@ -305,6 +312,11 @@ void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwid
                   isAvailable ? "yes" : "no",
                   packetBandwidth,
                   amountOfNodes);
+    if (isAvailable) {
+        m.cableDiagnosisTimer = 0;
+    } else {
+        m.cableDiagnosisTimer = GetTicks() + CABLE_DIAGNOSYS_DELAY;
+    }
 }
 
 void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16_t vargsCnt, ...)
@@ -419,6 +431,17 @@ void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, uint8_t
 {
     if(!success)
          ConsolePrintf(PRIO_ERROR, "I2C read failed for node=0x%X slave=0x%X\r\n" , targetAddress, slaveAddr);
+}
+
+void UCSI_CB_OnCableDiagnosisResult(void *pTag, uint16_t *pNodeAddrArray, uint8_t arrayLen)
+{
+    uint8_t i;
+    assert(pNodeAddrArray);
+    ConsolePrintfStart(PRIO_HIGH, "Cable Diagnosis Result = { ");
+    for (i = 0; i < arrayLen; i++) {
+        ConsolePrintfContinue("[Pos %d]=0x%X ",i , pNodeAddrArray[i]);
+    }
+    ConsolePrintfExit("}\r\n");
 }
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/

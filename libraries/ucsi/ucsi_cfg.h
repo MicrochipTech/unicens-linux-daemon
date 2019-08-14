@@ -235,6 +235,7 @@ typedef struct
 {
     uint32_t magic;
     uint8_t rbBuf[(CMD_QUEUE_LEN * sizeof(UnicensCmdEntry_t))];
+    uint16_t cableResult[MAX_NODES];
     Ucs_InitData_t uniInitData;
     Ucs_Supv_Mode_t supvShallMode;
     RB_t rb;
@@ -247,6 +248,7 @@ typedef struct
     bool initialized;
     bool printTrigger;
     bool triggerService;
+    bool switchOnlyInInactive;
 } UCSI_Data_t;
 
 #endif /* UNICENSINTEGRATION_H_ */
