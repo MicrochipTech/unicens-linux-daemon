@@ -19,7 +19,7 @@ cmake -G "Unix Makefiles" \
     -DQNX_BASE=$QNX_BASE \
     -DCMAKE_INSTALL_PREFIX="$G/dist" \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE="$P/cmake-toolchain/qnx.cmake" \
+    -DCMAKE_TOOLCHAIN_FILE="$P/cmake-toolchain/qnx7.cmake" \
     "$P"
 popd
 
