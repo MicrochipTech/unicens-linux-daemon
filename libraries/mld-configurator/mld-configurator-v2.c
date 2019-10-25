@@ -60,7 +60,11 @@ struct MldConfigLocal
 
 static struct MldConfigLocal m = { 0 };
 static const char *SYS_FS_PATH = ("/sys/bus/most/devices");
+#ifdef ANDROID
+static const char *CON_FS_PATH = ("/config");
+#else
 static const char *CON_FS_PATH = ("/sys/kernel/config");
+#endif
 static const char *AIM_CDEV = ("most_cdev");
 static const char *AIM_SOUND = ("most_sound");
 static const char *AIM_V4L = ("most_video");
