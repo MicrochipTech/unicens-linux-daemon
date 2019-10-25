@@ -43,6 +43,7 @@
 #include "UcsXml.h"
 #include "CdevHandler.h"
 #include "mld-configurator-v1.h"
+#include "mld-configurator-v2.h"
 #include "default_config.h"
 #include "task-unicens.h"
 
@@ -147,20 +148,40 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     }
     if (m.cfg)
     {
-        if (0 != pVar->drv1LocalNodeAddr)
+        if (1 == pVar->drvVersion && 0 != pVar->drvLocalNodeAddr)
         {
             struct timespec t;
             t.tv_sec = 0;
             t.tv_nsec = 300000000l;
-            if (!MldConfigV1_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drv1LocalNodeAddr, pVar->drv1Filter, 1000))
+            if (!MldConfigV1_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drvLocalNodeAddr, pVar->drvFilter, 1000))
             {
-                ConsolePrintf(PRIO_ERROR, RED "Could not start driver configuration service" RESETCOLOR "\r\n");
+                ConsolePrintf(PRIO_ERROR, RED "Could not start driver V1 configuration service" RESETCOLOR "\r\n");
                 return false;
             }
             if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
             {
                 nanosleep(&t, NULL);
                 while(!MldConfigV1_GetControlCdevName(m.controlTxCdev, m.controlRxCdev))
+                {
+                    ConsolePrintf(PRIO_ERROR, YELLOW "Wait for INICs control channel to appear" RESETCOLOR "\r\n");
+                    nanosleep(&t, NULL);
+                }
+            }
+        }
+        else if (2 == pVar->drvVersion && 0 != pVar->drvLocalNodeAddr)
+        {
+            struct timespec t;
+            t.tv_sec = 0;
+            t.tv_nsec = 300000000l;
+            if (!MldConfigV2_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drvLocalNodeAddr, pVar->drvFilter, 1000))
+            {
+                ConsolePrintf(PRIO_ERROR, RED "Could not start driver V2 configuration service" RESETCOLOR "\r\n");
+                return false;
+            }
+            if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
+            {
+                nanosleep(&t, NULL);
+                while(!MldConfigV2_GetControlCdevName(m.controlTxCdev, m.controlRxCdev))
                 {
                     ConsolePrintf(PRIO_ERROR, YELLOW "Wait for INICs control channel to appear" RESETCOLOR "\r\n");
                     nanosleep(&t, NULL);
@@ -474,9 +495,22 @@ void MldConfigV1_CB_OnMessage(bool isError, const char format[], uint16_t vargsC
     vsprintf(outbuf, format, argptr);
     va_end(argptr);
     if (isError)
-        ConsolePrintf(PRIO_ERROR, RED "Driver config error: %s" RESETCOLOR "\r\n", outbuf);
+        ConsolePrintf(PRIO_ERROR, RED "Driver V1 config error: %s" RESETCOLOR "\r\n", outbuf);
     else
-        ConsolePrintf(PRIO_LOW, "Driver config: %s\r\n", outbuf);
+        ConsolePrintf(PRIO_LOW, "Driver V1 config: %s\r\n", outbuf);
+}
+
+void MldConfigV2_CB_OnMessage(bool isError, const char format[], uint16_t vargsCnt, ...)
+{
+    va_list argptr;
+    char outbuf[300];
+    va_start(argptr, vargsCnt);
+    vsprintf(outbuf, format, argptr);
+    va_end(argptr);
+    if (isError)
+        ConsolePrintf(PRIO_ERROR, RED "Driver V2 config error: %s" RESETCOLOR "\r\n", outbuf);
+    else
+        ConsolePrintf(PRIO_LOW, "Driver V2 config: %s\r\n", outbuf);
 }
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/

@@ -125,32 +125,28 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         {
             defaultSet = true;
         }
-        else if (0 == strcmp("-drv1", argv[i]))
+        else if (0 == strcmp("-drv1", argv[i]) || 0 == strcmp("-drv2", argv[i]))
         {
             uint8_t j = 0;
             char *tkPtr;
             char *token;
             if (argc <= (i+1))
             {
-                ConsolePrintf(PRIO_ERROR, RED "-drv1 parameter needs additional node address of the local network controller" RESETCOLOR "\r\n");
+                ConsolePrintf(PRIO_ERROR, RED "-drv1 or -drv2 parameter need additional node address of the local network controller" RESETCOLOR "\r\n");
                 return false;
             }
+            pVar->drvVersion = (0 == strcmp("-drv1", argv[i])) ? 1 : 2;
             token = strtok_r( argv[i + 1], ":", &tkPtr );
             while( NULL != token )
             {
                 if (0 == j)
-                    pVar->drv1LocalNodeAddr = strtol( token, NULL, 0 );
+                    pVar->drvLocalNodeAddr = strtol( token, NULL, 0 );
                 else if (1 == j)
-                    pVar->drv1Filter = token;
+                    pVar->drvFilter = token;
                 token = strtok_r( NULL, ":", &tkPtr );
                 ++j;
             }
             ++i;
-        }
-        else if (0 == strcmp("-drv2", argv[i]))
-        {
-            ConsolePrintf(PRIO_ERROR, RED "-drv2 is currently reserved" RESETCOLOR "\r\n");
-            return false;
         }
         else if (0 == strcmp("-lld", argv[i]))
         {
@@ -210,12 +206,12 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
     }
     if (!pVar->cfgFileName && !defaultSet)
         ConsolePrintf(PRIO_HIGH, YELLOW "No filename was provided, executing default configuration (default_config.c).\r\nUse \"--help\" for details. Use \"-default\" to suppress this waring." RESETCOLOR "\r\n");
-    if (!pVar->cfgFileName && 0 != pVar->drv1LocalNodeAddr)
+    if (!pVar->cfgFileName && 0 != pVar->drvLocalNodeAddr)
     {
         ConsolePrintf(PRIO_ERROR, RED "-drv1 and -drv2 option only allowed, when specified an path to UNICENS XML file" RESETCOLOR "\r\n");
         return false;
     }
-    if (0 == pVar->drv1LocalNodeAddr && (NULL == pVar->controlRxCdev || NULL == pVar->controlTxCdev))
+    if (0 == pVar->drvLocalNodeAddr && (NULL == pVar->controlRxCdev || NULL == pVar->controlTxCdev))
     {
         pVar->controlRxCdev = DEFAULT_CONTROL_CDEV_RX;
         pVar->controlTxCdev = DEFAULT_CONTROL_CDEV_TX;

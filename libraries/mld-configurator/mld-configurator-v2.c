@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* MOST Linux Driver Configurator for MLD Driver V1.x                                             */
+/* MOST Linux Driver Configurator for MLD Driver V2.x                                             */
 /* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -38,29 +38,37 @@
 #include <pthread.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "mld-configurator-v1.h"
+#include "mld-configurator-v2.h"
 
 #define PATH_LEN    (80)
 #define VAL_LEN     (40)
 
 struct MldConfigLocal
 {
-    bool started;
-    bool allowRun;
     DriverInformation_t **pConfig;
-    uint16_t driverSize;
-    uint16_t localNodeAddress;
-    uint16_t pollTime;
-    pthread_t workerThread;
     char descriptionFilter[VAL_LEN];
     char ctxName[VAL_LEN];
     char crxName[VAL_LEN];
+    pthread_t workerThread;
+    uint16_t driverSize;
+    uint16_t localNodeAddress;
+    uint16_t pollTime;
+    bool started;
+    bool allowRun;
+    bool createAlsaCard;
 };
 
 static struct MldConfigLocal m = { 0 };
-static const char *SYS_FS_PATH = ("/sys/class/most/mostcore/devices");
+static const char *SYS_FS_PATH = ("/sys/bus/most/devices");
+static const char *CON_FS_PATH = ("/sys/kernel/config");
+static const char *AIM_CDEV = ("most_cdev");
+static const char *AIM_SOUND = ("most_sound");
+static const char *AIM_V4L = ("most_video");
+static const char *AIM_NETWORK = ("most_net");
+static const char *ALSA_CARD_NAME = ("card");
 static void *Worker(void *tag);
 static char *ExtendControlCdevName(char *out, char * in);
+static bool CreateFolder(const char *pFullPath);
 static bool DoesFileExist(const char *pPathToFile);
 static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLen);
 static bool WriteCharactersToFile( const char *path, const char *pFileName, const char *pString );
@@ -69,21 +77,18 @@ static void ReplaceCharsInString(char *target, const char *pWrongChars, char rep
 static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, char *descr, uint32_t descrLen, const char *parent, const char *grandParent);
 static void CheckDriverSettings(const char* channelName, const char* deviceName, const char *fullPath, const char *intf, const char *descr);
 static void WriteDriverConfig(const char* channelName, const char* deviceName, const char *fullPath, DriverInformation_t *drv);
-static bool ConfigureCdev(const char *fullPath, DriverInformation_t *drv);
-static bool LinkCdev(const char* channelName, const char* deviceName, DriverInformation_t *driver);
-static bool ConfigureAlsa(const char *fullPath, DriverInformation_t *drv);
-static bool LinkAlsa(const char* channelName, const char* deviceName, DriverInformation_t *driver);
-static bool ConfigureV4L2(const char *fullPath, DriverInformation_t *driver);
-static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInformation_t *driver);
-static bool ConfigureNetwork(const char *fullPath, DriverInformation_t *driver);
-static bool LinkNetwork(const char* channelName, const char* deviceName, DriverInformation_t *driver);
+static bool ConfigureCdev(const char *deviceName, DriverInformation_t *drv);
+static bool ConfigureAlsa(const char *deviceName, DriverInformation_t *drv);
+static bool CreateAlsaCard(void);
+static bool ConfigureV4L2(const char *deviceName, DriverInformation_t *driver);
+static bool ConfigureNetwork(const char *deviceName, DriverInformation_t *driver);
 
-bool MldConfigV1_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint16_t localNodeAddress, const char *descriptionFilter, uint16_t pollTime)
+bool MldConfigV2_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint16_t localNodeAddress, const char *descriptionFilter, uint16_t pollTime)
 {
     if (0 == pollTime) 
         return false;
     if (m.started)
-        MldConfigV1_Stop();
+        MldConfigV2_Stop();
     
     m.pConfig = pConfig;
     m.driverSize = driverSize;
@@ -96,7 +101,7 @@ bool MldConfigV1_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint1
     return m.started;
 }
 
-void MldConfigV1_Stop()
+void MldConfigV2_Stop()
 {
     void *returnVal;
     if (!m.started && !m.allowRun)
@@ -106,7 +111,7 @@ void MldConfigV1_Stop()
     m.started = false;
 }
 
-bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx)
+bool MldConfigV2_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx)
 {
     if (NULL == pControlCdevTx || NULL == pControlCdevRx)
         return false;
@@ -126,6 +131,10 @@ static void *Worker(void *tag)
         intf[0] = '\0';
         descr[0] = '\0';
         IterateDirectory(SYS_FS_PATH, intf, sizeof(intf), descr, sizeof(descr), NULL, NULL);
+        if (m.createAlsaCard) {
+            m.createAlsaCard = false;
+            CreateAlsaCard();
+        }
         usleep(1000 * m.pollTime);
     }
     return tag;
@@ -152,6 +161,15 @@ static bool DoesFileExist(const char *pPathToFile)
     return (-1 != access(pPathToFile, F_OK));
 }
 
+static bool CreateFolder(const char *pFullPath)
+{
+    struct stat st = { 0 };
+    if (stat(pFullPath, &st)) {
+        return (-1 != mkdir(pFullPath, 0x777));
+    }
+    return true;
+}
+
 static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLen)
 {
     FILE *fh;
@@ -164,7 +182,7 @@ static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLe
         success = ( NULL != fgets( pString, bufferLen, fh ) );
         fclose( fh );
     } else {
-        MldConfigV1_CB_OnMessage(true, "Read failed for '%s'", 1, pFileName);
+        MldConfigV2_CB_OnMessage(true, "Read failed for '%s'", 1, pFileName);
     }
     /* Eliminate carriage return */
     if (success)
@@ -182,7 +200,9 @@ static bool WriteCharactersToFile( const char *path, const char *pFileName, cons
     bool success = false;
     char combined[PATH_LEN];
     snprintf(combined, sizeof(combined), "%s/%s", path, pFileName);
-    fh = fopen( combined, "a" );
+    if (!DoesFileExist(combined))
+        return false;
+    fh = fopen( combined, "w" );
     if( NULL != fh )
     {
         int result = fputs( pString, fh );
@@ -192,7 +212,7 @@ static bool WriteCharactersToFile( const char *path, const char *pFileName, cons
             success = true;
         fclose( fh );
     }
-    MldConfigV1_CB_OnMessage(!success, "'%s/%s'='%s' %s", 4, path, pFileName, pString, success ? "success" : "fail");
+    MldConfigV2_CB_OnMessage(!success, "'%s/%s'='%s' %s", 4, path, pFileName, pString, success ? "success" : "fail");
     return success;
 }
 
@@ -232,6 +252,11 @@ static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, cha
     }
     while( NULL != (dir = readdir(d)))
     {
+        if (0 == strcmp("driver", dir->d_name) || 0 == strcmp("subsystem", dir->d_name))
+        {
+            /* driver or subsystem links to it self, do not go deeper. Endless recursion */
+            continue;
+        }
         if (0 == strcmp("interface", dir->d_name))
         {
             snprintf(combined, sizeof(combined), "%s/%s", path, dir->d_name);
@@ -256,6 +281,11 @@ static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, cha
     {
         if ('.' == dir->d_name[0])
             continue;
+        if (0 == strcmp("driver", dir->d_name) || 0 == strcmp("subsystem", dir->d_name))
+        {
+            /* driver or subsystem links to it self, do not go deeper. Endless recursion */
+            continue;
+        }
         snprintf(combined, sizeof(combined), "%s/%s", path, dir->d_name);
         IterateDirectory(combined, intf, intfLen, descr, descrLen, dir->d_name, parent);
     }
@@ -291,6 +321,7 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     {
         drv = &localDrv;
         localDrv.driverType = Driver_LinuxCdev;
+        localDrv.drv.LinuxCdev.channelName = channelName;
         localDrv.drv.LinuxCdev.aimName = "control-tx";
         localDrv.drv.LinuxCdev.dataType = DriverCfgDataType_Control;
         localDrv.drv.LinuxCdev.numBuffers = 16;
@@ -302,6 +333,7 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     {
         drv = &localDrv;
         localDrv.driverType = Driver_LinuxCdev;
+        localDrv.drv.LinuxCdev.channelName = channelName;
         localDrv.drv.LinuxCdev.aimName = "control-rx";
         localDrv.drv.LinuxCdev.dataType = DriverCfgDataType_Control;
         localDrv.drv.LinuxCdev.numBuffers = 16;
@@ -313,6 +345,7 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     {
         drv = &localDrv;
         localDrv.driverType = Driver_LinuxNetwork;
+        localDrv.drv.LinuxCdev.channelName = channelName;
         localDrv.drv.LinuxNetwork.aimName = "network-tx";
         localDrv.drv.LinuxNetwork.dataType = DriverCfgDataType_Async;
         localDrv.drv.LinuxNetwork.numBuffers = 20;
@@ -324,6 +357,7 @@ static void CheckDriverSettings(const char* channelName, const char* deviceName,
     {
         drv = &localDrv;
         localDrv.driverType = Driver_LinuxNetwork;
+        localDrv.drv.LinuxCdev.channelName = channelName;
         localDrv.drv.LinuxNetwork.aimName = "network-rx";
         localDrv.drv.LinuxNetwork.dataType = DriverCfgDataType_Async;
         localDrv.drv.LinuxNetwork.numBuffers = 20;
@@ -382,192 +416,192 @@ static void WriteDriverConfig(const char* channelName, const char* deviceName, c
     switch(drv->driverType)
     {
     case Driver_LinuxCdev:
-        if (ConfigureCdev(fullPath, drv))
-            LinkCdev(channelName, deviceName, drv);
+        ConfigureCdev(deviceName, drv);
         break;
     case Driver_LinuxAlsa:
-        if (ConfigureAlsa(fullPath, drv))
-            LinkAlsa(channelName, deviceName, drv);
+        ConfigureAlsa(deviceName, drv);
         break;
     case Driver_LinuxV4l2:
-        if (ConfigureV4L2(fullPath, drv))
-            LinkV4L2(channelName, deviceName, drv);
+        ConfigureV4L2(deviceName, drv);
         break;
     case Driver_LinuxNetwork:
-        if (ConfigureNetwork(fullPath, drv))
-            LinkNetwork(channelName, deviceName, drv);
+        ConfigureNetwork(deviceName, drv);
         break;
     }
 }
 
-static bool ConfigureCdev(const char *fullPath, DriverInformation_t *driver)
+static bool ConfigureCdev(const char *deviceName, DriverInformation_t *driver)
 {
     bool success = true;
     LinuxDriverCdev_t *drv = &driver->drv.LinuxCdev;
+    char fullPath[PATH_LEN];
+    if (!DoesFileExist(CON_FS_PATH)) {
+        return false;
+    }
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", CON_FS_PATH, AIM_CDEV);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    snprintf(fullPath, sizeof(fullPath), "%s/%s/inic-%s", CON_FS_PATH, AIM_CDEV, drv->aimName);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    success &= WriteCharactersToFile(fullPath, "device", deviceName);
+    success &= WriteCharactersToFile(fullPath, "channel", drv->channelName);
     if (DriverCfgDataType_Sync == drv->dataType)
-        success &= WriteCharactersToFile(fullPath, "set_datatype", "sync");
+        success &= WriteCharactersToFile(fullPath, "datatype", "sync");
     else if (DriverCfgDataType_Isoc == drv->dataType)
-        success &= WriteCharactersToFile(fullPath, "set_datatype", "isoc");
+        success &= WriteCharactersToFile(fullPath, "datatype", "isoc");
     else if (DriverCfgDataType_Control == drv->dataType)
-        success &= WriteCharactersToFile(fullPath, "set_datatype", "control");
+        success &= WriteCharactersToFile(fullPath, "datatype", "control");
     else if (DriverCfgDataType_Async == drv->dataType)
-        success &= WriteCharactersToFile(fullPath, "set_datatype", "async");
+        success &= WriteCharactersToFile(fullPath, "datatype", "async");
     else return false;
 
     if (DriverCfgDirection_Tx == drv->direction)
-        success &= WriteCharactersToFile(fullPath, "set_direction", "tx");
+        success &= WriteCharactersToFile(fullPath, "direction", "tx");
     else if (DriverCfgDirection_Rx == drv->direction)
-        success &= WriteCharactersToFile(fullPath, "set_direction", "rx");
+        success &= WriteCharactersToFile(fullPath, "direction", "rx");
     else return false;
 
     if (0 != drv->subBufferSize)
-        success &= WriteIntegerToFile(fullPath, "set_subbuffer_size", drv->subBufferSize);
+        success &= WriteIntegerToFile(fullPath, "subbuffer_size", drv->subBufferSize);
     if (DriverPhyUsb == driver->phy)
-        success &= WriteIntegerToFile(fullPath, "set_packets_per_xact", drv->packetsPerXact);
+        success &= WriteIntegerToFile(fullPath, "packets_per_xact", drv->packetsPerXact);
 
-    success &= WriteIntegerToFile(fullPath, "set_number_of_buffers", drv->numBuffers);
-    success &= WriteIntegerToFile(fullPath, "set_buffer_size", drv->bufferSize);
+    success &= WriteIntegerToFile(fullPath, "num_buffers", drv->numBuffers);
+    success &= WriteIntegerToFile(fullPath, "buffer_size", drv->bufferSize);
+    success &= WriteIntegerToFile(fullPath, "create_link", 1);
     return success;
 }
 
-static bool LinkCdev(const char* channelName, const char* deviceName, DriverInformation_t *driver)
+static bool ConfigureAlsa(const char *deviceName, DriverInformation_t *driver)
 {
-    char val[VAL_LEN];
-    char aimName[VAL_LEN] = { 0 };
-    LinuxDriverCdev_t *drv = &driver->drv.LinuxCdev;
-    if (NULL != drv->aimName)
-        strncpy(aimName, drv->aimName, sizeof(aimName));
-    if ('\0' != m.descriptionFilter[0])
-    {
-        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-    }
-    ReplaceCharsInString(aimName, " .:;/|!", '_');
-    snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
-    return WriteCharactersToFile("/sys/class/most/mostcore/aims/cdev", "add_link", val);
-}
-
-static bool ConfigureAlsa(const char *fullPath, DriverInformation_t *driver)
-{
+    char format[16];
     bool success = true;
     LinuxDriverAlsa_t *drv = &driver->drv.LinuxAlsa;
+    char fullPath[PATH_LEN];
+    if (!DoesFileExist(CON_FS_PATH)) {
+        return false;
+    }
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", CON_FS_PATH, AIM_SOUND);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    snprintf(fullPath, sizeof(fullPath), "%s/%s/%s", CON_FS_PATH, AIM_SOUND, ALSA_CARD_NAME);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    snprintf(fullPath, sizeof(fullPath), "%s/%s/%s/%s", CON_FS_PATH, AIM_SOUND, ALSA_CARD_NAME, drv->aimName);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    success &= WriteCharactersToFile(fullPath, "device", deviceName);
+    success &= WriteCharactersToFile(fullPath, "channel", drv->channelName);
     if (DriverCfgDataType_Sync == drv->dataType)
-        success &= WriteCharactersToFile(fullPath, "set_datatype", "sync");
+        success &= WriteCharactersToFile(fullPath, "datatype", "sync");
     else if (DriverCfgDataType_Isoc == drv->dataType)
-        success &= WriteCharactersToFile(fullPath, "set_datatype", "isoc");
+        success &= WriteCharactersToFile(fullPath, "datatype", "isoc");
     else return false;
 
     if (DriverCfgDirection_Tx == drv->direction)
-        success &= WriteCharactersToFile(fullPath, "set_direction", "tx");
+        success &= WriteCharactersToFile(fullPath, "direction", "tx");
     else if (DriverCfgDirection_Rx == drv->direction)
-        success &= WriteCharactersToFile(fullPath, "set_direction", "rx");
+        success &= WriteCharactersToFile(fullPath, "direction", "rx");
     else return false;
 
     if (0 != drv->subBufferSize)
-        success &= WriteIntegerToFile(fullPath, "set_subbuffer_size", drv->subBufferSize);
+        success &= WriteIntegerToFile(fullPath, "subbuffer_size", drv->subBufferSize);
     if (DriverPhyUsb == driver->phy)
-        success &= WriteIntegerToFile(fullPath, "set_packets_per_xact", drv->packetsPerXact);
+        success &= WriteIntegerToFile(fullPath, "packets_per_xact", drv->packetsPerXact);
 
-    success &= WriteIntegerToFile(fullPath, "set_number_of_buffers", drv->numBuffers);
-    success &= WriteIntegerToFile(fullPath, "set_buffer_size", drv->bufferSize);
+    success &= WriteIntegerToFile(fullPath, "num_buffers", drv->numBuffers);
+    success &= WriteIntegerToFile(fullPath, "buffer_size", drv->bufferSize);
+
+    snprintf(format, sizeof(format), "%dx%d", drv->amountOfChannels, drv->resolutionInBit);
+    success &= WriteCharactersToFile(fullPath, "comp_params", format);
+    success &= WriteIntegerToFile(fullPath, "create_link", 1);
+
+    m.createAlsaCard |= success;
     return success;
 }
 
-static bool LinkAlsa(const char* channelName, const char* deviceName, DriverInformation_t *driver)
+static bool CreateAlsaCard(void)
 {
-    char val[VAL_LEN];
-    char aimName[VAL_LEN] = { 0 };
-    LinuxDriverAlsa_t *drv = &driver->drv.LinuxAlsa;
-    if (NULL != drv->aimName)
-        strncpy(aimName, drv->aimName, sizeof(aimName));
-    if ('\0' != m.descriptionFilter[0])
-    {
-        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-    }
-    ReplaceCharsInString(aimName, " .:;/|!", '_');
-    snprintf(val, sizeof(val), "%s:%s:inic-%s.%dx%d", deviceName, channelName, 
-        aimName,
-        drv->amountOfChannels,
-        drv->resolutionInBit
-        );
-    return WriteCharactersToFile("/sys/class/most/mostcore/aims/sound", "add_link", val);
+    char fullPath[PATH_LEN];
+    snprintf(fullPath, sizeof(fullPath), "%s/%s/%s", CON_FS_PATH, AIM_SOUND, ALSA_CARD_NAME);
+    return WriteIntegerToFile(fullPath, "create_card", 1);
 }
 
-static bool ConfigureV4L2(const char *fullPath, DriverInformation_t *driver)
+static bool ConfigureV4L2(const char *deviceName, DriverInformation_t *driver)
 {
     bool success = true;
     LinuxDriverV4l2_t *drv = &driver->drv.LinuxV4l2;
+    char fullPath[PATH_LEN];
+    if (!DoesFileExist(CON_FS_PATH)) {
+        return false;
+    }
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", CON_FS_PATH, AIM_V4L);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    snprintf(fullPath, sizeof(fullPath), "%s/%s/%s", CON_FS_PATH, AIM_V4L, drv->aimName);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    success &= WriteCharactersToFile(fullPath, "device", deviceName);
+    success &= WriteCharactersToFile(fullPath, "channel", drv->channelName);
     if (DriverCfgDataType_Sync == drv->dataType)
-        success &= WriteCharactersToFile(fullPath, "set_datatype", "sync");
+        success &= WriteCharactersToFile(fullPath, "datatype", "sync");
     else if (DriverCfgDataType_Isoc == drv->dataType)
-        success &= WriteCharactersToFile(fullPath, "set_datatype", "isoc");
+        success &= WriteCharactersToFile(fullPath, "datatype", "isoc");
     else return false;
 
     if (DriverCfgDirection_Tx == drv->direction)
-        success &= WriteCharactersToFile(fullPath, "set_direction", "tx");
+        success &= WriteCharactersToFile(fullPath, "direction", "tx");
     else if (DriverCfgDirection_Rx == drv->direction)
-        success &= WriteCharactersToFile(fullPath, "set_direction", "rx");
+        success &= WriteCharactersToFile(fullPath, "direction", "rx");
     else return false;
 
     if (0 != drv->subBufferSize)
-        success &= WriteIntegerToFile(fullPath, "set_subbuffer_size", drv->subBufferSize);
+        success &= WriteIntegerToFile(fullPath, "subbuffer_size", drv->subBufferSize);
     if (DriverPhyUsb == driver->phy)
-        success &= WriteIntegerToFile(fullPath, "set_packets_per_xact", drv->packetsPerXact);
+        success &= WriteIntegerToFile(fullPath, "packets_per_xact", drv->packetsPerXact);
 
-    success &= WriteIntegerToFile(fullPath, "set_number_of_buffers", drv->numBuffers);
-    success &= WriteIntegerToFile(fullPath, "set_buffer_size", drv->bufferSize);
+    success &= WriteIntegerToFile(fullPath, "num_buffers", drv->numBuffers);
+    success &= WriteIntegerToFile(fullPath, "buffer_size", drv->bufferSize);
+    success &= WriteIntegerToFile(fullPath, "create_link", 1);
     return success;
 }
 
-static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInformation_t *driver)
-{
-    char val[VAL_LEN];
-    char aimName[VAL_LEN] = { 0 };
-    LinuxDriverV4l2_t *drv = &driver->drv.LinuxV4l2;
-    if (NULL != drv->aimName)
-        strncpy(aimName, drv->aimName, sizeof(aimName));
-    if ('\0' != m.descriptionFilter[0])
-    {
-        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-    }
-    ReplaceCharsInString(aimName, " .:;/|!", '_');
-    snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
-    return WriteCharactersToFile("/sys/class/most/mostcore/aims/v4l", "add_link", val);
-}
-
-static bool ConfigureNetwork(const char *fullPath, DriverInformation_t *driver)
+static bool ConfigureNetwork(const char *deviceName, DriverInformation_t *driver)
 {
     bool success = true;
     LinuxDriverNetwork_t *drv = &driver->drv.LinuxNetwork;
-    success &= WriteCharactersToFile(fullPath, "set_datatype", "async");
+    char fullPath[PATH_LEN];
+    if (!DoesFileExist(CON_FS_PATH)) {
+        return false;
+    }
+     snprintf(fullPath, sizeof(fullPath), "%s/%s", CON_FS_PATH, AIM_NETWORK);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    snprintf(fullPath, sizeof(fullPath), "%s/%s/%s", CON_FS_PATH, AIM_NETWORK, drv->aimName);
+    if (!CreateFolder(fullPath)) {
+        return false;
+    }
+    success &= WriteCharactersToFile(fullPath, "device", deviceName);
+    success &= WriteCharactersToFile(fullPath, "channel", drv->channelName);
+    success &= WriteCharactersToFile(fullPath, "datatype", "async");
 
     if (DriverCfgDirection_Tx == drv->direction)
-        success &= WriteCharactersToFile(fullPath, "set_direction", "tx");
+        success &= WriteCharactersToFile(fullPath, "direction", "tx");
     else if (DriverCfgDirection_Rx == drv->direction)
-        success &= WriteCharactersToFile(fullPath, "set_direction", "rx");
+        success &= WriteCharactersToFile(fullPath, "direction", "rx");
     else return false;
 
-    success &= WriteIntegerToFile(fullPath, "set_number_of_buffers", drv->numBuffers);
-    success &= WriteIntegerToFile(fullPath, "set_buffer_size", drv->bufferSize);
+    success &= WriteIntegerToFile(fullPath, "num_buffers", drv->numBuffers);
+    success &= WriteIntegerToFile(fullPath, "buffer_size", drv->bufferSize);
+    success &= WriteIntegerToFile(fullPath, "create_link", 1);
     return success;
 }
-
-static bool LinkNetwork(const char* channelName, const char* deviceName, DriverInformation_t *driver)
-{
-    char val[VAL_LEN];
-    char aimName[VAL_LEN] = { 0 };
-    LinuxDriverNetwork_t *drv = &driver->drv.LinuxNetwork;
-    if (NULL != drv->aimName)
-        strncpy(aimName, drv->aimName, sizeof(aimName));
-    if ('\0' != m.descriptionFilter[0])
-    {
-        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-    }
-    ReplaceCharsInString(aimName, " .:;/|!", '_');
-    snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
-    return WriteCharactersToFile("/sys/class/most/mostcore/aims/networking", "add_link", val);
-}
-

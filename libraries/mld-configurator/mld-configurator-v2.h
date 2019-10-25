@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------------------------*/
-/* MOST Linux Driver Configurator for MLD Driver V1.x                                             */
+/* MOST Linux Driver Configurator for MLD Driver V2.x                                             */
 /* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
@@ -27,8 +27,8 @@
 /* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE                  */
 /* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                           */
 /*------------------------------------------------------------------------------------------------*/
-#ifndef MLD_CONFIGURATOR_V1_H
-#define MLD_CONFIGURATOR_V1_H
+#ifndef MLD_CONFIGURATOR_V2_H
+#define MLD_CONFIGURATOR_V2_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +44,7 @@ extern "C" {
 /**
  * \brief Starts the background service to configure the MOST Linux Driver
  *
- * \note In case of errors the callback MldConfigV1_CB_OnError will be raised
+ * \note In case of errors the callback MldConfigV2_CB_OnError will be raised
  * \param pConfig - Array of structures holding driver information. To make live easier, this structure is taken from the XML parser component
  * \param driverSize - Array length
  * \param localNodeAddress - Specify what node address the local node has. Then only informations related to that address will be used
@@ -52,14 +52,14 @@ extern "C" {
  * \param pollTime - Service sleep time interval in milliseconds.
  * \return true if successfully started the service, false otherwise
  */
-bool MldConfigV1_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint16_t localNodeAddress, const char *descriptionFilter, uint16_t pollTime);
+bool MldConfigV2_Start(DriverInformation_t **pConfig, uint16_t driverSize, uint16_t localNodeAddress, const char *descriptionFilter, uint16_t pollTime);
 
 /**
  * \brief Stops the background service
  *
  * \note This function will block until the background thread has been terminated
  */
-void MldConfigV1_Stop();
+void MldConfigV2_Stop();
 
 /**
  * \brief Get the full path of control character devices
@@ -69,7 +69,7 @@ void MldConfigV1_Stop();
  * \param pControlCdevRx - Zero terminated string containing path to control RX CDEV or NULL if not found
  * \return true if both devices are available. false, otherwise, then pControlCdevTx and pControlCdevRx are invalid.
  */
-bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx);
+bool MldConfigV2_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx);
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                        CALLBACK SECTION                              */
@@ -83,10 +83,10 @@ bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx);
  * \param format - Zero terminated format string (following printf rules)
  * \param vargsCnt - Amount of parameters stored in "..."
  */
-extern void MldConfigV1_CB_OnMessage(bool isError, const char format[], uint16_t vargsCnt, ...);
+extern void MldConfigV2_CB_OnMessage(bool isError, const char format[], uint16_t vargsCnt, ...);
     
 #ifdef __cplusplus
 }
 #endif
     
-#endif /* MLD_CONFIGURATOR_V1_H */
+#endif /* MLD_CONFIGURATOR_V2_H */
