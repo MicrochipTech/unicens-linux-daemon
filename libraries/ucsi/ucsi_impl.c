@@ -357,6 +357,9 @@ void UCSI_Service(UCSI_Data_t *my)
             {
                 UCSI_CB_OnUserMessage(my->tag, UCSI_MsgError, "Ucs_I2c_WritePort failed", 0);
                 UCSI_CB_OnCommandResult(my->tag, UnicensCmd_I2CWrite, false, e->val.I2CWrite.destination);
+                if (e->val.I2CWrite.result_fptr) {
+                    e->val.I2CWrite.result_fptr(NULL /*processing error*/, e->val.I2CWrite.request_ptr);
+                }
             }
             break;
         case UnicensCmd_I2CRead:
@@ -522,7 +525,8 @@ bool UCSI_SetRouteActive(UCSI_Data_t *my, uint16_t routeId, bool isActive)
 }
 
 bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_t blockCount,
-    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData)
+    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData,
+    Ucsi_ResultCb_t result_fptr, void *request_ptr)
 {
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
@@ -539,6 +543,8 @@ bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_
     entry.val.I2CWrite.slaveAddr = slaveAddr;
     entry.val.I2CWrite.timeout = timeout;
     entry.val.I2CWrite.dataLen = dataLen;
+    entry.val.I2CWrite.result_fptr = result_fptr;
+    entry.val.I2CWrite.request_ptr = request_ptr;
     memcpy(entry.val.I2CWrite.data, pData, dataLen);
     return EnqueueCommand(my, &entry);
 }
@@ -1138,8 +1144,12 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
     OnCommandExecuted(my, UnicensCmd_I2CWrite, (UCS_I2C_RES_SUCCESS == result.code));
-    if (UCS_I2C_RES_SUCCESS != result.code)
-        UCSI_CB_OnUserMessage(my->tag, UCSI_MsgError, "Remote I2C Write to node=0x%X failed", 1, node_address);
+    if ((my->currentCmd->cmd == UnicensCmd_I2CWrite) && (my->currentCmd->val.I2CWrite.result_fptr)) {
+        my->currentCmd->val.I2CWrite.result_fptr(&result.code, my->currentCmd->val.I2CWrite.request_ptr);
+    } else {
+        if (UCS_I2C_RES_SUCCESS != result.code)
+            UCSI_CB_OnUserMessage(my->tag, UCSI_MsgError, "Remote I2C Write to node=0x%X failed", 1, node_address);
+    }
 }
 
 static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
