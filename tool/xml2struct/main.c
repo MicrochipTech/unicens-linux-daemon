@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
     switch(job)
     {
     case JOB_PRINT_UCS_STRUCTURE:
-        PrintUcsStructures(cfg->packetBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize, variablePrefix);
+        PrintUcsStructures(cfg->packetBw, cfg->proxyBw, cfg->pRoutes, cfg->routesSize, cfg->pNod, cfg->nodSize, variablePrefix);
         break;
     case JOB_PRINT_SINGLE_DRIVER:
         found = false;

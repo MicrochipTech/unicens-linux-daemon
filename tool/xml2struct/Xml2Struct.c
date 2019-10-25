@@ -38,7 +38,7 @@
 #include "Console.h"
 #include "Xml2Struct.h"
 
-static const char *VERSION_STR = "V5.0.0";
+static const char *VERSION_STR = "V5.1.0";
 
 #define CASE(X) case X: { return #X; }
 #define CHECK_ASSERT(X) { \
@@ -78,6 +78,7 @@ struct LocalVar
 static void PrintHeader(void);
 static void *Mcalloc(struct ObjectList *list, uint32_t nElem, uint32_t elemSize);
 static void Mfree(struct ObjectList *cur);
+static UCS_NS_CONST Ucs_Xrm_ResObject_t *GetObjectFromTable(const char *name);
 static char *GetNameFromTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element);
 static void StoreNameInTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element, char *name);
 static char *AllocateString(const char format[], uint16_t vargsCnt, ...);
@@ -127,6 +128,7 @@ const char *GetXml2StructVersion(void)
 
 void PrintUcsStructures(
     uint16_t packetBw,
+    uint16_t proxyBw,
     Ucs_Rm_Route_t *pRoutes,
     uint16_t routesSize,
     Ucs_Rm_Node_t *pNod,
@@ -144,6 +146,7 @@ void PrintUcsStructures(
     PrintHeader();
     ConsolePrintf(PRIO_HIGH, "#include \"ucs_api.h\"\n\n");
     ConsolePrintf(PRIO_HIGH, "uint16_t %sPacketBandwidth = %u;\n", m.prefix, packetBw);
+    ConsolePrintf(PRIO_HIGH, "uint16_t %sProxyBandwidth = %u;\n", m.prefix, proxyBw);
     ConsolePrintf(PRIO_HIGH, "uint16_t %sRoutesSize = %u;\n", m.prefix, routesSize);
     ConsolePrintf(PRIO_HIGH, "uint16_t %sNodeSize = %u;\n\n", m.prefix, nodSize);
     /* Iterate all routes for printing the resources*/
@@ -152,8 +155,8 @@ void PrintUcsStructures(
         Ucs_Rm_Route_t *route = &pRoutes[i];
         CHECK_ASSERT(route->source_endpoint_ptr);
         CHECK_ASSERT(route->sink_endpoint_ptr);
-        CHECK_ASSERT(route->source_endpoint_ptr->jobs_list_ptr);
-        CHECK_ASSERT(route->sink_endpoint_ptr->jobs_list_ptr);
+        CHECK_ASSERT(0 != route->static_connection.static_con_label || route->source_endpoint_ptr->jobs_list_ptr);
+        CHECK_ASSERT(0 != route->static_connection.static_con_label ||route->sink_endpoint_ptr->jobs_list_ptr);
         m.currentRoute = i + 1;
         m.isSourceJob = true;
         ConsolePrintf(PRIO_HIGH, "/* Route %d from source-node=0x%X to sink-node=0x%X */\n",
@@ -204,6 +207,7 @@ void PrintHeaderFile(const char *variablePrefix)
     ConsolePrintfContinue("#endif\n\n");
     ConsolePrintfContinue("#include \"ucs_api.h\"\n\n");
     ConsolePrintfContinue("extern uint16_t %sPacketBandwidth;\n", prefix);
+    ConsolePrintfContinue("extern uint16_t %sProxyBandwidth;\n", prefix);
     ConsolePrintfContinue("extern uint16_t %sRoutesSize;\n", prefix);
     ConsolePrintfContinue("extern uint16_t %sNodeSize;\n", prefix);
     ConsolePrintfContinue("extern Ucs_Rm_Route_t %sAllRoutes[];\n", prefix);
@@ -255,11 +259,26 @@ void Mfree(struct ObjectList *cur)
     }
 }
 
+static UCS_NS_CONST Ucs_Xrm_ResObject_t *GetObjectFromTable(const char *name)
+{
+    struct NameLookupTable *tail = &m.allNames;
+    CHECK_ASSERT(name);
+    if (!name) return NULL;
+    while(tail && tail->name && tail->element)
+    {
+        if (0 == strcmp(name, tail->name))
+            return tail->element;
+        tail = tail->next;
+    }
+    return NULL;
+}
+
 static char *GetNameFromTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element)
 {
     struct NameLookupTable *tail = &m.allNames;
+    CHECK_ASSERT(element);
     if (!element) return NULL;
-    while(tail)
+    while(tail && tail->name && tail->element)
     {
         if (element == tail->element)
             return tail->name;
@@ -271,9 +290,13 @@ static char *GetNameFromTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element)
 static void StoreNameInTable(UCS_NS_CONST Ucs_Xrm_ResObject_t *element, char *name)
 {
     struct NameLookupTable *tail = &m.allNames;
+    CHECK_ASSERT(element);
+    CHECK_ASSERT(name);
     CHECK_ASSERT(NULL == GetNameFromTable(element));
     while(tail)
     {
+        if (NULL == tail->element)
+            break;
         if (tail->next)
         {
             tail = tail->next;
@@ -307,15 +330,22 @@ static char *AllocateString(const char format[], uint16_t vargsCnt, ...)
 
 static char *GetVariableName(UCS_NS_CONST Ucs_Xrm_ResObject_t *element, const char *shortName)
 {
+    uint8_t i = 0;
+    char tempBuf[64];
     char *name = GetNameFromTable(element);
     if (name)
         return name;
     if (!shortName) return NULL;
-    name = AllocateString("%s%sOfRoute%d_%s", 4, 
-        m.prefix,
-        m.isSourceJob ? "Src" : "Snk",
-        m.currentRoute,
-        shortName);
+    do
+    {
+        snprintf(tempBuf, sizeof(tempBuf), "%s%sOfRoute%d_%s%d", 
+            m.prefix,
+            m.isSourceJob ? "Src" : "Snk",
+            m.currentRoute,
+            shortName,
+            i++);
+    } while (NULL != GetObjectFromTable(tempBuf));
+    name = AllocateString("%s", 1, tempBuf);
     CHECK_ASSERT(name);
     StoreNameInTable(element, name);
     return name;
@@ -468,7 +498,7 @@ static void PrintStrmPort(Ucs_Xrm_StrmPort_t *port)
 {
     ConsolePrintfStart(PRIO_HIGH, "%s %s = { \n"TAB C99(".resource_type = ")"%s,\n"TAB, 
             GetTypeString(port), 
-            GetVariableName(port, (0 == port->index ? "StrmPort0" : "StrmPort1")),
+            GetVariableName(port, "StrmPort"),
             GetResourceTypeString(&port->resource_type));
     ConsolePrintfContinue(C99(".index = ")"%u,\n"TAB, port->index);
     ConsolePrintfContinue(C99(".clock_config = ")"%s,\n"TAB, GetStrmClkString(port->clock_config));
@@ -773,6 +803,8 @@ static void PrintJobs(Ucs_Xrm_ResObject_t **jobs_list_ptr)
 {
     uint16_t i;
     Ucs_Xrm_ResObject_t *job = NULL;
+    if (NULL == jobs_list_ptr)
+        return;
     for (i = 0; (job = jobs_list_ptr[i]); i++ )
     {
         PrintUcsElement(job);
@@ -888,13 +920,14 @@ static void PrintNodes(Ucs_Rm_Node_t *nodes, uint8_t len)
         if (node->init_script_list_ptr && node->init_script_list_size)
         {
             ConsolePrintfContinue(TAB C99(".init_script_list_ptr = ")"%s,\n"TAB, GetNameFromTable(node->init_script_list_ptr));
-            ConsolePrintfContinue(TAB C99(".init_script_list_size = ")"%u\n"TAB, node->init_script_list_size);
+            ConsolePrintfContinue(TAB C99(".init_script_list_size = ")"%u,\n"TAB, node->init_script_list_size);
         }
         else
         {
             ConsolePrintfContinue(TAB C99(".init_script_list_ptr = ")"NULL,\n"TAB);
-            ConsolePrintfContinue(TAB C99(".init_script_list_size = ")"0\n"TAB);
+            ConsolePrintfContinue(TAB C99(".init_script_list_size = ")"0,\n"TAB);
         }
+        ConsolePrintfContinue(TAB C99(".remote_attach_disabled = ")"%u\n"TAB, node->remote_attach_disabled);
         ConsolePrintfContinue("}");
     }
     ConsolePrintfExit(" };\n");
@@ -906,6 +939,8 @@ static const char*GetEndpointTypeString(Ucs_Rm_EndPointType_t eptyp)
     {
         CASE(UCS_RM_EP_SOURCE);
         CASE(UCS_RM_EP_SINK);
+        CASE(UCS_RM_EP_DC_SOURCE);
+        CASE(UCS_RM_EP_DC_SINK);
         default:
             ConsolePrintf(PRIO_ERROR, "GetEndpointTypeString ep-type:%d not implemented\n", eptyp);
             exit(-1);
@@ -922,7 +957,11 @@ static void PrintEndpoint(Ucs_Rm_EndPoint_t *ep, bool isSourceEp, uint8_t routeP
     StoreNameInTable(ep, varName);
     ConsolePrintfStart(PRIO_HIGH, "Ucs_Rm_EndPoint_t %s = {\n"TAB, varName);
     ConsolePrintfContinue(C99(".endpoint_type = ")"%s,\n"TAB, GetEndpointTypeString(ep->endpoint_type));
-    ConsolePrintfContinue(C99(".jobs_list_ptr = ")"%s,\n"TAB, GetNameFromTable(ep->jobs_list_ptr));
+    if (NULL != ep->jobs_list_ptr) {
+        ConsolePrintfContinue(C99(".jobs_list_ptr = ")"%s,\n"TAB, GetNameFromTable(ep->jobs_list_ptr));
+    } else {
+        ConsolePrintfContinue(C99(".jobs_list_ptr = ")"NULL,\n"TAB);
+    }
     ConsolePrintfContinue(C99(".node_obj_ptr = ")"&%s", GetNameFromTable(ep->node_obj_ptr));
     ConsolePrintfExit(" };\n");
 }

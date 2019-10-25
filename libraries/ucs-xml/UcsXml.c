@@ -51,10 +51,12 @@
 
 struct UcsXmlRoute
 {
-    bool isSource;
+    bool isTalker;
     bool isActive;
     uint16_t routeId;
     char routeName[32];
+    uint16_t labelNormal;
+    uint16_t labelFallback;
     Ucs_Rm_EndPoint_t *ep;
     struct UcsXmlRoute *next;
 };
@@ -115,6 +117,8 @@ typedef struct
     uint16_t routeId;
     uint16_t syncOffset;
     const char *routeName;
+    uint16_t labelNormal;
+    uint16_t labelFallback;
     Ucs_Xrm_ResObject_t *inSocket;
     Ucs_Xrm_ResObject_t *outSocket;
     struct UcsXmlJobList *jobList;
@@ -152,9 +156,12 @@ typedef struct {
 /*Key section*/
 static const char* UNICENS =                "Unicens";
 static const char* PACKET_BW =              "AsyncBandwidth";
+static const char* PROXY_BW =               "ProxyBandwidth";
 static const char* NAME =                   "Name";
 static const char* ROUTE =                  "Route";
 static const char* ROUTE_ID =               "RouteId";
+static const char* LABEL_NORMAL =           "ConnectionLabelNormal";
+static const char* LABEL_FALLBACK =         "ConnectionLabelFallback";
 static const char* ROUTE_IS_ACTIVE =        "IsActive";
 static const char* ENDPOINT_ADDRESS =       "EndpointAddress";
 static const char* CHANNEL_ADDRESS =        "ChannelAddress";
@@ -162,6 +169,7 @@ static const char* BANDWIDTH =              "Bandwidth";
 static const char* BYTES_PER_FRAME =        "BytesPerFrame";
 static const char* OFFSET =                 "Offset";
 static const char* NODE =                   "Node";
+static const char* REMOTE_ATTACH_DISABLE =  "FallbackRoot";
 static const char* CLOCK_CONFIG =           "ClockConfig";
 static const char* ADDRESS =                "Address";
 static const char* FRAMES_PER_TRANSACTION = "FramesPerTransaction";
@@ -769,7 +777,12 @@ static bool AddJob(struct UcsXmlJobList **joblist, Ucs_Xrm_ResObject_t *job, str
         return true;
     }
     tail = joblist[0];
-    while(tail->next) tail = tail->next;
+    while(tail) {
+        assert(tail->job != job);
+        if (!tail->next)
+            break;
+        tail = tail->next;
+    }
     tail->next = MCalloc(objList, 1, sizeof(struct UcsXmlJobList));
     if (NULL == tail->next) return false;
     tail->next->job = job;
@@ -877,6 +890,8 @@ static ParseResult_t ParseAll(mxml_node_t *tree, UcsXmlVal_t *ucs, PrivateData_t
     if (!GetUInt16(tree, PACKET_BW, &ucs->packetBw, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
 
+    GetUInt16(tree, PROXY_BW, &ucs->proxyBw, false);
+
     /*Iterate all nodes*/
     if (!GetElement(tree, NODE, true, &sub, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
@@ -969,6 +984,14 @@ static ParseResult_t ParseNode(mxml_node_t *node, PrivateData_t *priv)
     if(NULL == signature) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
     if (!GetUInt16(node, ADDRESS, &signature->node_address, true))
         RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+    if (GetString(node, REMOTE_ATTACH_DISABLE, &txt, false))
+    {
+        if (0 == strcmp(txt, VALUE_TRUE) || 0 == strcmp(txt, VALUE_1)) {
+            priv->nodeData.nod->remote_attach_disabled = true;
+        } else if (0 == strcmp(txt, VALUE_FALSE) || 0 == strcmp(txt, VALUE_0)) {
+            priv->nodeData.nod->remote_attach_disabled = false;
+        } else { RETURN_ASSERT(Parse_XmlError, "Wrong enum"); }
+    }
     if (GetString(node, SCRIPT, &txt, false))
     {
         struct UcsXmlScript *scr = MCalloc(&priv->objList, 1, sizeof(struct UcsXmlScript));
@@ -1106,7 +1129,12 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         p.isSource = isSource;
         p.dataType = priv->conData.dataType;
         if (!GetUInt16(soc, BANDWIDTH, &p.bandwidth, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-        if (!GetString(soc, ROUTE, &priv->conData.routeName, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+        if(!GetUInt16(soc, LABEL_NORMAL, &priv->conData.labelNormal, false))
+        {
+            if (!GetString(soc, ROUTE, &priv->conData.routeName, false))
+                RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute, no route and no connection labels provided");
+        }
+        GetUInt16(soc, LABEL_FALLBACK, &priv->conData.labelFallback, false);
         if (GetString(soc, ROUTE_IS_ACTIVE, &txt, false))
         {
             if (0 == strcmp(txt, VALUE_TRUE) || 0 == strcmp(txt, VALUE_1))
@@ -1179,13 +1207,13 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         p.streamPortB = priv->nodeData.strmPortB;
         if (NULL == p.streamPortA)
         {
-            if (!GetStrmPortDefaultCreated(&p.streamPortA, &priv->objList))
+            if (!GetStrmPortDefaultCreated(&p.streamPortA, 0, &priv->objList))
                 RETURN_ASSERT(Parse_XmlError, "Can not get default created stream port A");
             priv->nodeData.strmPortA = (Ucs_Xrm_StrmPort_t *)p.streamPortA;
         }
         if (NULL == p.streamPortB)
         {
-            if (!GetStrmPortDefaultCreated(&p.streamPortB, &priv->objList))
+            if (!GetStrmPortDefaultCreated(&p.streamPortB, 1, &priv->objList))
                 RETURN_ASSERT(Parse_XmlError, "Can not get default created stream port B");
             priv->nodeData.strmPortB = (Ucs_Xrm_StrmPort_t *)p.streamPortB;
         }
@@ -1266,6 +1294,8 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
     /*Connect in and out socket once they are created*/
     if (priv->conData.inSocket && priv->conData.outSocket)
     {
+        bool routeFound = false;
+        bool labelFound = false;
         bool networkIsInput;
         bool networkIsOutput;
         Ucs_Rm_EndPoint_t *ep;
@@ -1316,12 +1346,23 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         ep->node_obj_ptr = priv->nodeData.nod;
         route = MCalloc(&priv->objList, 1, sizeof(struct UcsXmlRoute));
         if (NULL == route) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
-        route->isSource = networkIsOutput;
+        route->isTalker = networkIsOutput;
         route->isActive = !priv->conData.isDeactivated;
         route->routeId = priv->conData.routeId;
         route->ep = ep;
-        assert(NULL != priv->conData.routeName);
-        strncpy(route->routeName, priv->conData.routeName, sizeof(route->routeName));
+        if (NULL != priv->conData.routeName) {
+            strncpy(route->routeName, priv->conData.routeName, sizeof(route->routeName));
+            routeFound = true;
+        } else if (0 != priv->conData.labelNormal) {
+            route->labelNormal = priv->conData.labelNormal;
+            labelFound = true;
+        }
+        if(!routeFound && !labelFound) {
+            RETURN_ASSERT(Parse_XmlError, "No route name and no connection label specified")
+        }
+        if (0 != priv->conData.labelFallback) {
+            route->labelFallback = priv->conData.labelFallback;
+        }
         AddRoute(&priv->pRtLst, route);
     }
     return Parse_Success;
@@ -1703,62 +1744,126 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
     uint16_t routeAmount = 0;
     struct UcsXmlRoute *sourceRoute;
     assert(NULL != ucs && NULL != priv);
-    /*First: Count the amount of routes and allocate the correct amount*/
+    /* First: Count the amount of routes and allocate the correct amount*/
     sourceRoute = priv->pRtLst;
+    /* Start counting routes linked via route names */
     while (NULL != sourceRoute)
     {
-        if (sourceRoute->isSource)
+        if (sourceRoute->isTalker)
         {
             struct UcsXmlRoute *sinkRoute = priv->pRtLst;
             while (NULL != sinkRoute)
             {
-                if (sourceRoute != sinkRoute
-                    && !sinkRoute->isSource
-                    && (0 == strncmp(sourceRoute->routeName, sinkRoute->routeName, sizeof(sourceRoute->routeName))))
+                if (sourceRoute != sinkRoute && !sinkRoute->isTalker)
                 {
-                    routeAmount++;
+                    if (0 != strlen(sourceRoute->routeName) && 0 != strlen(sinkRoute->routeName) &&
+                         (0 == strncmp(sourceRoute->routeName, sinkRoute->routeName, sizeof(sourceRoute->routeName))))
+                    {
+                        routeAmount++;
+                    }
                 }
                 sinkRoute = sinkRoute->next;
             }
         }
         sourceRoute = sourceRoute->next;
     }
+    /* Next count routes having connection labels set */
+    sourceRoute = priv->pRtLst;
+    while (NULL != sourceRoute)
+    {
+        if (0 != sourceRoute->labelNormal) {
+            routeAmount++;
+        }
+        if (0 != sourceRoute->labelFallback) {
+            routeAmount++;
+        }
+        sourceRoute = sourceRoute->next;
+    }
+    /* Counting done */
     if (0 == routeAmount)
         return Parse_Success; /*Its okay to have no routes at all (e.g. MEP traffic only)*/
     ucs->pRoutes = MCalloc(&priv->objList, routeAmount, sizeof(Ucs_Rm_Route_t));
     if (NULL == ucs->pRoutes) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
 
-    /*Second: Fill allocated structure now*/
+    /* Second: Fill allocated structure now */
+    /* Start filling routes inked via route names */
     sourceRoute = priv->pRtLst;
     while (NULL != sourceRoute)
     {
-        if (sourceRoute->isSource)
+        if (sourceRoute->isTalker)
         {
             struct UcsXmlRoute *sinkRoute = priv->pRtLst;
             while (NULL != sinkRoute)
             {
-                if (sourceRoute != sinkRoute
-                    && !sinkRoute->isSource
-                    && (0 == strncmp(sourceRoute->routeName, sinkRoute->routeName, sizeof(sourceRoute->routeName))))
+                if (sourceRoute != sinkRoute && !sinkRoute->isTalker)
                 {
-                    Ucs_Rm_Route_t *route;
-                    if(ucs->routesSize >= routeAmount)
+                    if (0 != strlen(sourceRoute->routeName) && 0 != strlen(sinkRoute->routeName) && 
+                         (0 == strncmp(sourceRoute->routeName, sinkRoute->routeName, sizeof(sourceRoute->routeName))))
                     {
-                        RETURN_ASSERT(Parse_MemoryError, "Internal routing error");
+                        Ucs_Rm_Route_t *route;
+                        if(ucs->routesSize >= routeAmount)
+                        {
+                            RETURN_ASSERT(Parse_MemoryError, "Internal routing error");
+                        }
+                        route = &ucs->pRoutes[ucs->routesSize++];
+                        route->source_endpoint_ptr = sourceRoute->ep;
+                        route->sink_endpoint_ptr = sinkRoute->ep;
+                        route->active = sinkRoute->isActive && sourceRoute->isActive;
+                        if (ROUTE_INVALID_ID != sinkRoute->routeId)
+                            route->route_id = sinkRoute->routeId;
+                        else if (ROUTE_INVALID_ID != sourceRoute->routeId)
+                            route->route_id = sourceRoute->routeId;
+                        else
+                            route->route_id = priv->autoRouteId++;
                     }
-                    route = &ucs->pRoutes[ucs->routesSize++];
-                    route->source_endpoint_ptr = sourceRoute->ep;
-                    route->sink_endpoint_ptr = sinkRoute->ep;
-                    route->active = sinkRoute->isActive && sourceRoute->isActive;
-                    if (ROUTE_INVALID_ID != sinkRoute->routeId)
-                        route->route_id = sinkRoute->routeId;
-                    else if (ROUTE_INVALID_ID != sourceRoute->routeId)
-                        route->route_id = sourceRoute->routeId;
-                    else
-                        route->route_id = priv->autoRouteId++;
                 }
                 sinkRoute = sinkRoute->next;
             }
+        }
+        sourceRoute = sourceRoute->next;
+    }
+    /* Next fill routes having connection labels set */
+    sourceRoute = priv->pRtLst;
+    while (NULL != sourceRoute)
+    {
+        Ucs_Rm_Route_t *dcRoute = NULL;
+        if (0 != sourceRoute->labelNormal) {
+            struct DCRouteParametes p;
+            p.ep = sourceRoute->ep;
+            p.isTalker = sourceRoute->isTalker;
+            p.routeAmount = routeAmount;
+            p.ucs = ucs;
+            p.list = &priv->objList;
+            if (!GetDefaultCreatedRoute(&dcRoute, &p)) {
+                RETURN_ASSERT(Parse_MemoryError, "Internal routing error");
+            }
+            assert(NULL != dcRoute);
+            dcRoute->static_connection.fallback_enabled = false;
+            dcRoute->static_connection.static_con_label = sourceRoute->labelNormal;
+            dcRoute->active = sourceRoute->isActive;
+            if (ROUTE_INVALID_ID != sourceRoute->routeId)
+                dcRoute->route_id = sourceRoute->routeId;
+            else
+                dcRoute->route_id = priv->autoRouteId++;
+        }
+        if (0 != sourceRoute->labelFallback) {
+            struct DCRouteParametes p;
+            p.ep = sourceRoute->ep;
+            p.isTalker = sourceRoute->isTalker;
+            p.routeAmount = routeAmount;
+            p.ucs = ucs;
+            p.list = &priv->objList;
+            if (!GetDefaultCreatedRoute(&dcRoute, &p)) {
+                RETURN_ASSERT(Parse_MemoryError, "Internal routing error");
+            }
+            assert(NULL != dcRoute);
+            dcRoute->static_connection.fallback_enabled = true;
+            dcRoute->static_connection.static_con_label = sourceRoute->labelFallback;
+            dcRoute->active = sourceRoute->isActive;
+            if (ROUTE_INVALID_ID != sourceRoute->routeId)
+                dcRoute->route_id = sourceRoute->routeId;
+            else
+                dcRoute->route_id = priv->autoRouteId++;
         }
         sourceRoute = sourceRoute->next;
     }
@@ -1767,31 +1872,43 @@ static ParseResult_t ParseRoutes(UcsXmlVal_t *ucs, PrivateData_t *priv)
     /* Third perform checks when running in debug mode*/
     {
         Ucs_Xrm_ResourceType_t *job;
-        uint16_t i, j;
+        uint16_t i;
         for (i = 0; i < routeAmount; i++)
         {
             Ucs_Rm_Route_t *route = &ucs->pRoutes[i];
+            assert(0 != route->route_id);
             assert(NULL != route->source_endpoint_ptr);
             assert(NULL != route->sink_endpoint_ptr);
-            assert(NULL != route->source_endpoint_ptr->jobs_list_ptr);
-            assert(UCS_RM_EP_SOURCE == route->source_endpoint_ptr->endpoint_type);
-            assert(UCS_RM_EP_SINK == route->sink_endpoint_ptr->endpoint_type);
+            if (UCS_RM_EP_SOURCE == route->source_endpoint_ptr->endpoint_type) {
+                uint16_t j = 0;
+                assert(NULL != route->source_endpoint_ptr->jobs_list_ptr);
+                while((job = ((Ucs_Xrm_ResourceType_t *)route->source_endpoint_ptr->jobs_list_ptr[j])))
+                {
+                    assert(UCS_XRM_RC_TYPE_QOS_CON >= *job);
+                    ++j;
+                }
+            } else if (UCS_RM_EP_DC_SOURCE == route->source_endpoint_ptr->endpoint_type) {
+                assert(0 != route->static_connection.static_con_label);
+            } else {
+                assert(false);
+            }
+            if (UCS_RM_EP_SINK == route->sink_endpoint_ptr->endpoint_type) {
+                uint16_t j = 0;
+                assert(NULL != route->sink_endpoint_ptr->jobs_list_ptr);
+                while((job = ((Ucs_Xrm_ResourceType_t *)route->sink_endpoint_ptr->jobs_list_ptr[j])))
+                {
+                    assert(UCS_XRM_RC_TYPE_QOS_CON >= *job);
+                    ++j;
+                }
+            } else if (UCS_RM_EP_DC_SINK == route->sink_endpoint_ptr->endpoint_type) {
+                assert(0 != route->static_connection.static_con_label);
+            } else {
+                assert(false);
+            }
             assert(NULL != route->source_endpoint_ptr->node_obj_ptr);
             assert(NULL != route->sink_endpoint_ptr->node_obj_ptr);
             assert(NULL != route->source_endpoint_ptr->node_obj_ptr->signature_ptr);
             assert(NULL != route->sink_endpoint_ptr->node_obj_ptr->signature_ptr);
-            j = 0;
-            while((job = ((Ucs_Xrm_ResourceType_t *)route->source_endpoint_ptr->jobs_list_ptr[j])))
-            {
-                assert(UCS_XRM_RC_TYPE_QOS_CON >= *job);
-                ++j;
-            }
-            j = 0;
-            while((job = ((Ucs_Xrm_ResourceType_t *)route->sink_endpoint_ptr->jobs_list_ptr[j])))
-            {
-                assert(UCS_XRM_RC_TYPE_QOS_CON >= *job);
-                ++j;
-            }
         }
     }
 #endif

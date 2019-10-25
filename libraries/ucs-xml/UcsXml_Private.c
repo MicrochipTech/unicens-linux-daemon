@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "UcsXml.h"
 #include "UcsXml_Private.h"
 
 static const char* USB_PHY_STANDARD =       "Standard";
@@ -356,7 +355,7 @@ bool GetStrmPort(Ucs_Xrm_StrmPort_t **strmPort, struct StrmPortParameters *param
     return true;
 }
 
-bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, struct UcsXmlObjectList *list)
+bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, uint8_t portIndex, struct UcsXmlObjectList *list)
 {
     Ucs_Xrm_DefaultCreatedPort_t *p;
     CHECK_POINTER(streamPort);
@@ -365,7 +364,7 @@ bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, struct UcsXmlOb
     CHECK_POINTER(p);
     p->resource_type = UCS_XRM_RC_TYPE_DC_PORT;
     p->port_type = UCS_XRM_PORT_TYPE_STRM;
-    p->index = 0;
+    p->index = portIndex;
     *streamPort = (Ucs_Xrm_ResObject_t *)p;
     return true;
 }
@@ -513,6 +512,57 @@ bool GetAvpCon(Ucs_Xrm_AvpCon_t **avpCon, struct AvpConParameters *param)
         }
     } else {
         con->isoc_packet_size = UCS_ISOC_PCKT_SIZE_188;
+    }
+    return true;
+}
+
+bool GetDefaultCreatedEndpoint(Ucs_Rm_EndPoint_t **dcEP, struct DCEndpointParameters *param)
+{
+    Ucs_Rm_EndPoint_t *ep = NULL;
+    CHECK_POINTER(dcEP);
+    CHECK_POINTER(param);
+    CHECK_POINTER(param->list);
+    CHECK_POINTER(param->someNode);
+    ep = MCalloc(param->list, 1, sizeof(Ucs_Rm_EndPoint_t));
+    CHECK_POINTER(ep);
+    *dcEP = ep;
+    if (param->networkIsOutput) {
+        ep->endpoint_type = UCS_RM_EP_DC_SINK;
+    } else {
+        ep->endpoint_type = UCS_RM_EP_DC_SOURCE;
+    }
+    ep->jobs_list_ptr = NULL; /* No job list required */
+    ep->node_obj_ptr = param->someNode;
+    return true;
+}
+
+bool GetDefaultCreatedRoute(Ucs_Rm_Route_t **dcRoute, struct DCRouteParametes *param)
+{
+    struct DCEndpointParameters p;
+    Ucs_Rm_Route_t *route;
+    CHECK_POINTER(dcRoute);
+    CHECK_POINTER(param);
+    CHECK_POINTER(param->list);
+    CHECK_POINTER(param->ucs);
+    CHECK_POINTER(param->ep);
+    if(param->ucs->routesSize >= param->routeAmount) {
+        ASSERT_FALSE("param->ucs->routesSize >= param->routeAmount", "Internal routing error");
+    }
+    route = &param->ucs->pRoutes[param->ucs->routesSize++];
+    *dcRoute = route;
+    p.networkIsOutput = param->isTalker;
+    p.list = param->list;
+    p.someNode = &param->ucs->pNod[0];
+    if (p.networkIsOutput) {
+        route->source_endpoint_ptr = param->ep;
+        if (!GetDefaultCreatedEndpoint(&route->sink_endpoint_ptr, &p)) {
+            ASSERT_FALSE("GetDefaultCreatedEndpoint", "Could not create default created endpoint");
+        }
+    } else {
+        route->sink_endpoint_ptr = param->ep;
+        if (!GetDefaultCreatedEndpoint(&route->source_endpoint_ptr, &p)) {
+            ASSERT_FALSE("GetDefaultCreatedEndpoint", "Could not create default created endpoint");
+        }
     }
     return true;
 }

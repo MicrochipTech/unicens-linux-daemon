@@ -1,4 +1,4 @@
 [submodule "libraries/unicens/ucs2"]
 	path = libraries/unicens/ucs2
 	url = https://github.com/MicrochipTech/unicens.git
-	branch = maintenance-v2.2.0
+	branch = maintenance-v2.3.0
