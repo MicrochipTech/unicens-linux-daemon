@@ -1129,9 +1129,9 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         p.isSource = isSource;
         p.dataType = priv->conData.dataType;
         if (!GetUInt16(soc, BANDWIDTH, &p.bandwidth, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-        if (!GetString(soc, ROUTE, &priv->conData.routeName, false))
+        if(!GetUInt16(soc, LABEL_NORMAL, &priv->conData.labelNormal, false))
         {
-            if(!GetUInt16(soc, LABEL_NORMAL, &priv->conData.labelNormal, false))
+            if (!GetString(soc, ROUTE, &priv->conData.routeName, false))
                 RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute, no route and no connection labels provided");
         }
         GetUInt16(soc, LABEL_FALLBACK, &priv->conData.labelFallback, false);
