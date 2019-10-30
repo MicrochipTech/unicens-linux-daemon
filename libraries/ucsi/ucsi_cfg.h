@@ -71,6 +71,14 @@ typedef enum
 } UnicensCmdResult_t;
 
 /**
+ * \brief Asynchronous callback notifiying a command result
+ * \param result_ptr    The asynchronous result of the command
+ * \param request_ptr   User reference, typically points to the afb_req
+ *                      object.
+ */
+typedef void (*Ucsi_ResultCb_t)(void *result_ptr, void *request_ptr);
+
+/**
  * \brief Internal enum for UNICENS Integration
  */
 typedef enum
@@ -147,6 +155,8 @@ typedef struct
     uint16_t timeout;
     uint8_t dataLen;
     uint8_t data[I2C_WRITE_MAX_LEN];
+    Ucsi_ResultCb_t result_fptr;
+    void *request_ptr;
 } UnicensCmdI2CWrite_t;
 
 /**

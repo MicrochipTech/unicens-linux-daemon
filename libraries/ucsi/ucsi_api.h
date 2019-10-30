@@ -110,7 +110,6 @@ bool UCSI_ProcessRxData(UCSI_Data_t *pPriv,
  */
 void UCSI_Service(UCSI_Data_t *pPriv);
 
-
 /**
  * \brief Call after timer set by UCSI_CB_OnSetServiceTimer
  *        expired.
@@ -133,7 +132,7 @@ void UCSI_Timeout(UCSI_Data_t *pPriv);
  *
  * \return true, if operation was successful. false if the message could not be sent.
  */
-bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen);
+bool UCSI_SendAmsMessage(UCSI_Data_t *pPriv, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen);
 
 /**
  * \brief Gets the queued AMS message from UNICENS stack
@@ -149,7 +148,7 @@ bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress
  *
  * \return true, if operation was successful. false if no message got be retrieved.
  */
-bool UCSI_GetAmsMessage(UCSI_Data_t *my, uint16_t *pMsgId, uint16_t *pSourceAddress, uint8_t **pPayload, uint32_t *pPayloadLen);
+bool UCSI_GetAmsMessage(UCSI_Data_t *pPriv, uint16_t *pMsgId, uint16_t *pSourceAddress, uint8_t **pPayload, uint32_t *pPayloadLen);
 
 /**
  * \brief Releases the message memory returned by UCSI_GetAmsMessage.
@@ -161,7 +160,7 @@ bool UCSI_GetAmsMessage(UCSI_Data_t *my, uint16_t *pMsgId, uint16_t *pSourceAddr
  *
  * \param pPriv - private data section of this instance
  */
-void UCSI_ReleaseAmsMessage(UCSI_Data_t *my);
+void UCSI_ReleaseAmsMessage(UCSI_Data_t *pPriv);
 
 /**
  * \brief Enables or disables a route by the given routeId
@@ -187,11 +186,14 @@ bool UCSI_SetRouteActive(UCSI_Data_t *pPriv, uint16_t routeId, bool isActive);
  * \param timeout - Timeout in milliseconds.
  * \param dataLen - Amount of bytes to send via I2C
  * \param pData - The payload to be send.
+ * \param result_fptr - Callback function notifying the asynchronous result.
+ * \param request_ptr - User reference which is provided for the asynchronous result.
  *
  * \return true, if route command was enqueued to UNICENS.
  */
 bool UCSI_I2CWrite(UCSI_Data_t *pPriv, uint16_t targetAddress, bool isBurst, uint8_t blockCount,
-    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData);
+    uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData,
+    Ucsi_ResultCb_t result_fptr, void *request_ptr);
 
 /**
  * \brief Performs an remote I2C read command.
@@ -254,7 +256,6 @@ extern void UCSI_CB_OnCommandResult(void *pTag, UnicensCmd_t command, bool succe
  * \return timestamp in milliseconds
  */
 extern uint16_t UCSI_CB_OnGetTime(void *pTag);
-
 
 /**
  * \brief Callback when the implementer needs to arm a timer.
