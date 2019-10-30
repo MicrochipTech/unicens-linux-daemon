@@ -231,6 +231,14 @@ Script to which the node is linked.</xs:documentation>
 											</xs:simpleType>
 										</xs:attribute>
 										<xs:attribute name="NetworkControllerVersion" type="xs:string" use="optional"/>
+										<xs:attribute name="TypicalCurrent" type="Number"/>
+										<xs:attribute name="FallbackRoot" type="xs:boolean" use="optional">
+											<xs:annotation>
+												<xs:documentation>
+													<UCSElementPath>/Unicens/Node/@FallbackRoot</UCSElementPath>
+true, if this node can act as fallback root, meaning it is a backup timing master. false, this device is always a timing slave.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
 									</xs:extension>
 								</xs:complexContent>
 							</xs:complexType>
@@ -593,12 +601,28 @@ Name of the Script</xs:documentation>
 								</xs:complexContent>
 							</xs:complexType>
 						</xs:element>
+						<xs:element name="PoDLInjector">
+							<xs:complexType>
+								<xs:complexContent>
+									<xs:extension base="SpecifiedElement">
+										<xs:attribute name="MaximumCurrent" type="Number"/>
+									</xs:extension>
+								</xs:complexContent>
+							</xs:complexType>
+						</xs:element>
 					</xs:choice>
 					<xs:attribute name="AsyncBandwidth" type="Number" use="required">
 						<xs:annotation>
 							<xs:documentation>
 								<UCSElementPath>/Unicens/@AsyncBandwidth</UCSElementPath>
 Asynchronous bandwidth of the Unicens network.</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="ProxyBandwidth" type="Number" use="optional">
+						<xs:annotation>
+							<xs:documentation>
+								<UCSElementPath>/Unicens/@ProxyBandwidth</UCSElementPath>
+Amount of Bytes reserved for all static allocated synchronous connections combined.</xs:documentation>
 						</xs:annotation>
 					</xs:attribute>
 					<xs:attribute name="Network" use="optional">
@@ -928,6 +952,20 @@ A (virtual) route is a logical unidirectional connection between two endpoints. 
 						<xs:documentation>
 							<UCSElementPath>/NetworkSocketType/@RouteId</UCSElementPath>
 User-defined route identifier</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="ConnectionLabelNormal" type="Number">
+					<xs:annotation>
+						<xs:documentation>
+							<UCSElementPath>/NetworkSocketType/@ConnectionLabelNormal</UCSElementPath>
+Unique Label identifying a synchronous stream via network state.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="ConnectionLabelFallback" type="Number">
+					<xs:annotation>
+						<xs:documentation>
+							<UCSElementPath>/NetworkSocketType/@ConnectionLabelFallback</UCSElementPath>
+Unique Label identifying a synchronous stream via fallback mode.</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 			</xs:extension>

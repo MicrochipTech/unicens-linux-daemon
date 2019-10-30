@@ -32,7 +32,13 @@ $ ./build.sh
 > After performing all steps from the tutorial, you also may use the crossAndroid.sh script.
 
 Now the binaries `unicensd` and `xml2struct` shall be available in the current folder.
-In order to run unicensd, first make sure [MOST Linux Driver](https://github.com/microchip-ais/linux/blob/mchp-dev/mld/README.md) is loaded.
+In order to run unicensd, first make sure that the MOST Linux Driver is up and running.
+
+Please follow this tutorial therefor: [MOST Linux Driver](https://github.com/microchip-ais/linux/blob/mchp-dev/mld/README.md). 
+
+On Raspbian OS its recommend to get the kernel headers by following this tutorial: [rpi_source](https://github.com/notro/rpi-source/wiki).
+
+
 The daemon searches by default for these control enabled character devices (CDEVs):
 
  - /dev/inic-control-rx

@@ -40,7 +40,7 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSD_VERSION    ("V5.0.0")
+#define UNICENSD_VERSION    ("V5.1.0")
 
 /* Character device to INIC control channel */
 #define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-control-tx")
@@ -125,32 +125,28 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         {
             defaultSet = true;
         }
-        else if (0 == strcmp("-drv1", argv[i]))
+        else if (0 == strcmp("-drv1", argv[i]) || 0 == strcmp("-drv2", argv[i]))
         {
             uint8_t j = 0;
             char *tkPtr;
             char *token;
             if (argc <= (i+1))
             {
-                ConsolePrintf(PRIO_ERROR, RED "-drv1 parameter needs additional node address of the local network controller" RESETCOLOR "\r\n");
+                ConsolePrintf(PRIO_ERROR, RED "-drv1 or -drv2 parameter need additional node address of the local network controller" RESETCOLOR "\r\n");
                 return false;
             }
+            pVar->drvVersion = (0 == strcmp("-drv1", argv[i])) ? 1 : 2;
             token = strtok_r( argv[i + 1], ":", &tkPtr );
             while( NULL != token )
             {
                 if (0 == j)
-                    pVar->drv1LocalNodeAddr = strtol( token, NULL, 0 );
+                    pVar->drvLocalNodeAddr = strtol( token, NULL, 0 );
                 else if (1 == j)
-                    pVar->drv1Filter = token;
+                    pVar->drvFilter = token;
                 token = strtok_r( NULL, ":", &tkPtr );
                 ++j;
             }
             ++i;
-        }
-        else if (0 == strcmp("-drv2", argv[i]))
-        {
-            ConsolePrintf(PRIO_ERROR, RED "-drv2 is currently reserved" RESETCOLOR "\r\n");
-            return false;
         }
         else if (0 == strcmp("-lld", argv[i]))
         {
@@ -160,6 +156,11 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
         {
             ConsolePrintf(PRIO_ERROR, YELLOW "Promiscuous Mode active for all nodes" RESETCOLOR "\r\n");
             pVar->promiscuousMode = true;
+        }
+        else if (0 == strcmp("-local", argv[i]))
+        {
+            ConsolePrintf(PRIO_ERROR, YELLOW "Messages to local attached INIC will be copied to debug node address" RESETCOLOR "\r\n");
+            pVar->debugLocalMsg = true;
         }
         else if (0 == strcmp("-crx", argv[i]))
         {
@@ -181,6 +182,22 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
             pVar->controlTxCdev = argv[i + 1];
             ++i;
         }
+        else if (0 == strcmp("-program", argv[i]))
+        {
+            if (argc <= (i+1))
+            {
+                ConsolePrintf(PRIO_ERROR, RED "-program parameter needs additional amount of expected node count" RESETCOLOR "\r\n");
+                return -1;
+            }
+            pVar->programNodeCnt = strtol( argv[i + 1], NULL, 0 );
+            ++i;
+            ConsolePrintf(PRIO_HIGH, YELLOW "Programming is enabled. Target node count is=%d" RESETCOLOR "\r\n", pVar->programNodeCnt);
+        }
+        else if (0 == strcmp("--persistent", argv[i]))
+        {
+            ConsolePrintf(PRIO_ERROR, YELLOW "Persistent programming mode chosen" RESETCOLOR "\r\n");
+            pVar->programPersistent = true;
+        }
         else
         {
             ConsolePrintf(PRIO_ERROR, RED "Invalid command line parameter='%s'" RESETCOLOR "\r\n", argv[i]);
@@ -189,12 +206,12 @@ static bool ParseCommandLine(int argc, char *argv[], TaskUnicens_t *pVar)
     }
     if (!pVar->cfgFileName && !defaultSet)
         ConsolePrintf(PRIO_HIGH, YELLOW "No filename was provided, executing default configuration (default_config.c).\r\nUse \"--help\" for details. Use \"-default\" to suppress this waring." RESETCOLOR "\r\n");
-    if (!pVar->cfgFileName && 0 != pVar->drv1LocalNodeAddr)
+    if (!pVar->cfgFileName && 0 != pVar->drvLocalNodeAddr)
     {
         ConsolePrintf(PRIO_ERROR, RED "-drv1 and -drv2 option only allowed, when specified an path to UNICENS XML file" RESETCOLOR "\r\n");
         return false;
     }
-    if (0 == pVar->drv1LocalNodeAddr && (NULL == pVar->controlRxCdev || NULL == pVar->controlTxCdev))
+    if (0 == pVar->drvLocalNodeAddr && (NULL == pVar->controlRxCdev || NULL == pVar->controlTxCdev))
     {
         pVar->controlRxCdev = DEFAULT_CONTROL_CDEV_RX;
         pVar->controlTxCdev = DEFAULT_CONTROL_CDEV_TX;
@@ -219,7 +236,14 @@ static void PrintHelp(void)
     ConsolePrintfContinue("  -drv2                    Configures the Microchip MOST Linux Driver V2.X (reserved)\r\n");
     ConsolePrintfContinue("  -promisc                 Enable promiscuous mode on all INICs.\r\n" \
                           "                           Promiscuous mode disables packet filter in all INICS, so all Ethernet packets will be received by all nodes.\r\n");
+    ConsolePrintfContinue("  -local                   Special mode for INICnet sniffer. Messages sent to local attached INIC will be duplicated sent to debug node address.\r\n");
     ConsolePrintfContinue("  -lld                     Prints out the byte arrays send and received via Low Level Driver\r\n");
+    ConsolePrintfContinue("  -program [Node Count]    Enables automatic reprogramming mode. If there is a node address collision,\r\n");
+    ConsolePrintfContinue("                           the conflicting devices will get the next free node address assigned. By default the changes are\r\n");
+    ConsolePrintfContinue("                           written to RAM only (not persistent). The programming starts when the number of devices found reaches\r\n");
+    ConsolePrintfContinue("                           the given [Node Count] value.\r\n");
+    ConsolePrintfContinue("  --persistent             Only valid along with -program parameter. If set, the changes are written into persistent memory (Flash or OTP)\r\n");
+    ConsolePrintfContinue("                           !!WARNING: Use this parameter with care. On OS8121/0/2/4/6 you can only write changes two times!!\r\n");
     ConsolePrintfContinue("  --help                   Shows this help and exit\r\n\r\n");
     ConsolePrintfContinue("Examples:\r\n");
     ConsolePrintfExit("  unicensd -default\r\n");

@@ -44,11 +44,15 @@ typedef struct
     bool noRouteTable;
     bool lldTrace;
     bool promiscuousMode;
+    bool debugLocalMsg;
     const char *cfgFileName;
-    uint16_t drv1LocalNodeAddr;
-    const char *drv1Filter;
+    uint8_t drvVersion;
+    uint16_t drvLocalNodeAddr;
+    const char *drvFilter;
     char *controlRxCdev;
     char *controlTxCdev;
+    uint8_t programNodeCnt;
+    bool programPersistent;
 } TaskUnicens_t;
 
 /**

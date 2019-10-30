@@ -44,7 +44,7 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSC_VERSION    ("V4.1.0")
+#define UNICENSC_VERSION    ("V5.1.0")
 
 #ifdef NO_RAW_CLOCK
 #define CLOCK_SRC CLOCK_MONOTONIC
