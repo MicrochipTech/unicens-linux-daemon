@@ -46,6 +46,7 @@
 #define I2C_WRITE_MAX_LEN       (32)
 #define AMS_MSG_MAX_LEN         (45)
 #define MAX_NODES               (32)
+#define PROGRAM_MAX_DATA_LEN    (50)
 
 #include <string.h>
 #include <stdarg.h>
@@ -94,6 +95,8 @@ typedef enum
     UnicensCmd_I2CRead,
     UnicensCmd_SendAmsMessage,
     UnicensCmd_PacketFilterMode,
+    UnicensCmd_ProgramNode,
+    UnicensCmd_ProgramExit,
     UnicensCmd_SupvSetMode
 } UnicensCmd_t;
 
@@ -195,6 +198,17 @@ typedef struct
  */
 typedef struct
 {
+    uint8_t data[PROGRAM_MAX_DATA_LEN];
+    uint16_t nodePosAddr;
+    Ucs_Signature_t signature;
+    Ucs_Prg_Command_t commands;
+} UnicensCmdProgramNode_t;
+
+/**
+ * \brief Internal struct for UNICENS Integration
+ */
+typedef struct
+{
     Ucs_Supv_Mode_t supvMode;
 } UnicensCmdSupvMode_t;
 
@@ -214,6 +228,7 @@ typedef struct
         UnicensCmdI2CWrite_t I2CWrite;
         UnicensCmdI2CRead_t I2CRead;
         UnicensCmdPacketFilterMode_t PacketFilterMode;
+        UnicensCmdProgramNode_t ProgramNode;
         UnicensCmdSupvMode_t SupvMode;
 #if (ENABLE_AMS_LIB)
         UnicensCmdSendAmsMessage_t SendAms;
@@ -235,6 +250,15 @@ typedef struct {
     volatile uint32_t txPos;
 } RB_t;
 
+typedef struct
+{
+    Ucs_Signature_t nodes[MAX_NODES];
+    bool signatureValid[MAX_NODES];
+    bool allowProgramming;
+    bool persistent;
+    uint8_t triggerNodeCount;
+} UCSI_Programming_t;
+
 /**
  * \brief Internal variables for one instance of UNICENS Integration
  * \note Allocate this structure for each instance (static or malloc)
@@ -245,8 +269,10 @@ typedef struct
 {
     uint32_t magic;
     uint8_t rbBuf[(CMD_QUEUE_LEN * sizeof(UnicensCmdEntry_t))];
+    uint16_t cableResult[MAX_NODES];
     Ucs_InitData_t uniInitData;
     Ucs_Supv_Mode_t supvShallMode;
+    UCSI_Programming_t program;
     RB_t rb;
     void *tag;
     void *uniLldHPtr;
@@ -257,6 +283,7 @@ typedef struct
     bool initialized;
     bool printTrigger;
     bool triggerService;
+    bool switchOnlyInInactive;
 } UCSI_Data_t;
 
 #endif /* UNICENSINTEGRATION_H_ */

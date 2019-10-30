@@ -48,8 +48,19 @@ extern "C" {
  *                instance (static allocated or allocated with malloc)
  * \param pTag - Pointer given by the integrator. This pointer will be
  *               returned by any callback function of this component
+ * \param debugLocalNode - true, if messages sent to local attached INIC should be copied to debug node address (for INICnet sniffer).
  */
-void UCSI_Init(UCSI_Data_t *pPriv, void *pTag);
+void UCSI_Init(UCSI_Data_t *pPriv, void *pTag, bool debugLocalNode);
+
+
+/**
+ * \brief Executes cable diagnosis tests
+ *
+ * \param pPriv - private data section of this instance
+ * 
+ * \return true, cable diagnosis job is enqueued in to the job list. false, operation failed.
+ */
+bool UCSI_RunCableDiagnosis(UCSI_Data_t *pPriv);
 
 /**
  * \brief Executes the given configuration. If already started, all
@@ -58,16 +69,20 @@ void UCSI_Init(UCSI_Data_t *pPriv, void *pTag);
  *       raised: "UCSI_CB_OnStop"
  *
  * \param pPriv - private data section of this instance
- * \param packetBw - The amount of bytes per frame, reserved for Ethernet channel.
+ * \param packetBw - The amount of bytes per frame, reserved for the Ethernet channel.
+ * \param proxyBw - The amount of bytes per frame, reserved for the Proxy (static allocated synchronous) channel.
  * \param pRoutesList - Reference to a list of routes
  * \param routesListSize - Number of routes in the list
  * \param pNodesList - Reference to the list of nodes
  * \param nodesListSize - Reference to a list of routes
+ * \param programAmountOfNodes - 0, if programming is disabled. Otherwise the expected node count, when programming shall be started
+ * \param programPersistent - true, if OTP/Flash memory shall be programmed. false, use RAM only.
  * \return true, configuration successfully enqueued, false otherwise
  */
 bool UCSI_NewConfig(UCSI_Data_t *pPriv,
-    uint16_t packetBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
-    Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize);
+    uint16_t packetBw, uint16_t proxyBw, Ucs_Rm_Route_t *pRoutesList, uint16_t routesListSize,
+    Ucs_Rm_Node_t *pNodesList, uint16_t nodesListSize,
+    uint8_t programAmountOfNodes, bool programPersistent);
 
 /**
  * \brief Executes the given script. If already started, all
@@ -278,15 +293,25 @@ extern void UCSI_CB_OnSetServiceTimer(void *pTag, uint16_t timeout);
 extern void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwidth, uint8_t amountOfNodes);
 
 /**
+ * \brief Enumeration specifying the urgency of the message
+ */ 
+typedef enum
+{
+    UCSI_MsgDebug,
+    UCSI_MsgError,
+    UCSI_MsgUrgent
+} UCSI_UserMessageUrgency_t;
+
+/**
  * \brief Callback when ever UNICENS forms a human readable message.
  *        This can be error events or when enabled also debug messages.
  * \note This function must be implemented by the integrator
  * \param pTag - Pointer given by the integrator by UCSI_Init
- * \param isError - true, if this message is an important error message. false, user/debug message, not important.
+ * \param urgency - Enumeration specifying the urgency of the message
  * \param format - Zero terminated format string (following printf rules)
  * \param vargsCnt - Amount of parameters stored in "..."
  */
-extern void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[],
+extern void UCSI_CB_OnUserMessage(void *pTag, UCSI_UserMessageUrgency_t urgency, const char format[],
     uint16_t vargsCnt, ...);
 
 /**
@@ -389,6 +414,31 @@ extern void UCSI_CB_OnMgrReport(void *pTag, Ucs_Supv_Report_t code, Ucs_Signatur
  * \param bufLen - Length of buffer
  */
 extern void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, uint8_t slaveAddr, const uint8_t *pBuffer, uint32_t bufLen);
+
+/**
+ * \brief Callback when nodes are discovered or disappear
+ * \note This function must be implemented by the integrator
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param pNodeAddrArray - Array of integers holding the found node addresses (until the cable got broken)
+ * \param arrayLen - The length of pNodeAddrArray
+ * \param pNode - Reference to the node structure found in nodes list. Maybe NULL.
+ * 
+ * \note The node array is sorted. So first the root node comes first, first slave, second slave and so on.
+ */
+extern void UCSI_CB_OnCableDiagnosisResult(void *pTag, uint16_t *pNodeAddrArray, uint8_t arrayLen);
+
+/**
+ * \brief Callback when programming mode is active and the needed amount of devices where discovered in the network.
+
+ * \note This function must be implemented by the integrator
+ * \note With this callback, the user can trigger a reprogramming of the IdentString for one node. After programming of that node, this function will be called again. Until the integrator returns false.
+ * \param pTag - Pointer given by the integrator by UCSI_Init
+ * \param pNodes - Array of signature pointers of all the discovered devices in the network.
+ * \param nodeArrayLen - The length of the array
+ * \param pNewIdentString - Valid pointer will be given to user. Specify the new values of the IdentString for one node.
+ * \return Signature of the node to be flashed. NULL in case no node shall be flashed and the programming mode shall be left.
+ */
+extern const Ucs_Signature_t *UCSI_CB_OnProgrammingModeDeviceDiscovery(void *pTag, const Ucs_Signature_t *pNodes, uint32_t nodeArrayLen, Ucs_IdentString_t *pNewIdentString);
 
 #ifdef __cplusplus
 }

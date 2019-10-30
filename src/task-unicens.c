@@ -43,6 +43,7 @@
 #include "UcsXml.h"
 #include "CdevHandler.h"
 #include "mld-configurator-v1.h"
+#include "mld-configurator-v2.h"
 #include "default_config.h"
 #include "task-unicens.h"
 
@@ -58,6 +59,7 @@
 
 #define CDEV_PATH_LEN (64)
 #define DEBUG_TABLE_PRINT_TIME_MS  (250)
+#define CABLE_DIAGNOSYS_DELAY      (1000)
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                      DEFINES AND LOCAL VARIABLES                     */
@@ -77,12 +79,15 @@ typedef struct
     bool amsReceived;
     bool unicensDataAvailable;
     bool txErrorState;
+    uint32_t cableDiagnosisTimer;
     timer_t ucsTimer;
     sem_t serviceSem;
     CdevData_t ctrlTx;
     CdevData_t ctrlRx;
     char controlRxCdev[CDEV_PATH_LEN];
     char controlTxCdev[CDEV_PATH_LEN];
+    uint8_t programNodeCnt;
+    bool programPersistent;
 } LocalVar_t;
 
 static LocalVar_t m;
@@ -118,6 +123,8 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     m.noRouteTable = pVar->noRouteTable;
     m.lldTrace = pVar->lldTrace;
     m.promiscuousMode = pVar->promiscuousMode;
+    m.programNodeCnt = pVar->programNodeCnt;
+    m.programPersistent = pVar->programPersistent;
     if (!TimerInitialize() || !SemInitialize())
     {
         ConsolePrintf(PRIO_ERROR, RED "Failed to initialize timer/threading resources" RESETCOLOR "\r\n");
@@ -133,17 +140,22 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
         }
     }
     /* Initialize UNICENS */
-    UCSI_Init(&m.unicens, &m);
+    UCSI_Init(&m.unicens, &m, pVar->debugLocalMsg);
+    if (m.programPersistent && 0 == m.programNodeCnt)
+    {
+        ConsolePrintf(PRIO_ERROR, RED "Can not program persistent without setting amount of nodes (use additional -program)" RESETCOLOR "\r\n");
+        return false;
+    }
     if (m.cfg)
     {
-        if (0 != pVar->drv1LocalNodeAddr)
+        if (1 == pVar->drvVersion && 0 != pVar->drvLocalNodeAddr)
         {
             struct timespec t;
             t.tv_sec = 0;
             t.tv_nsec = 300000000l;
-            if (!MldConfigV1_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drv1LocalNodeAddr, pVar->drv1Filter, 1000))
+            if (!MldConfigV1_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drvLocalNodeAddr, pVar->drvFilter, 1000))
             {
-                ConsolePrintf(PRIO_ERROR, RED "Could not start driver configuration service" RESETCOLOR "\r\n");
+                ConsolePrintf(PRIO_ERROR, RED "Could not start driver V1 configuration service" RESETCOLOR "\r\n");
                 return false;
             }
             if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
@@ -156,7 +168,27 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
                 }
             }
         }
-        if (!UCSI_NewConfig(&m.unicens, m.cfg->packetBw, m.cfg->pRoutes, m.cfg->routesSize, m.cfg->pNod, m.cfg->nodSize))
+        else if (2 == pVar->drvVersion && 0 != pVar->drvLocalNodeAddr)
+        {
+            struct timespec t;
+            t.tv_sec = 0;
+            t.tv_nsec = 300000000l;
+            if (!MldConfigV2_Start(m.cfg->ppDriver, m.cfg->driverSize, pVar->drvLocalNodeAddr, pVar->drvFilter, 1000))
+            {
+                ConsolePrintf(PRIO_ERROR, RED "Could not start driver V2 configuration service" RESETCOLOR "\r\n");
+                return false;
+            }
+            if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
+            {
+                nanosleep(&t, NULL);
+                while(!MldConfigV2_GetControlCdevName(m.controlTxCdev, m.controlRxCdev))
+                {
+                    ConsolePrintf(PRIO_ERROR, YELLOW "Wait for INICs control channel to appear" RESETCOLOR "\r\n");
+                    nanosleep(&t, NULL);
+                }
+            }
+        }
+        if (!UCSI_NewConfig(&m.unicens, m.cfg->packetBw, m.cfg->proxyBw, m.cfg->pRoutes, m.cfg->routesSize, m.cfg->pNod, m.cfg->nodSize, m.programNodeCnt, m.programPersistent))
         {
             ConsolePrintf(PRIO_ERROR, RED "Could not enqueue XML generated UNICENS config" RESETCOLOR "\r\n");
             assert(false);
@@ -165,7 +197,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
     }
     else
     {
-        if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize))
+        if (!UCSI_NewConfig(&m.unicens, PacketBandwidth, ProxyBandwidth, AllRoutes, RoutesSize, AllNodes, NodeSize, m.programNodeCnt, m.programPersistent))
         {
             ConsolePrintf(PRIO_ERROR, RED "Could not enqueue default UNICENS config" RESETCOLOR "\r\n");
             assert(false);
@@ -248,6 +280,11 @@ void TaskUnicens_Service(void)
         }
         else assert(false);
     }
+    if (m.cableDiagnosisTimer && GetTicks() >= m.cableDiagnosisTimer) {
+        m.cableDiagnosisTimer = 0;
+        ConsolePrintf(PRIO_HIGH, "Starting network diagnosis..\r\n");
+        UCSI_RunCableDiagnosis(&m.unicens);
+    }
     SemWait();
 }
 
@@ -305,9 +342,14 @@ void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packetBandwid
                   isAvailable ? "yes" : "no",
                   packetBandwidth,
                   amountOfNodes);
+    if (isAvailable) {
+        m.cableDiagnosisTimer = 0;
+    } else {
+        m.cableDiagnosisTimer = GetTicks() + CABLE_DIAGNOSYS_DELAY;
+    }
 }
 
-void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16_t vargsCnt, ...)
+void UCSI_CB_OnUserMessage(void *pTag, UCSI_UserMessageUrgency_t urgency, const char format[], uint16_t vargsCnt, ...)
 {
     va_list argptr;
     char outbuf[300];
@@ -315,10 +357,19 @@ void UCSI_CB_OnUserMessage(void *pTag, bool isError, const char format[], uint16
     va_start(argptr, vargsCnt);
     vsnprintf(outbuf, sizeof(outbuf), format, argptr);
     va_end(argptr);
-    if (isError)
-        ConsolePrintf(PRIO_ERROR, RED "%s" RESETCOLOR "\r\n", outbuf);
-    else
-        ConsolePrintf(PRIO_LOW, "%s\r\n", outbuf);
+    switch(urgency)
+    {
+        case UCSI_MsgError:
+            ConsolePrintf(PRIO_ERROR, RED "%s" RESETCOLOR "\r\n", outbuf);
+            break;
+        case UCSI_MsgUrgent:
+            ConsolePrintf(PRIO_HIGH, YELLOW "%s" RESETCOLOR "\r\n", outbuf);
+            break;            
+        case UCSI_MsgDebug:
+        default:
+            ConsolePrintf(PRIO_LOW, "%s\r\n", outbuf);
+            break;
+    }
 }
 
 void UCSI_CB_OnPrintRouteTable(void *pTag, const char pString[])
@@ -421,6 +472,17 @@ void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, uint8_t
          ConsolePrintf(PRIO_ERROR, "I2C read failed for node=0x%X slave=0x%X\r\n" , targetAddress, slaveAddr);
 }
 
+void UCSI_CB_OnCableDiagnosisResult(void *pTag, uint16_t *pNodeAddrArray, uint8_t arrayLen)
+{
+    uint8_t i;
+    assert(pNodeAddrArray);
+    ConsolePrintfStart(PRIO_HIGH, "Cable Diagnosis Result = { ");
+    for (i = 0; i < arrayLen; i++) {
+        ConsolePrintfContinue("[Pos %d]=0x%X ",i , pNodeAddrArray[i]);
+    }
+    ConsolePrintfExit("}\r\n");
+}
+
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                      Linux Driver Configurator                       */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
@@ -433,9 +495,22 @@ void MldConfigV1_CB_OnMessage(bool isError, const char format[], uint16_t vargsC
     vsprintf(outbuf, format, argptr);
     va_end(argptr);
     if (isError)
-        ConsolePrintf(PRIO_ERROR, RED "Driver config error: %s" RESETCOLOR "\r\n", outbuf);
+        ConsolePrintf(PRIO_ERROR, RED "Driver V1 config error: %s" RESETCOLOR "\r\n", outbuf);
     else
-        ConsolePrintf(PRIO_LOW, "Driver config: %s\r\n", outbuf);
+        ConsolePrintf(PRIO_LOW, "Driver V1 config: %s\r\n", outbuf);
+}
+
+void MldConfigV2_CB_OnMessage(bool isError, const char format[], uint16_t vargsCnt, ...)
+{
+    va_list argptr;
+    char outbuf[300];
+    va_start(argptr, vargsCnt);
+    vsprintf(outbuf, format, argptr);
+    va_end(argptr);
+    if (isError)
+        ConsolePrintf(PRIO_ERROR, RED "Driver V2 config error: %s" RESETCOLOR "\r\n", outbuf);
+    else
+        ConsolePrintf(PRIO_LOW, "Driver V2 config: %s\r\n", outbuf);
 }
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
