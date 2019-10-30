@@ -150,13 +150,13 @@ static char *ExtendControlCdevName(char *out, char * in)
     if (NULL == out || NULL == in)
         return NULL;
     strncpy(out, EXTENSION, sizeof(EXTENSION));
+    strncat(out, in, 32);
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(out, m.descriptionFilter, VAL_LEN);
         strncat(out, "-", 1);
+        strncat(out, m.descriptionFilter, VAL_LEN);
     }
     ReplaceCharsInString(out, " .:;|!", '_');
-    strncat(out, in, 32);
     return out;
 }
 
