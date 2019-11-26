@@ -50,7 +50,7 @@
 #define YELLOW     "\033[1;33m"
 #define BLUE       "\033[0;34m"
 
-#define STR_BUF_LEN (200)
+#define STR_BUF_LEN (384)
 #define STR_RES_LEN (60)
 
 struct ResourceList

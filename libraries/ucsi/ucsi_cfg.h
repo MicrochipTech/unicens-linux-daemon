@@ -33,6 +33,7 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                  USER ADJUSTABLE VALUES                              */
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
 #ifdef DEBUG
 #define ENABLE_INIC_WATCHDOG    (false)
 #else
@@ -178,10 +179,7 @@ typedef struct
  */
 typedef struct
 {
-    uint16_t msgId;
-    uint16_t targetAddress;
-    uint8_t pPayload[AMS_MSG_MAX_LEN];
-    uint32_t payloadLen;
+    Ucs_AmsTx_Msg_t *msg;
 } UnicensCmdSendAmsMessage_t;
 
 /**

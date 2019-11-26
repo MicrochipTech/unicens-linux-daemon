@@ -161,7 +161,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
             if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
             {
                 nanosleep(&t, NULL);
-                while(!MldConfigV1_GetControlCdevName(m.controlTxCdev, m.controlRxCdev))
+                while(!MldConfigV1_GetControlCdevName(m.controlTxCdev, m.controlRxCdev, sizeof(m.controlTxCdev)))
                 {
                     ConsolePrintf(PRIO_ERROR, YELLOW "Wait for INICs control channel to appear" RESETCOLOR "\r\n");
                     nanosleep(&t, NULL);
@@ -181,7 +181,7 @@ bool TaskUnicens_Init(TaskUnicens_t *pVar)
             if (NULL == pVar->controlRxCdev && NULL == pVar->controlTxCdev)
             {
                 nanosleep(&t, NULL);
-                while(!MldConfigV2_GetControlCdevName(m.controlTxCdev, m.controlRxCdev))
+                while(!MldConfigV2_GetControlCdevName(m.controlTxCdev, m.controlRxCdev, sizeof(m.controlTxCdev)))
                 {
                     ConsolePrintf(PRIO_ERROR, YELLOW "Wait for INICs control channel to appear" RESETCOLOR "\r\n");
                     nanosleep(&t, NULL);

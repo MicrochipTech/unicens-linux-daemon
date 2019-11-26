@@ -123,6 +123,7 @@ static uint8_t ProgrammingGetNodeCount(UCSI_Data_t *my);
 static uint16_t BuildIdentString(Ucs_IdentString_t *ident_string, uint8_t data[]);
 static uint16_t CalcCCITT16(uint8_t data[], uint16_t length, uint16_t start_value);
 static uint16_t CalcCCITT16Step(uint16_t crc, uint8_t value);
+static void OnNetworkAlive(Ucs_Network_AliveStatus_t *result_ptr, void *user_ptr);
 
 /************************************************************************/
 /* Public Function Implementations                                      */
@@ -194,6 +195,32 @@ bool UCSI_RunCableDiagnosis(UCSI_Data_t *my)
     e = (UnicensCmdEntry_t *)RB_GetWritePtr(&my->rb);
     if (NULL == e) return false;
     my->supvShallMode = UCS_SUPV_MODE_DIAGNOSIS;
+    e->cmd = UnicensCmd_SupvSetMode;
+    e->val.SupvMode.supvMode = UCS_SUPV_MODE_INACTIVE;
+    return EnqueueCommand(my, e);
+}
+
+bool UCSI_RunFallbackMode(UCSI_Data_t *my)
+{
+    UnicensCmdEntry_t *e;
+    assert(MAGIC == my->magic);
+    if (NULL == my) return false;
+    e = (UnicensCmdEntry_t *)RB_GetWritePtr(&my->rb);
+    if (NULL == e) return false;
+    my->supvShallMode = UCS_SUPV_MODE_FALLBACK;
+    e->cmd = UnicensCmd_SupvSetMode;
+    e->val.SupvMode.supvMode = UCS_SUPV_MODE_INACTIVE;
+    return EnqueueCommand(my, e);
+}
+
+bool UCSI_ShutdownNetwork(UCSI_Data_t *my)
+{
+    UnicensCmdEntry_t *e;
+    assert(MAGIC == my->magic);
+    if (NULL == my) return false;
+    e = (UnicensCmdEntry_t *)RB_GetWritePtr(&my->rb);
+    if (NULL == e) return false;
+    my->supvShallMode = UCS_SUPV_MODE_INACTIVE;
     e->cmd = UnicensCmd_SupvSetMode;
     e->val.SupvMode.supvMode = UCS_SUPV_MODE_INACTIVE;
     return EnqueueCommand(my, e);
@@ -375,33 +402,17 @@ void UCSI_Service(UCSI_Data_t *my)
 #if ENABLE_AMS_LIB
         case UnicensCmd_SendAmsMessage:
         {
-            Ucs_AmsTx_Msg_t *msg;
-            msg = Ucs_AmsTx_AllocMsg(my->unicens, e->val.SendAms.payloadLen);
-            if (NULL == msg)
-            {
-                /* Try again later */
-                popEntry = false;
-                break;
-            }
-            if (0 != e->val.SendAms.payloadLen)
-            {
-                assert(NULL != msg->data_ptr);
-                memcpy(msg->data_ptr, e->val.SendAms.pPayload, e->val.SendAms.payloadLen);
-            }
-            msg->custom_info_ptr = NULL;
-            msg->data_size = e->val.SendAms.payloadLen;
-            msg->destination_address = e->val.SendAms.targetAddress;
-            msg->llrbc = 10;
-            msg->msg_id = e->val.SendAms.msgId;
+            Ucs_AmsTx_Msg_t *msg = e->val.SendAms.msg;
+            assert(NULL != msg);
             if (UCS_RET_SUCCESS == Ucs_AmsTx_SendMsg(my->unicens, msg, OnUcsAmsWrite))
             {
                 popEntry = false;
             }
             else
             {
-                Ucs_AmsTx_FreeUnusedMsg(my->unicens, msg);
                 UCSI_CB_OnUserMessage(my->tag, UCSI_MsgError, "Ucs_AmsTx_SendMsg failed", 0);
-                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_SendAmsMessage, false, e->val.SendAms.targetAddress);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_SendAmsMessage, false, msg->destination_address);
+                Ucs_AmsTx_FreeUnusedMsg(my->unicens, msg);
             }
             break;
         }
@@ -462,22 +473,35 @@ void UCSI_Timeout(UCSI_Data_t *my)
     }
 }
 
-bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen)
+Ucs_AmsTx_Msg_t *UCSI_GetAmsTxBuffer(UCSI_Data_t *my, uint32_t payloadLen)
+{
+#if ENABLE_AMS_LIB
+    assert(MAGIC == my->magic);
+    if (NULL == my) return NULL;
+    Ucs_AmsTx_Msg_t *msg;
+    msg = Ucs_AmsTx_AllocMsg(my->unicens, payloadLen);
+    if (NULL == msg)
+        return NULL;
+    msg->custom_info_ptr = NULL;
+    msg->data_size = payloadLen;
+    return msg;
+#else
+    return false;
+#endif
+}
+
+bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress, Ucs_AmsTx_Msg_t *msg)
 {
 #if ENABLE_AMS_LIB
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
-    if (NULL == my) return false;
-    if (payloadLen > AMS_MSG_MAX_LEN)
-    {
-        UCSI_CB_OnUserMessage(my->tag, UCSI_MsgUrgent, "SendAms was called with payload length=%d, allowed is=%d", 2, payloadLen, AMS_MSG_MAX_LEN);
-        return false;
-    }
+    if (NULL == my || NULL == msg) return false;
+    msg->custom_info_ptr = NULL;
+    msg->destination_address = targetAddress;
+    msg->llrbc = 10;
+    msg->msg_id = msgId;
     entry.cmd = UnicensCmd_SendAmsMessage;
-    entry.val.SendAms.msgId = msgId;
-    entry.val.SendAms.targetAddress = targetAddress;
-    entry.val.SendAms.payloadLen = payloadLen;
-    memcpy(entry.val.SendAms.pPayload, pPayload, payloadLen);
+    entry.val.SendAms.msg = msg;
     return EnqueueCommand(my, &entry);
 #else
     return false;
@@ -657,7 +681,7 @@ static void OnCommandExecuted(UCSI_Data_t *my, UnicensCmd_t cmd, bool success)
             break;
 #if ENABLE_AMS_LIB
         case UnicensCmd_SendAmsMessage:
-                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.SendAms.targetAddress);
+                UCSI_CB_OnCommandResult(my->tag, cmd, success, e->val.SendAms.msg->destination_address);
             break;
 #endif
         case UnicensCmd_PacketFilterMode:
@@ -1026,8 +1050,9 @@ static void OnUcsInitResult(Ucs_InitResult_t result, void *user_ptr)
     assert(MAGIC == my->magic);
     my->initialized = (UCS_INIT_RES_SUCCESS == result);
     OnCommandExecuted(my, UnicensCmd_Init, (UCS_INIT_RES_SUCCESS == result));
-    if (!my->initialized)
-    {
+    if (my->initialized) {
+        Ucs_Network_RegisterAliveCb(my->unicens, OnNetworkAlive);
+    } else {
         UCSI_CB_OnUserMessage(my->tag, UCSI_MsgError, "UcsInitResult reported error (0x%X), restarting...", 1, result);
         e.cmd = UnicensCmd_Init;
         e.val.Init.init_ptr = &my->uniInitData;
@@ -1144,7 +1169,7 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
     OnCommandExecuted(my, UnicensCmd_I2CWrite, (UCS_I2C_RES_SUCCESS == result.code));
-    if ((my->currentCmd->cmd == UnicensCmd_I2CWrite) && (my->currentCmd->val.I2CWrite.result_fptr)) {
+    if ((NULL != my->currentCmd) && (my->currentCmd->cmd == UnicensCmd_I2CWrite) && (my->currentCmd->val.I2CWrite.result_fptr)) {
         my->currentCmd->val.I2CWrite.result_fptr(&result.code, my->currentCmd->val.I2CWrite.request_ptr);
     } else {
         if (UCS_I2C_RES_SUCCESS != result.code)
@@ -1294,11 +1319,11 @@ static void OnHdxReport(Ucs_Hdx_Report_t *result, void *user_ptr)
             assert(false);
             break;
     }
-    
+
     if (result->signature_ptr) {
         uint16_t nodeAddr = result->signature_ptr->node_address;
         uint16_t posAddr = result->signature_ptr->node_pos_addr;
-        snprintf(m_traceBuffer, sizeof(m_traceBuffer), "HalfDuplex Report code='%s', result=0x%X pos=0x%X nodeAddr=0x%X posAddr=0x%X", 
+        snprintf(m_traceBuffer, sizeof(m_traceBuffer), "HalfDuplex Report code='%s', result=0x%X pos=0x%X nodeAddr=0x%X posAddr=0x%X",
              pCodeString, result->cable_diag_result, result->position, nodeAddr, posAddr);
         if (result->position <= MAX_NODES) {
             my->cableResult[result->position - 1] = nodeAddr;
@@ -1306,7 +1331,7 @@ static void OnHdxReport(Ucs_Hdx_Report_t *result, void *user_ptr)
     } else {
         uint8_t i = 0;
         uint8_t len = 0;
-        snprintf(m_traceBuffer, sizeof(m_traceBuffer), "HalfDuplex Report code='%s', result=0x%X pos=0x%X", 
+        snprintf(m_traceBuffer, sizeof(m_traceBuffer), "HalfDuplex Report code='%s', result=0x%X pos=0x%X",
              pCodeString, result->cable_diag_result, result->position);
         for (i = 0; i < MAX_NODES; i++) {
             if (my->cableResult[i]) {
@@ -1324,11 +1349,9 @@ static void OnHdxReport(Ucs_Hdx_Report_t *result, void *user_ptr)
 
 static void OnUcsProgramLocalNode(Ucs_Signature_t *signature_ptr, Ucs_Prg_Command_t **program_pptr, Ucs_Prg_ReportCb_t *result_fptr, void *user_ptr)
 {
-    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
-    assert(MAGIC == my->magic);
-    signature_ptr = signature_ptr;
-
     /* Currently not implemented */
+    user_ptr = user_ptr;
+    signature_ptr = signature_ptr;
     program_pptr = NULL;
     result_fptr = NULL;
     user_ptr = NULL;
@@ -1435,7 +1458,7 @@ static void ProgrammingStoreSignature(UCSI_Data_t *my, const Ucs_Signature_t *si
                 return;
             }
             leaveProgrammingMode = false;
-            UCSI_CB_OnUserMessage(my->tag, UCSI_MsgUrgent, "Programming nodePos=0x%X, node address 0x%X change to 0x%X, mac %04X%04X%04X change to %04X%04X%04X", 9, 
+            UCSI_CB_OnUserMessage(my->tag, UCSI_MsgUrgent, "Programming nodePos=0x%X, node address 0x%X change to 0x%X, mac %04X%04X%04X change to %04X%04X%04X", 9,
                 nodeToBeFlashed->node_pos_addr,
                 nodeToBeFlashed->node_address,
                 newIdentString.node_address,
@@ -1538,6 +1561,17 @@ static uint16_t CalcCCITT16Step(uint16_t crc, uint8_t value)
    crc_hi = (value ^ ((value >> 5) & 0x7U)) & 0xFFU;
 
    return (uint16_t)(((uint16_t)((uint16_t)crc_hi << 8) & (uint16_t)0xFF00U) | (uint16_t)((uint16_t)crc_lo & (uint16_t)0xFFU));
+}
+
+static void OnNetworkAlive(Ucs_Network_AliveStatus_t *result, void *user_ptr)
+{
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(result);
+    assert(MAGIC == my->magic);
+    if (!result)
+        return;
+    snprintf(m_traceBuffer, sizeof(m_traceBuffer), "On alive message, welcomed=%d, status=0x%X, nodeAddr=0x%X", result->welcomed, result->alive_status, result->signature.node_address);
+    UCSI_CB_OnUserMessage(my->tag, true, m_traceBuffer, 0);
 }
 
 /************************************************************************/

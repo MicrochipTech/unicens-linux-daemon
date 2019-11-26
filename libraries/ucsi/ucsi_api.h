@@ -57,10 +57,28 @@ void UCSI_Init(UCSI_Data_t *pPriv, void *pTag, bool debugLocalNode);
  * \brief Executes cable diagnosis tests
  *
  * \param pPriv - private data section of this instance
- * 
+ *
  * \return true, cable diagnosis job is enqueued in to the job list. false, operation failed.
  */
 bool UCSI_RunCableDiagnosis(UCSI_Data_t *pPriv);
+
+/**
+ * \brief Starts the network fallback mode.
+ *
+ * \param pPriv - private data section of this instance
+ *
+ * \return true, fallback mode job is enqueued in to the job list. false, operation failed.
+ */
+bool UCSI_RunFallbackMode(UCSI_Data_t *pPriv);
+
+/**
+ * \brief Shutdown the network. No communication or streaming will be possible.
+ *
+ * \param pPriv - private data section of this instance
+ *
+ * \return true, network shutdown job is enqueued in to the job list. false, operation failed.
+ */
+bool UCSI_ShutdownNetwork(UCSI_Data_t *pPriv);
 
 /**
  * \brief Executes the given configuration. If already started, all
@@ -135,19 +153,30 @@ void UCSI_Service(UCSI_Data_t *pPriv);
 void UCSI_Timeout(UCSI_Data_t *pPriv);
 
 /**
+ * \brief Gets and AMS buffer to store the payload
+ *
+ * \note After filling the payload, call UCSI_SendAmsMessage and pass the filled buffer
+ *
+ * \param pPriv - private data section of this instance
+ * \param payloadLen - The length of the AMS payload
+ *
+ * \return If successful pointer to the AMS buffer. NULL otherwise.
+ */
+Ucs_AmsTx_Msg_t *UCSI_GetAmsTxBuffer(UCSI_Data_t *pPriv, uint32_t payloadLen);
+
+/**
  * \brief Sends an AMS message to the control channel
  *
- * \note Call this function only from single context (not from ISR)
+ * \note First get the buffer with the UCSI_GetAmsTxBuffer function.
  *
  * \param pPriv - private data section of this instance
  * \param msgId - The AMS message id
  * \param targetAddress - The node / group target address
- * \param pPayload - The AMS payload to be sent
- * \param payloadLen - The length of the AMS payload
+ * \param msg - The filled AMS buffer
  *
  * \return true, if operation was successful. false if the message could not be sent.
  */
-bool UCSI_SendAmsMessage(UCSI_Data_t *pPriv, uint16_t msgId, uint16_t targetAddress, uint8_t *pPayload, uint32_t payloadLen);
+bool UCSI_SendAmsMessage(UCSI_Data_t *my, uint16_t msgId, uint16_t targetAddress, Ucs_AmsTx_Msg_t *msg);
 
 /**
  * \brief Gets the queued AMS message from UNICENS stack
@@ -294,7 +323,7 @@ extern void UCSI_CB_OnNetworkState(void *pTag, bool isAvailable, uint16_t packet
 
 /**
  * \brief Enumeration specifying the urgency of the message
- */ 
+ */
 typedef enum
 {
     UCSI_MsgDebug,
@@ -422,7 +451,7 @@ extern void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, 
  * \param pNodeAddrArray - Array of integers holding the found node addresses (until the cable got broken)
  * \param arrayLen - The length of pNodeAddrArray
  * \param pNode - Reference to the node structure found in nodes list. Maybe NULL.
- * 
+ *
  * \note The node array is sorted. So first the root node comes first, first slave, second slave and so on.
  */
 extern void UCSI_CB_OnCableDiagnosisResult(void *pTag, uint16_t *pNodeAddrArray, uint8_t arrayLen);
