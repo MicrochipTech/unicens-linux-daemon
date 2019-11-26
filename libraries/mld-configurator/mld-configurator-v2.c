@@ -40,15 +40,16 @@
 #include <sys/stat.h>
 #include "mld-configurator-v2.h"
 
-#define PATH_LEN    (80)
-#define VAL_LEN     (40)
+#define PATH_LEN        (384)
+#define VAL_SHORT_LEN   (32)
+#define VAL_BIG_LEN     (128)
 
 struct MldConfigLocal
 {
     DriverInformation_t **pConfig;
-    char descriptionFilter[VAL_LEN];
-    char ctxName[VAL_LEN];
-    char crxName[VAL_LEN];
+    char descriptionFilter[VAL_SHORT_LEN];
+    char ctxName[VAL_SHORT_LEN];
+    char crxName[VAL_SHORT_LEN];
     pthread_t workerThread;
     uint16_t driverSize;
     uint16_t localNodeAddress;
@@ -71,7 +72,7 @@ static const char *AIM_V4L = ("most_video");
 static const char *AIM_NETWORK = ("most_net");
 static const char *ALSA_CARD_NAME = ("card");
 static void *Worker(void *tag);
-static char *ExtendControlCdevName(char *out, char * in);
+static char *ExtendControlCdevName(char *out, char * in, uint32_t outLen);
 static bool CreateFolder(const char *pFullPath);
 static bool DoesFileExist(const char *pPathToFile);
 static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLen);
@@ -115,21 +116,21 @@ void MldConfigV2_Stop()
     m.started = false;
 }
 
-bool MldConfigV2_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx)
+bool MldConfigV2_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx, uint32_t maxCharLen)
 {
     if (NULL == pControlCdevTx || NULL == pControlCdevRx)
         return false;
-    if (!DoesFileExist(ExtendControlCdevName(pControlCdevTx, "tx")))
+    if (!DoesFileExist(ExtendControlCdevName(pControlCdevTx, "tx", maxCharLen)))
         return false;
-    if (!DoesFileExist(ExtendControlCdevName(pControlCdevRx, "rx")))
+    if (!DoesFileExist(ExtendControlCdevName(pControlCdevRx, "rx", maxCharLen)))
         return false;
     return true;
 }
 
 static void *Worker(void *tag)
 {
-    char intf[VAL_LEN];
-    char descr[VAL_LEN];
+    char intf[VAL_SHORT_LEN];
+    char descr[VAL_SHORT_LEN];
     while(m.allowRun)
     {
         intf[0] = '\0';
@@ -144,17 +145,17 @@ static void *Worker(void *tag)
     return tag;
 }
 
-static char *ExtendControlCdevName(char *out, char * in)
+static char *ExtendControlCdevName(char *out, char * in, uint32_t outLen)
 {
     static const char EXTENSION[] = "/dev/inic-control-";
     if (NULL == out || NULL == in)
         return NULL;
-    strncpy(out, EXTENSION, sizeof(EXTENSION));
-    strncat(out, in, 32);
+    strncpy(out, EXTENSION, outLen);
+    strncat(out, in, outLen - strlen(out));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(out, "-", 1);
-        strncat(out, m.descriptionFilter, VAL_LEN);
+        strncat(out, "-", outLen - strlen(out));
+        strncat(out, m.descriptionFilter, outLen - strlen(out));
     }
     ReplaceCharsInString(out, " .:;|!", '_');
     return out;
@@ -299,7 +300,7 @@ static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, cha
 static void CheckDriverSettings(const char* channelName, const char* deviceName, const char *fullPath, const char *intf, const char *descr)
 {
     uint16_t i;
-    char val[VAL_LEN];
+    char val[VAL_SHORT_LEN];
     char path[PATH_LEN];
     DriverPhysicalLayer_t curPhy = DriverPhyUnknown;
     DriverInformation_t *drv = NULL;

@@ -40,8 +40,9 @@
 #include <sys/stat.h>
 #include "mld-configurator-v1.h"
 
-#define PATH_LEN    (80)
-#define VAL_LEN     (40)
+#define PATH_LEN        (384)
+#define VAL_SHORT_LEN   (32)
+#define VAL_BIG_LEN     (128)
 
 struct MldConfigLocal
 {
@@ -52,15 +53,15 @@ struct MldConfigLocal
     uint16_t localNodeAddress;
     uint16_t pollTime;
     pthread_t workerThread;
-    char descriptionFilter[VAL_LEN];
-    char ctxName[VAL_LEN];
-    char crxName[VAL_LEN];
+    char descriptionFilter[VAL_SHORT_LEN];
+    char ctxName[VAL_SHORT_LEN];
+    char crxName[VAL_SHORT_LEN];
 };
 
 static struct MldConfigLocal m = { 0 };
 static const char *SYS_FS_PATH = ("/sys/class/most/mostcore/devices");
 static void *Worker(void *tag);
-static char *ExtendControlCdevName(char *out, char * in);
+static char *ExtendControlCdevName(char *out, char * in, uint32_t outLen);
 static bool DoesFileExist(const char *pPathToFile);
 static bool ReadFromFile(const char *pFileName, char *pString, uint16_t bufferLen);
 static bool WriteCharactersToFile( const char *path, const char *pFileName, const char *pString );
@@ -106,21 +107,21 @@ void MldConfigV1_Stop()
     m.started = false;
 }
 
-bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx)
+bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx, uint32_t maxCharLen)
 {
     if (NULL == pControlCdevTx || NULL == pControlCdevRx)
         return false;
-    if (!DoesFileExist(ExtendControlCdevName(pControlCdevTx, "tx")))
+    if (!DoesFileExist(ExtendControlCdevName(pControlCdevTx, "tx", maxCharLen)))
         return false;
-    if (!DoesFileExist(ExtendControlCdevName(pControlCdevRx, "rx")))
+    if (!DoesFileExist(ExtendControlCdevName(pControlCdevRx, "rx", maxCharLen)))
         return false;
     return true;
 }
 
 static void *Worker(void *tag)
 {
-    char intf[VAL_LEN];
-    char descr[VAL_LEN];
+    char intf[VAL_SHORT_LEN];
+    char descr[VAL_SHORT_LEN];
     while(m.allowRun)
     {
         intf[0] = '\0';
@@ -131,17 +132,17 @@ static void *Worker(void *tag)
     return tag;
 }
 
-static char *ExtendControlCdevName(char *out, char * in)
+static char *ExtendControlCdevName(char *out, char * in, uint32_t outLen)
 {
     static const char EXTENSION[] = "/dev/inic-control-";
     if (NULL == out || NULL == in)
         return NULL;
-    strncpy(out, EXTENSION, sizeof(EXTENSION));
-    strncat(out, in, 32);
+    strncpy(out, EXTENSION, outLen);
+    strncat(out, in, outLen - strlen(out));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(out, "-", 1);
-        strncat(out, m.descriptionFilter, VAL_LEN);
+        strncat(out, "-", outLen - strlen(out));
+        strncat(out, m.descriptionFilter, outLen - strlen(out));
     }
     ReplaceCharsInString(out, " .:;|!", '_');
     return out;
@@ -265,7 +266,7 @@ static void IterateDirectory(const char *path, char *intf, uint32_t intfLen, cha
 static void CheckDriverSettings(const char* channelName, const char* deviceName, const char *fullPath, const char *intf, const char *descr)
 {
     uint16_t i;
-    char val[VAL_LEN];
+    char val[VAL_SHORT_LEN];
     char path[PATH_LEN];
     DriverPhysicalLayer_t curPhy = DriverPhyUnknown;
     DriverInformation_t *drv = NULL;
@@ -432,15 +433,16 @@ static bool ConfigureCdev(const char *fullPath, DriverInformation_t *driver)
 
 static bool LinkCdev(const char* channelName, const char* deviceName, DriverInformation_t *driver)
 {
-    char val[VAL_LEN];
-    char aimName[VAL_LEN] = { 0 };
+    bool success = false;
+    char val[VAL_BIG_LEN];
+    char aimName[VAL_SHORT_LEN] = { 0 };
     LinuxDriverCdev_t *drv = &driver->drv.LinuxCdev;
     if (NULL != drv->aimName)
         strncpy(aimName, drv->aimName, sizeof(aimName));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
+        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_SHORT_LEN) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_SHORT_LEN) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
@@ -475,15 +477,15 @@ static bool ConfigureAlsa(const char *fullPath, DriverInformation_t *driver)
 
 static bool LinkAlsa(const char* channelName, const char* deviceName, DriverInformation_t *driver)
 {
-    char val[VAL_LEN];
-    char aimName[VAL_LEN] = { 0 };
+    char val[VAL_BIG_LEN];
+    char aimName[VAL_SHORT_LEN] = { 0 };
     LinuxDriverAlsa_t *drv = &driver->drv.LinuxAlsa;
     if (NULL != drv->aimName)
         strncpy(aimName, drv->aimName, sizeof(aimName));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
+        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_SHORT_LEN) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_SHORT_LEN) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s.%dx%d", deviceName, channelName, 
@@ -522,15 +524,15 @@ static bool ConfigureV4L2(const char *fullPath, DriverInformation_t *driver)
 
 static bool LinkV4L2(const char* channelName, const char* deviceName, DriverInformation_t *driver)
 {
-    char val[VAL_LEN];
-    char aimName[VAL_LEN] = { 0 };
+    char val[VAL_BIG_LEN];
+    char aimName[VAL_SHORT_LEN] = { 0 };
     LinuxDriverV4l2_t *drv = &driver->drv.LinuxV4l2;
     if (NULL != drv->aimName)
         strncpy(aimName, drv->aimName, sizeof(aimName));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
+        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_SHORT_LEN) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_SHORT_LEN) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);
@@ -556,15 +558,15 @@ static bool ConfigureNetwork(const char *fullPath, DriverInformation_t *driver)
 
 static bool LinkNetwork(const char* channelName, const char* deviceName, DriverInformation_t *driver)
 {
-    char val[VAL_LEN];
-    char aimName[VAL_LEN] = { 0 };
+    char val[VAL_BIG_LEN];
+    char aimName[VAL_SHORT_LEN] = { 0 };
     LinuxDriverNetwork_t *drv = &driver->drv.LinuxNetwork;
     if (NULL != drv->aimName)
         strncpy(aimName, drv->aimName, sizeof(aimName));
     if ('\0' != m.descriptionFilter[0])
     {
-        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
-        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_LEN) - 1));
+        strncat(aimName, "-", (sizeof(aimName) - strnlen(aimName, VAL_SHORT_LEN) - 1));
+        strncat(aimName, m.descriptionFilter, (sizeof(aimName) - strnlen(aimName, VAL_SHORT_LEN) - 1));
     }
     ReplaceCharsInString(aimName, " .:;/|!", '_');
     snprintf(val, sizeof(val), "%s:%s:inic-%s", deviceName, channelName, aimName);

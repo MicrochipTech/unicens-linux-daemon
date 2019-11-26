@@ -67,9 +67,10 @@ void MldConfigV1_Stop();
  *
  * \param pControlCdevTx - Zero terminated string containing path to control TX CDEV or NULL if not found
  * \param pControlCdevRx - Zero terminated string containing path to control RX CDEV or NULL if not found
+ * \param maxCharLen - Limits the amount of character written to pControlCdevTx and pControlCdevRx
  * \return true if both devices are available. false, otherwise, then pControlCdevTx and pControlCdevRx are invalid.
  */
-bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx);
+bool MldConfigV1_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx, uint32_t maxCharLen);
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                        CALLBACK SECTION                              */

@@ -69,7 +69,7 @@ void MldConfigV2_Stop();
  * \param pControlCdevRx - Zero terminated string containing path to control RX CDEV or NULL if not found
  * \return true if both devices are available. false, otherwise, then pControlCdevTx and pControlCdevRx are invalid.
  */
-bool MldConfigV2_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx);
+bool MldConfigV2_GetControlCdevName(char *pControlCdevTx, char *pControlCdevRx, uint32_t maxCharLen);
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 /*                        CALLBACK SECTION                              */
