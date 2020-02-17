@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
 /* UNICENS Daemon (unicensd) main-loop                                                            */
-/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
+/* Copyright 2020, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -40,7 +40,7 @@
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
 /* UNICENS daemon version number */
-#define UNICENSD_VERSION    ("V5.1.1")
+#define UNICENSD_VERSION    "V5.2.0"
 
 /* Character device to INIC control channel */
 #define DEFAULT_CONTROL_CDEV_TX ("/dev/inic-control-tx")
@@ -61,7 +61,12 @@ int main(int argc, char *argv[])
 {
     static TaskUnicens_t taskVars;
     ConsoleSetPrio(PRIO_HIGH);
-    ConsolePrintf(PRIO_HIGH, YELLOW "------|UNICENS daemon %s (BUILD %s %s)|------" RESETCOLOR "\r\n", UNICENSD_VERSION, __DATE__, __TIME__);
+    ConsolePrintf(PRIO_HIGH, BLUE "\r   __  ___   ___________________   _______\r\n" \
+                                  "  / / / / | / /  _/ ____/ ____/ | / / ___/\r\n" \
+                                  " / / / /  |/ // // /   / __/ /  |/ /\\__ \\ \r\n" \
+                                  "/ /_/ / /|  // // /___/ /___/ /|  /___/ / \r\n" \
+                                  "\\____/_/ |_/___/\\____/_____/_/ |_//____/  \r\n   " \
+                             YELLOW UNICENSD_VERSION " (BUILD %s %s)" RESETCOLOR "\r\n", __DATE__, __TIME__);    
     if (!ParseCommandLine(argc, argv, &taskVars))
     {
         ConsolePrintf(PRIO_ERROR, RED "Parsing command line failed" RESETCOLOR "\r\n");
