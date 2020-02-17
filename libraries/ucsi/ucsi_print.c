@@ -131,7 +131,6 @@ void UCSIPrint_Service(uint32_t timestamp)
         return;
     if (timestamp >= m.timeOut)
     {
-        UCSIPrint_CB_OnUserMessage(m.tag, RED "UCSI-Watchdog:Max timeout reached" RESETCOLOR);
         exec = true;
     }
     else if (timestamp >= m.nextService)
@@ -339,6 +338,9 @@ static void PrintTable(void)
         }
         if (NodeState_Available == srcState && NodeState_Available == snkState)
         {
+            if (!inJobs) {
+                shallActive = false; /* Suppress red marks on fallback routes */
+            }
             if (shallActive == isActive)
                 routeAvail = GREEN "^";
             else
@@ -516,7 +518,7 @@ static bool GetRouteState(uint16_t routeId, bool *pIsActive, uint16_t *pConLabel
     assert(NULL != pIsActive);
     assert(NULL != pConLabel);
     /* Find existing entry */
-    for (i = 0; i < UCSI_PRINT_MAX_NODES; i++)
+    for (i = 0; i < UCSI_PRINT_MAX_RESOURCES; i++)
     {
         if (m.cList[i].isValid && routeId == m.cList[i].routeId)
         {
