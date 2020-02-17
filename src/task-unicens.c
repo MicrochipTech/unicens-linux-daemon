@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
-/* UNICENS Daemon Task Implementation                                                             */
-/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
+/* Task for UNICENS integration                                                                   */
+/* Copyright 2019, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
@@ -460,16 +460,33 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t nodeAddress, uint8_t gpioPin
 void UCSI_CB_OnMgrReport(void *pTag, Ucs_Supv_Report_t code, Ucs_Signature_t *signature, Ucs_Rm_Node_t *pNode)
 {
     pTag = pTag;
-    if (m.promiscuousMode && NULL != signature && UCS_SUPV_REP_AVAILABLE == code) 
-    {
-        UCSI_EnablePromiscuousMode(&m.unicens, signature->node_address, true);
+    if (NULL != signature && UCS_SUPV_REP_AVAILABLE == code) {
+        ConsolePrintf(PRIO_MEDIUM, GREEN "*********************************************\r\n");
+        ConsolePrintf(PRIO_MEDIUM, "* NODE SIGNATURE:\r\n");
+        ConsolePrintf(PRIO_MEDIUM, "* Node Addr=0x%X\r\n", signature->node_address);
+        ConsolePrintf(PRIO_MEDIUM, "* Group Addr=0x%X\r\n", signature->group_address);
+        ConsolePrintf(PRIO_MEDIUM, "* MAC Addr=0x%04X%04X%04X\r\n", signature->mac_47_32, signature->mac_31_16, signature->mac_15_0);
+        ConsolePrintf(PRIO_MEDIUM, "* Node Pos Addr=0x%X\r\n", signature->node_pos_addr);
+        ConsolePrintf(PRIO_MEDIUM, "* Diagosis Id=0x%X\r\n", signature->diagnosis_id);
+        ConsolePrintf(PRIO_MEDIUM, "* Num Ports=%d\r\n", signature->num_ports);
+        ConsolePrintf(PRIO_MEDIUM, "* Chip ID=0x%X\r\n", signature->chip_id);
+        ConsolePrintf(PRIO_MEDIUM, "* Firmware=%d.%d.%d.%ld\r\n", signature->fw_major, signature->fw_minor, signature->fw_release, signature->fw_build);
+        ConsolePrintf(PRIO_MEDIUM, "* CS=%d.%d.%d\r\n", signature->cs_major, signature->cs_minor, signature->cs_release);
+        ConsolePrintf(PRIO_MEDIUM, "*********************************************" RESETCOLOR "\r\n");
+
+        if (m.promiscuousMode) {
+            uint16_t nodeAddr = signature->node_address;
+            if (0x200 != nodeAddr && 0x2B0 != nodeAddr) {
+                UCSI_EnablePromiscuousMode(&m.unicens, nodeAddr, true);
+            }
+        }
     }
 }
 
 void UCSI_CB_OnI2CRead(void *pTag, bool success, uint16_t targetAddress, uint8_t slaveAddr, const uint8_t *pBuffer, uint32_t bufLen)
 {
     if(!success)
-         ConsolePrintf(PRIO_ERROR, "I2C read failed for node=0x%X slave=0x%X\r\n" , targetAddress, slaveAddr);
+         ConsolePrintf(PRIO_ERROR, RED "I2C read failed for node=0x%X slave=0x%X" RESETCOLOR "\r\n", targetAddress, slaveAddr);
 }
 
 void UCSI_CB_OnCableDiagnosisResult(void *pTag, uint16_t *pNodeAddrArray, uint8_t arrayLen)

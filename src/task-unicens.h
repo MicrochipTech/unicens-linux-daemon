@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------------------*/
-/* UNICENS Daemon Task Implementation                                                             */
-/* Copyright 2018, Microchip Technology Inc. and its subsidiaries.                                */
+/* Task for UNICENS integration                                                                   */
+/* Copyright 2019, Microchip Technology Inc. and its subsidiaries.                                */
 /*                                                                                                */
 /* Redistribution and use in source and binary forms, with or without                             */
 /* modification, are permitted provided that the following conditions are met:                    */
