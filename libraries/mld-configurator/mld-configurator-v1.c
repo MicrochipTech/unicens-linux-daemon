@@ -433,7 +433,6 @@ static bool ConfigureCdev(const char *fullPath, DriverInformation_t *driver)
 
 static bool LinkCdev(const char* channelName, const char* deviceName, DriverInformation_t *driver)
 {
-    bool success = false;
     char val[VAL_BIG_LEN];
     char aimName[VAL_SHORT_LEN] = { 0 };
     LinuxDriverCdev_t *drv = &driver->drv.LinuxCdev;
