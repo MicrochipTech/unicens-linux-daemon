@@ -123,6 +123,7 @@ typedef struct
     Ucs_Xrm_ResObject_t *outSocket;
     struct UcsXmlJobList *jobList;
     Ucs_Xrm_Combiner_t *combiner;
+    Ucs_Xrm_Splitter_t *splitter;
     mxml_node_t *pendingCombinerSockets;
     Ucs_Sync_MuteMode_t muteMode;
     Ucs_Avp_IsocPacketSize_t isocPacketSize;
@@ -1121,10 +1122,12 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
     {
         const char* txt;
         struct NetworkSocketParameters p;
-        /* If there is an combiner stored, add it now into job list (right before Network socket) */
-        if (priv->conData.combiner)
+        /* If there is an combiner or splitter stored, add it now into job list (right before Network socket) */
+        if (priv->conData.combiner) {
             if (!AddJob(jobList, priv->conData.combiner, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
-
+        } else if (priv->conData.splitter) { 
+            targetSock = &priv->conData.splitter->socket_in_obj_ptr;
+        }
         p.list = &priv->objList;
         p.isSource = isSource;
         p.dataType = priv->conData.dataType;
@@ -1152,7 +1155,9 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
             if (!GetUInt16(soc, OFFSET, &priv->conData.syncOffset, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
         }
         if (!GetNetworkSocket((Ucs_Xrm_NetworkSocket_t **)targetSock, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get Network Socket");
-        if (!AddJob(jobList, *targetSock, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
+        if (!AddJob(jobList, *targetSock, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");if (priv->conData.splitter) { 
+            if (!AddJob(jobList, priv->conData.splitter, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
+        }
         break;
     }
     case MSocket_USB:
@@ -1229,28 +1234,36 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
     {
         mxml_node_t *networkSoc;
         struct SplitterParameters p;
+        p.list = &priv->objList;
+        priv->conData.syncOffsetNeeded = true;
+        if (!GetUInt16(soc, BYTES_PER_FRAME, &p.bytesPerFrame, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
         if (isSource)
         {
-            UcsXml_CB_OnError("Splitter can not be used as input socket", 0);
-            RETURN_ASSERT(Parse_XmlError, "Wrong usage of Splitter");
-        }
-        p.list = &priv->objList;
-        if (!GetUInt16(soc, BYTES_PER_FRAME, &p.bytesPerFrame, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-        /* Current input socket will be stored inside splitter
-         * and splitter will become the new input socket */
-        if (!(p.inSoc = priv->conData.inSocket)) RETURN_ASSERT(Parse_XmlError, "Wrong usage of Splitter");
-        if (!GetSplitter((Ucs_Xrm_Splitter_t **)&priv->conData.inSocket, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get Splitter");
-        if (!AddJob(jobList, priv->conData.inSocket, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
-        if (!GetElement(soc->child, NETWORK_SOCKET, false, &networkSoc, true))
-            RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-        priv->conData.syncOffsetNeeded = true;
-
-        while(networkSoc)
-        {
-            struct UcsXmlJobList *jobListCopy = DeepCopyJobList(*jobList, &priv->objList);
-            if (!ParseSocket(networkSoc, false, MSocket_NETWORK, &jobListCopy, priv)) RETURN_ASSERT(Parse_XmlError, "Failed to parse Network Socket");
-            if (!GetElement(networkSoc, NETWORK_SOCKET, false, &networkSoc, false))
-                return Parse_Success; /* Do not break here, otherwise an additional invalid route will be created */
+            /* Splitter is used as SyncConnection Source. 
+             * It will split a big network socket into a smaller socket on a peripherial port of INIC (Stream/USB/MLB) */
+            if (!GetSplitter(&priv->conData.splitter, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get Splitter");
+            priv->conData.inSocket = priv->conData.splitter;
+            if (!GetElement(soc->child, NETWORK_SOCKET, false, &networkSoc, true))
+                RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+            /* Currently only supporting one NetworkSocket */
+            if(networkSoc) {
+                if (!ParseSocket(networkSoc, true, MSocket_NETWORK, jobList, priv)) RETURN_ASSERT(Parse_XmlError, "Failed to parse Network Socket");
+            }
+        } else {
+            /* Current input socket will be stored inside splitter
+             * and splitter will become the new input socket */
+            if (!(p.inSoc = priv->conData.inSocket)) RETURN_ASSERT(Parse_XmlError, "Wrong usage of Splitter");
+            if (!GetSplitter((Ucs_Xrm_Splitter_t **)&priv->conData.inSocket, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get Splitter");
+            if (!AddJob(jobList, priv->conData.inSocket, &priv->objList)) RETURN_ASSERT(Parse_XmlError, "Failed to add job");
+            if (!GetElement(soc->child, NETWORK_SOCKET, false, &networkSoc, true))
+                RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+            while(networkSoc)
+            {
+                struct UcsXmlJobList *jobListCopy = DeepCopyJobList(*jobList, &priv->objList);
+                if (!ParseSocket(networkSoc, false, MSocket_NETWORK, &jobListCopy, priv)) RETURN_ASSERT(Parse_XmlError, "Failed to parse Network Socket");
+                if (!GetElement(networkSoc, NETWORK_SOCKET, false, &networkSoc, false))
+                    return Parse_Success; /* Do not break here, otherwise an additional invalid route will be created */
+            }
         }
         break;
     }
@@ -1264,7 +1277,7 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         }
         p.list = &priv->objList;
         if (!GetUInt16(soc, BYTES_PER_FRAME, &p.bytesPerFrame, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
-        if (!GetCombiner(&priv->conData.combiner, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get combiner");
+        if (!GetCombiner(&priv->conData.combiner, &p)) RETURN_ASSERT(Parse_XmlError, "Can not get Combiner");
         priv->conData.syncOffsetNeeded = true;
         if (!GetElement(soc->child, NETWORK_SOCKET, false, &priv->conData.pendingCombinerSockets, true))
             RETURN_ASSERT(Parse_XmlError, "No Network Socket inside Combiner");
@@ -1333,7 +1346,8 @@ static ParseResult_t ParseSocket(mxml_node_t *soc, bool isSource, MSocketType_t 
         ep = MCalloc(&priv->objList, 1, sizeof(Ucs_Rm_EndPoint_t));
         if (NULL == ep) RETURN_ASSERT(Parse_MemoryError, "calloc returned NULL");
 
-        networkIsInput = (UCS_XRM_RC_TYPE_NW_SOCKET == *((Ucs_Xrm_ResourceType_t *)priv->conData.inSocket));
+        networkIsInput = (UCS_XRM_RC_TYPE_NW_SOCKET == *((Ucs_Xrm_ResourceType_t *)priv->conData.inSocket)) ||
+            (UCS_XRM_RC_TYPE_SPLITTER == *((Ucs_Xrm_ResourceType_t *)priv->conData.inSocket));
         networkIsOutput = (UCS_XRM_RC_TYPE_NW_SOCKET == *((Ucs_Xrm_ResourceType_t *)priv->conData.outSocket));
         if (!networkIsInput && !networkIsOutput)
         {
