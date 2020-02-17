@@ -96,6 +96,7 @@ static void OnUcsInitResult(Ucs_InitResult_t result, void *user_ptr);
 static void OnUcsStopResult(Ucs_StdResult_t result, void *user_ptr);
 static void OnUcsGpioPortCreate(uint16_t node_address, uint16_t gpio_port_handle, Ucs_Gpio_Result_t result, void *user_ptr);
 static void OnUcsGpioPortWrite(uint16_t node_address, uint16_t gpio_port_handle, uint16_t current_state, uint16_t sticky_state, Ucs_Gpio_Result_t result, void *user_ptr);
+static void OnUcsGpioPinMode(uint16_t node_address, uint16_t gpio_port_handle, Ucs_Gpio_PinConfiguration_t pin_cfg_list[], uint8_t list_sz, Ucs_Gpio_Result_t result, void *user_ptr);
 static void OnUcsSupvReport(Ucs_Supv_Report_t code, Ucs_Signature_t *signature_ptr, Ucs_Rm_Node_t *node_ptr, void *user_ptr);
 static void OnUcsNsRun(uint16_t node_address, Ucs_Ns_ResultCode_t result, Ucs_Ns_ErrorInfo_t error_info, void *ucs_user_ptr);
 static void OnUcsAmsRxMsgReceived(void *user_ptr);
@@ -375,9 +376,18 @@ void UCSI_Service(UCSI_Data_t *my)
                 UCSI_CB_OnCommandResult(my->tag, UnicensCmd_GpioWritePort, false, e->val.GpioWritePort.destination);
             }
             break;
+        case UnicensCmd_GpioPortMode:
+            if (UCS_RET_SUCCESS == Ucs_Gpio_SetPinMode(my->unicens, e->val.GpioWritePort.destination, 0x1D00, e->val.GpioPortMode.gpioPinId, e->val.GpioPortMode.mode, OnUcsGpioPinMode))
+                popEntry = false;
+            else
+            {
+                UCSI_CB_OnUserMessage(my->tag, UCSI_MsgError, "UnicensCmd_GpioPortMode failed", 0);
+                UCSI_CB_OnCommandResult(my->tag, UnicensCmd_GpioPortMode, false, e->val.GpioPortMode.destination);
+            }
+            break;
         case UnicensCmd_I2CWrite:
             if (UCS_RET_SUCCESS == Ucs_I2c_WritePort(my->unicens, e->val.I2CWrite.destination, 0x0F00,
-                (e->val.I2CWrite.isBurst ? UCS_I2C_BURST_MODE : UCS_I2C_DEFAULT_MODE), e->val.I2CWrite.blockCount,
+                e->val.I2CWrite.i2cMode, e->val.I2CWrite.blockCount,
                 e->val.I2CWrite.slaveAddr, e->val.I2CWrite.timeout, e->val.I2CWrite.dataLen, e->val.I2CWrite.data, OnUcsI2CWrite))
                 popEntry = false;
             else
@@ -385,7 +395,7 @@ void UCSI_Service(UCSI_Data_t *my)
                 UCSI_CB_OnUserMessage(my->tag, UCSI_MsgError, "Ucs_I2c_WritePort failed", 0);
                 UCSI_CB_OnCommandResult(my->tag, UnicensCmd_I2CWrite, false, e->val.I2CWrite.destination);
                 if (e->val.I2CWrite.result_fptr) {
-                    e->val.I2CWrite.result_fptr(NULL /*processing error*/, e->val.I2CWrite.request_ptr);
+                    e->val.I2CWrite.result_fptr(false, e->val.I2CWrite.i2cMode, e->val.I2CWrite.destination, e->val.I2CWrite.slaveAddr, e->val.I2CWrite.request_ptr);
                 }
             }
             break;
@@ -548,9 +558,9 @@ bool UCSI_SetRouteActive(UCSI_Data_t *my, uint16_t routeId, bool isActive)
     return false;
 }
 
-bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_t blockCount,
+bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, Ucs_I2c_TrMode_t i2cMode, uint8_t blockCount,
     uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData,
-    Ucsi_ResultCb_t result_fptr, void *request_ptr)
+    Ucsi_I2CWriteResultCb_t result_fptr, void *request_ptr)
 {
     UnicensCmdEntry_t entry;
     assert(MAGIC == my->magic);
@@ -562,7 +572,7 @@ bool UCSI_I2CWrite(UCSI_Data_t *my, uint16_t targetAddress, bool isBurst, uint8_
     }
     entry.cmd = UnicensCmd_I2CWrite;
     entry.val.I2CWrite.destination = targetAddress;
-    entry.val.I2CWrite.isBurst = isBurst;
+    entry.val.I2CWrite.i2cMode = i2cMode;
     entry.val.I2CWrite.blockCount = blockCount;
     entry.val.I2CWrite.slaveAddr = slaveAddr;
     entry.val.I2CWrite.timeout = timeout;
@@ -597,6 +607,18 @@ bool UCSI_SetGpioState(UCSI_Data_t *my, uint16_t targetAddress, uint8_t gpioPinI
     entry.val.GpioWritePort.destination = targetAddress;
     entry.val.GpioWritePort.mask = mask;
     entry.val.GpioWritePort.data = isHighState ? mask : 0;
+    return EnqueueCommand(my, &entry);
+}
+
+bool UCSI_SetGpioMode(UCSI_Data_t *my, uint16_t targetAddress, uint8_t gpioPinId, Ucs_Gpio_PinMode_t mode)
+{
+    UnicensCmdEntry_t entry;
+    assert(MAGIC == my->magic);
+    if (NULL == my) return false;
+    entry.cmd = UnicensCmd_GpioPortMode;
+    entry.val.GpioPortMode.destination = targetAddress;
+    entry.val.GpioPortMode.gpioPinId  = gpioPinId;
+    entry.val.GpioPortMode.mode = mode;
     return EnqueueCommand(my, &entry);
 }
 
@@ -1084,6 +1106,13 @@ static void OnUcsGpioPortWrite(uint16_t node_address, uint16_t gpio_port_handle,
     OnCommandExecuted(my, UnicensCmd_GpioWritePort, (UCS_GPIO_RES_SUCCESS == result.code));
 }
 
+static void OnUcsGpioPinMode(uint16_t node_address, uint16_t gpio_port_handle, Ucs_Gpio_PinConfiguration_t pin_cfg_list[], uint8_t list_sz, Ucs_Gpio_Result_t result, void *user_ptr)
+{
+    UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
+    assert(MAGIC == my->magic);
+    OnCommandExecuted(my, UnicensCmd_GpioPortMode, (UCS_GPIO_RES_SUCCESS == result.code));
+}
+
 static void OnUcsSupvReport(Ucs_Supv_Report_t code, Ucs_Signature_t *signature_ptr, Ucs_Rm_Node_t *node_ptr, void *user_ptr)
 {
     uint16_t node_address;
@@ -1168,13 +1197,13 @@ static void OnUcsI2CWrite(uint16_t node_address, uint16_t i2c_port_handle,
 {
     UCSI_Data_t *my = (UCSI_Data_t *)user_ptr;
     assert(MAGIC == my->magic);
-    OnCommandExecuted(my, UnicensCmd_I2CWrite, (UCS_I2C_RES_SUCCESS == result.code));
     if ((NULL != my->currentCmd) && (my->currentCmd->cmd == UnicensCmd_I2CWrite) && (my->currentCmd->val.I2CWrite.result_fptr)) {
-        my->currentCmd->val.I2CWrite.result_fptr(&result.code, my->currentCmd->val.I2CWrite.request_ptr);
+        my->currentCmd->val.I2CWrite.result_fptr(UCS_I2C_RES_SUCCESS == result.code, my->currentCmd->val.I2CWrite.i2cMode, my->currentCmd->val.I2CWrite.destination, my->currentCmd->val.I2CWrite.slaveAddr, my->currentCmd->val.I2CWrite.request_ptr);
     } else {
         if (UCS_I2C_RES_SUCCESS != result.code)
             UCSI_CB_OnUserMessage(my->tag, UCSI_MsgError, "Remote I2C Write to node=0x%X failed", 1, node_address);
     }
+    OnCommandExecuted(my, UnicensCmd_I2CWrite, (UCS_I2C_RES_SUCCESS == result.code));
 }
 
 static void OnUcsI2CRead(uint16_t node_address, uint16_t i2c_port_handle,
@@ -1571,7 +1600,7 @@ static void OnNetworkAlive(Ucs_Network_AliveStatus_t *result, void *user_ptr)
     if (!result)
         return;
     snprintf(m_traceBuffer, sizeof(m_traceBuffer), "On alive message, welcomed=%d, status=0x%X, nodeAddr=0x%X", result->welcomed, result->alive_status, result->signature.node_address);
-    UCSI_CB_OnUserMessage(my->tag, true, m_traceBuffer, 0);
+    UCSI_CB_OnUserMessage(my->tag, UCSI_MsgDebug, m_traceBuffer, 0);
 }
 
 /************************************************************************/
@@ -1616,7 +1645,7 @@ void App_TraceError(void *ucs_user_ptr, const char module_str[], const char entr
     vsnprintf(m_traceBuffer, sizeof(m_traceBuffer), entry_str, argptr);
     va_end(argptr);
     UCSIPrint_UnicensActivity();
-    UCSI_CB_OnUserMessage(tag, true, "Error | %s | %s", 2, module_str, m_traceBuffer);
+    UCSI_CB_OnUserMessage(tag, UCSI_MsgError, "Error | %s | %s", 2, module_str, m_traceBuffer);
 }
 
 void App_TraceInfo(void *ucs_user_ptr, const char module_str[], const char entry_str[], uint16_t vargs_cnt, ...)
@@ -1632,7 +1661,7 @@ void App_TraceInfo(void *ucs_user_ptr, const char module_str[], const char entry
     va_start(argptr, vargs_cnt);
     vsnprintf(m_traceBuffer, sizeof(m_traceBuffer), entry_str, argptr);
     va_end(argptr);
-    UCSI_CB_OnUserMessage(tag, false, "Info | %s | %s", 2, module_str, m_traceBuffer);
+    UCSI_CB_OnUserMessage(tag, UCSI_MsgDebug, "Info | %s | %s", 2, module_str, m_traceBuffer);
 }
 #endif
 

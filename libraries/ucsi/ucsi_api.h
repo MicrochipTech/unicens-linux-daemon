@@ -224,9 +224,9 @@ bool UCSI_SetRouteActive(UCSI_Data_t *pPriv, uint16_t routeId, bool isActive);
  *
  * \param pPriv - private data section of this instance
  * \param targetAddress - targetAddress - The node / group target address
- * \param isBurst - true, write blockCount I2C telegrams dataLen with a single call. false, write a single I2C message.
+ * \param i2cMode - The I2C mode to be used. Can be 'UCS_I2C_DEFAULT_MODE', 'UCS_I2C_REPEATED_MODE', 'UCS_I2C_BURST_MODE'
  * \param blockCount - amount of blocks to write. Only used when isBurst is set to true.
- * \param slaveAddr - The I2C address.
+ * \param slaveAddr - The I2C slave address.
  * \param timeout - Timeout in milliseconds.
  * \param dataLen - Amount of bytes to send via I2C
  * \param pData - The payload to be send.
@@ -235,9 +235,9 @@ bool UCSI_SetRouteActive(UCSI_Data_t *pPriv, uint16_t routeId, bool isActive);
  *
  * \return true, if route command was enqueued to UNICENS.
  */
-bool UCSI_I2CWrite(UCSI_Data_t *pPriv, uint16_t targetAddress, bool isBurst, uint8_t blockCount,
+bool UCSI_I2CWrite(UCSI_Data_t *pPriv, uint16_t targetAddress, Ucs_I2c_TrMode_t i2cMode, uint8_t blockCount,
     uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen, const uint8_t *pData,
-    Ucsi_ResultCb_t result_fptr, void *request_ptr);
+    Ucsi_I2CWriteResultCb_t result_fptr, void *request_ptr);
 
 /**
  * \brief Performs an remote I2C read command.
@@ -255,8 +255,9 @@ bool UCSI_I2CWrite(UCSI_Data_t *pPriv, uint16_t targetAddress, bool isBurst, uin
 bool UCSI_I2CRead(UCSI_Data_t *pPriv, uint16_t targetAddress,
     uint8_t slaveAddr, uint16_t timeout, uint8_t dataLen);
 
+
 /**
- * \brief Enables or disables a route by the given routeId
+ * \brief Sets the state of a given GPIO pin
  * \note Call this function only from single context (not from ISR)
  *
  * \param pPriv - private data section of this instance
@@ -267,6 +268,20 @@ bool UCSI_I2CRead(UCSI_Data_t *pPriv, uint16_t targetAddress,
  * \return true, if GPIO command was enqueued to UNICENS.
  */
 bool UCSI_SetGpioState(UCSI_Data_t *pPriv, uint16_t targetAddress, uint8_t gpioPinId, bool isHighState);
+
+
+/**
+ * \brief Sets the mode and initial state of a given GPIO pin
+ * \note Call this function only from single context (not from ISR)
+ *
+ * \param pPriv - private data section of this instance
+ * \param targetAddress - targetAddress - The node / group target address
+ * \param gpioPinId - INIC GPIO PIN starting with 0 for the first GPIO.
+ * \param mode - The new GPIO mode to be set.
+ *
+ * \return true, if GPIO command was enqueued to UNICENS.
+ */
+bool UCSI_SetGpioMode(UCSI_Data_t *my, uint16_t targetAddress, uint8_t gpioPinId, Ucs_Gpio_PinMode_t mode);
 
 /**
  * \brief Enables Promiscuous Mode on the given Node.

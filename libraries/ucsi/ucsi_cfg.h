@@ -74,11 +74,14 @@ typedef enum
 
 /**
  * \brief Asynchronous callback notifiying a command result
- * \param result_ptr    The asynchronous result of the command
+ * \param success - true, if I2C write command was successful executed. false, otherwise.
+ * \param i2cMode - The I2C mode to be used. Can be 'UCS_I2C_DEFAULT_MODE', 'UCS_I2C_REPEATED_MODE', 'UCS_I2C_BURST_MODE'
+ * \param nodeAddress - Node Address of the INIC sending the update.
+ * \param slaveAddr - The I2C slave address.
  * \param request_ptr   User reference, typically points to the afb_req
  *                      object.
  */
-typedef void (*Ucsi_ResultCb_t)(void *result_ptr, void *request_ptr);
+typedef void (*Ucsi_I2CWriteResultCb_t)(bool success, Ucs_I2c_TrMode_t i2cMode, uint16_t nodeAddress, uint8_t slaveAddr, void *request_ptr);
 
 /**
  * \brief Internal enum for UNICENS Integration
@@ -92,6 +95,7 @@ typedef enum
     UnicensCmd_NsRun,
     UnicensCmd_GpioCreatePort,
     UnicensCmd_GpioWritePort,
+    UnicensCmd_GpioPortMode,
     UnicensCmd_I2CWrite,
     UnicensCmd_I2CRead,
     UnicensCmd_SendAmsMessage,
@@ -153,13 +157,23 @@ typedef struct
 typedef struct
 {
     uint16_t destination;
-    bool isBurst;
+    uint8_t gpioPinId;
+    Ucs_Gpio_PinMode_t mode;
+} UnicensCmdGpioPortMode_t;
+
+/**
+ * \brief Internal struct for UNICENS Integration
+ */
+typedef struct
+{
+    uint16_t destination;
+    Ucs_I2c_TrMode_t i2cMode;
     uint8_t blockCount;
     uint8_t slaveAddr;
     uint16_t timeout;
     uint8_t dataLen;
     uint8_t data[I2C_WRITE_MAX_LEN];
-    Ucsi_ResultCb_t result_fptr;
+    Ucsi_I2CWriteResultCb_t result_fptr;
     void *request_ptr;
 } UnicensCmdI2CWrite_t;
 
@@ -223,6 +237,7 @@ typedef struct
         UnicensCmdNsRun_t NsRun;
         UnicensCmdGpioCreatePort_t GpioCreatePort;
         UnicensCmdGpioWritePort_t GpioWritePort;
+        UnicensCmdGpioPortMode_t GpioPortMode;
         UnicensCmdI2CWrite_t I2CWrite;
         UnicensCmdI2CRead_t I2CRead;
         UnicensCmdPacketFilterMode_t PacketFilterMode;
