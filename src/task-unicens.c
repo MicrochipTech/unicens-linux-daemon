@@ -470,7 +470,7 @@ void UCSI_CB_OnMgrReport(void *pTag, Ucs_Supv_Report_t code, Ucs_Signature_t *si
         ConsolePrintf(PRIO_MEDIUM, "* Diagosis Id=0x%X\r\n", signature->diagnosis_id);
         ConsolePrintf(PRIO_MEDIUM, "* Num Ports=%d\r\n", signature->num_ports);
         ConsolePrintf(PRIO_MEDIUM, "* Chip ID=0x%X\r\n", signature->chip_id);
-        ConsolePrintf(PRIO_MEDIUM, "* Firmware=%d.%d.%d.%ld\r\n", signature->fw_major, signature->fw_minor, signature->fw_release, signature->fw_build);
+        ConsolePrintf(PRIO_MEDIUM, "* Firmware=%d.%d.%d.%d\r\n", signature->fw_major, signature->fw_minor, signature->fw_release, signature->fw_build);
         ConsolePrintf(PRIO_MEDIUM, "* CS=%d.%d.%d\r\n", signature->cs_major, signature->cs_minor, signature->cs_release);
         ConsolePrintf(PRIO_MEDIUM, "*********************************************" RESETCOLOR "\r\n");
 
