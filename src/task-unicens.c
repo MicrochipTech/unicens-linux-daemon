@@ -476,9 +476,7 @@ void UCSI_CB_OnMgrReport(void *pTag, Ucs_Supv_Report_t code, Ucs_Signature_t *si
 
         if (m.promiscuousMode) {
             uint16_t nodeAddr = signature->node_address;
-            if (0x200 != nodeAddr && 0x2B0 != nodeAddr) {
-                UCSI_EnablePromiscuousMode(&m.unicens, nodeAddr, true);
-            }
+            UCSI_EnablePromiscuousMode(&m.unicens, nodeAddr, true);
         }
     }
 }
