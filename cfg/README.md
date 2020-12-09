@@ -36,11 +36,11 @@ Example:
 The tree view looks as follows:
 ```
 Parent
-�
+¦
 +---Child
-�
+¦
 +---Child
-    �
+    ¦
     +--- GrandChild
 ```
 
@@ -54,7 +54,7 @@ An example is `<greeting>Hello, world!</greeting>`
 
 **Attribute**
 
-An _attribute_ is a construct consisting of a name–value pair that exists within a start-tag or empty-element tag.
+An _attribute_ is a construct consisting of a nameâ€“value pair that exists within a start-tag or empty-element tag.
 
 An example is `<img src="madonna.jpg" alt="Madonna" />`, where the names of the attributes are "src" and "alt",
 and their values are "madonna.jpg" and "Madonna" respectively.
@@ -364,7 +364,7 @@ Following two Attributes are mandatory to define a valid Stream socket `<StreamS
 
 **5.4) Defining a Network Socket**
 
-The Network socket describes the resources allocated on the network´s streaming channel.
+The Network socket describes the resources allocated on the networkÂ´s streaming channel.
 As mentioned earlier, in every connection (SyncConnection, AVPConnection), there must be exactly one Network socket defined, either as input or as output.
 Following two attributes are mandatory to define a valid Network socket `<NetworkSocket>`:
  - Bandwidth=".."
@@ -550,7 +550,7 @@ Here is an example, cutting a 5.1 multi-channel stream from a head unit into thr
 
 **7.) Defining an Audio Loopback**
 
-In certain cases, it may be helpful to route the audio from the source back to itself (looping back). This may be the case when the radio tuner shall not accidentally activate the head unit´s wake word (like "Alexa" or "Hey Siri").
+In certain cases, it may be helpful to route the audio from the source back to itself (looping back). This may be the case when the radio tuner shall not accidentally activate the head unitÂ´s wake word (like "Alexa" or "Hey Siri").
 To achieve this, simply add two `<SyncConnection>` to the same Node. Ensure that the Route name of the `<NetworkSocket>` is the same for both.
 The target peripheral interface (USB, MediaLB, Streaming Port) may be different for both connections.
 
@@ -651,8 +651,8 @@ An example, supporting switching of multiple sources, would be:
 ```
 
 In the example above three sources are available:
- - 0x1001: The  Head Unit will be routed on the auxiliary board´s headphone jacket, by default activated.
- - 0x1002: The  microphone will be routed on the auxiliary board´s headphone jacket, by default deactivated.
+ - 0x1001: The  Head Unit will be routed on the auxiliary boardÂ´s headphone jacket, by default activated.
+ - 0x1002: The  microphone will be routed on the auxiliary boardÂ´s headphone jacket, by default deactivated.
  - 0x1003: The auxiliary boards "Line In"-jacket will be routed to its own headphone jacket (Loopback (See 7)), by default deactivated.
 
 Once the XML is prepared, the source code of the UNICENS daemon can be modified.
@@ -718,7 +718,7 @@ Following four Attributes are mandatory to define a valid USB Port `<USBPort>`:
 The `<MediaLBPort>` tag has only one attribute:
 
  - ClockConfig="..."
-	 - The value is a multiple of the network frame rate Fs (48 kHz); this means that the MediaLB port is always frequency locked to the network’s system clock.
+	 - The value is a multiple of the network frame rate Fs (48 kHz); this means that the MediaLB port is always frequency locked to the networkâ€™s system clock.
 	 - This is an enumeration.
 	 - Refer to section 5.2 to see the meaning.
 	 - These are the allowed values (case and space sensitive):
@@ -748,7 +748,7 @@ Following two attributes are mandatory to define a valid Streaming Port `<Stream
 		 - *Seq*
  - ClockConfig=".."
 	 - This value is a multiple of the network frame rate Fs (48kHz); this means the
-Streaming Port is always frequency locked to the network’s system clock.
+Streaming Port is always frequency locked to the networkâ€™s system clock.
  	 - This is an enumeration.
 	 - Refer to section 5.3 to see the meaning.
 	 - These are the allowed values (case and space sensitive):
@@ -1008,14 +1008,14 @@ The `<GPIOPinState>` tag has two mandatory attributes:
  	 - This attribute selects which GPIO output pin(s) shall be adjusted.
  	 - Each bit has the meaning: 0 = Untouched; 1 = Change the state of the Pin according to the Value attribute (see next).
 
- - Value=".."
+ - Data=".."
  	 - This value is a bit mask (unsigned 16 bit).
  	 - Each bit addresses one GPIO pin (starting with bit 0 for GPIO 0 and ending with bit 15 for GPIO 15).
  	 - This attribute selects the new state of the GPIO output pin(s). Make sure this is also reflected by the corresponding Mask attribute, mentioned earlier.
  	 - Each bit has the meaning: 0 = Set to Low state (if Mask matches); 1 = Set to High state (if Mask matches).
 
 ```xml
-<GPIOPinState Mask="0x100" Value="0x100"/>
+<GPIOPinState Mask="0x100" Data="0x100"/>
 ```
 
 In the example above, the GPIO 8 (0x100 == 1 << 8) is set to High state.
@@ -1074,7 +1074,7 @@ The `<Cdev>` tag  has three mandatory attributes:
  - BufferSize=".."
 	 - Integer value, specifying the number of bytes for a single buffer element
 	 - This buffer will be allocated inside the driver and will temporary hold the streamed data.
-	 - Making this value bigger, makes the application more robust, in cases where the operating system´s scheduler is slowly doing task switching, due to heavy system load.
+	 - Making this value bigger, makes the application more robust, in cases where the operating systemÂ´s scheduler is slowly doing task switching, due to heavy system load.
 	 - Reducing the buffer size may help to reduce the audio/video latency. But if the value is too small, the risk of data loss (Buffer-Underrun) increases, which may result in audio- and video artifacts.
 	 - If the latency does not matter, using 8 Kbyte is usually safe.
 	 - If the latency is crucial, it is generally hard to specify a "good" buffer size, as this depends a lot on the used CPU, operating system, kernel configuration and the typical system load. The integrator needs to find a good compromise between low latency and high robustness.
