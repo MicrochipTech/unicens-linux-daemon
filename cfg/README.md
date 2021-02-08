@@ -933,7 +933,7 @@ It only has one mandatory attribute called _DebounceTime_:
 <GPIOPortCreate DebounceTime="20"/>
 ```
 
-**10.4) Defining a GPIO Pin Mode Job**
+**10.5) Defining a GPIO Pin Mode Job**
 
 In order to use this job, make sure that the GPIO Port has already been created by the `<GPIOPortCreate>` tag.
 The tag to be used is named `<GPIOPortPinMode>`.
@@ -994,7 +994,7 @@ void UCSI_CB_OnGpioStateChange(void *pTag, uint16_t inicNetNodeAddress, uint8_t 
 { }
 ```
 
-**10.5) Defining a GPIO Pin State job**
+**10.6) Defining a GPIO Pin State job**
 
 In order to use this job, make sure that the GPIO Port has already been created by `<GPIOPortCreate>`.
 The tag to be used is named `<GPIOPinState>`.
