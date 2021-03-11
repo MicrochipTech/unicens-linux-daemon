@@ -38,7 +38,7 @@
 #include "Console.h"
 #include "Xml2Struct.h"
 
-static const char *VERSION_STR = "V5.2.0";
+static const char *VERSION_STR = "V5.2.1";
 
 #define CASE(X) case X: { return #X; }
 #define CHECK_ASSERT(X) { \
@@ -94,6 +94,7 @@ static void PrintUsbSocket(Ucs_Xrm_UsbSocket_t *socket);
 static const char*GetStrmClkString(Ucs_Stream_PortClockConfig_t clk);
 static const char*GetStrmAlignString(Ucs_Stream_PortDataAlign_t align);
 static void PrintStrmPort(Ucs_Xrm_StrmPort_t *port);
+static void PrintRmckPort(Ucs_Xrm_RmckPort_t *port);
 static void PrintStrmSocket(Ucs_Xrm_StrmSocket_t *socket);
 static void PrintCombiner(Ucs_Xrm_Combiner_t *combiner);
 static void PrintSplitter(Ucs_Xrm_Splitter_t *splitter);
@@ -506,6 +507,18 @@ static void PrintStrmPort(Ucs_Xrm_StrmPort_t *port)
     ConsolePrintfExit(" };\n");
 }
 
+static void PrintRmckPort(Ucs_Xrm_RmckPort_t *port)
+{
+    ConsolePrintfStart(PRIO_HIGH, "%s %s = { \n"TAB C99(".resource_type = ")"%s,\n"TAB, 
+            GetTypeString(port), 
+            GetVariableName(port, "RmckPort"),
+            GetResourceTypeString(&port->resource_type));
+    ConsolePrintfContinue(C99(".index = ")"%u,\n"TAB, port->index);
+    ConsolePrintfContinue(C99(".clock_source = ")"UCS_RMCK_PORT_CLK_SRC_NW_SYSTEM,\n"TAB);
+    ConsolePrintfContinue(C99(".divisor = ")"%u", port->divisor);
+    ConsolePrintfExit(" };\n");
+}
+
 static const char*GetStrmPinString(Ucs_Stream_PortPinId_t pin)
 {
     switch(pin)
@@ -633,6 +646,7 @@ static const char*GetTypeString(Ucs_Xrm_ResObject_t *element)
         case UCS_XRM_RC_TYPE_COMBINER: return "Ucs_Xrm_Combiner_t";
         case UCS_XRM_RC_TYPE_SPLITTER: return "Ucs_Xrm_Splitter_t";
         case UCS_XRM_RC_TYPE_AVP_CON: return "Ucs_Xrm_AvpCon_t";
+        case UCS_XRM_RC_TYPE_RMCK_PORT: return "Ucs_Xrm_RmckPort_t";
     default:
         ConsolePrintf(PRIO_ERROR, "GetTypeString ResourceType:%d not implemented\n", typ);
         exit(-1);
@@ -656,6 +670,7 @@ static const char*GetResourceTypeString(Ucs_Xrm_ResourceType_t *element)
         CASE(UCS_XRM_RC_TYPE_COMBINER);
         CASE(UCS_XRM_RC_TYPE_SPLITTER);
         CASE(UCS_XRM_RC_TYPE_AVP_CON);
+        CASE(UCS_XRM_RC_TYPE_RMCK_PORT);
         default:
             ConsolePrintf(PRIO_ERROR, "GetResourceTypeString ResourceType:%d not implemented\n", typ);
             exit(-1);
@@ -777,6 +792,9 @@ static void PrintUcsElement(Ucs_Xrm_ResObject_t *element)
         break;
     case UCS_XRM_RC_TYPE_STRM_PORT:
         PrintStrmPort((Ucs_Xrm_StrmPort_t *)element);
+        break;
+    case UCS_XRM_RC_TYPE_RMCK_PORT:
+        PrintRmckPort((Ucs_Xrm_RmckPort_t *)element);
         break;
     case UCS_XRM_RC_TYPE_STRM_SOCKET:
         PrintStrmSocket((Ucs_Xrm_StrmSocket_t *)element);

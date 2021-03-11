@@ -1018,6 +1018,14 @@ static void OnUnicensDebugXrmResources(Ucs_Xrm_ResourceType_t resource_type,
                 "align=%d", 5, adr, msg, m->index, m->clock_config, m->data_alignment);
             break;
         }
+        case UCS_XRM_RC_TYPE_RMCK_PORT:
+        {
+            Ucs_Xrm_RmckPort_t *m = (Ucs_Xrm_RmckPort_t *)resource_ptr;
+            assert(m->resource_type == resource_type);
+            UCSI_CB_OnUserMessage(my->tag, UCSI_MsgDebug, "Xrm-Debug (0x%03X): RMCK port %s, index=%d, divisor=%d, ",
+                    4, adr, msg, m->index, m->divisor);
+            break;
+        }
         case UCS_XRM_RC_TYPE_STRM_SOCKET:
         {
             Ucs_Xrm_StrmSocket_t *m = (Ucs_Xrm_StrmSocket_t *)resource_ptr;

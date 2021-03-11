@@ -455,6 +455,9 @@ static void ParseResources(Ucs_Xrm_ResObject_t **ppJobList, char *pBuf, uint32_t
         case UCS_XRM_RC_TYPE_AVP_CON:
             strcat(pBuf, "AC");
             break;
+        case UCS_XRM_RC_TYPE_RMCK_PORT:
+            strcat(pBuf, "R");
+            break;
         default:
             strcat(pBuf, "E");
             break;

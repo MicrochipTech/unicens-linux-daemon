@@ -118,6 +118,13 @@ struct StrmPortParameters
 bool GetStrmPort(Ucs_Xrm_StrmPort_t **strmPort, struct StrmPortParameters *param);
 bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, uint8_t portIndex, struct UcsXmlObjectList *list);
 
+struct RmckPortParameters
+{
+    struct UcsXmlObjectList *list;
+    uint16_t divisor;
+};
+bool GetRmckPort(Ucs_Xrm_RmckPort_t **rmckPort, struct RmckPortParameters *param);
+
 struct StrmSocketParameters
 {
     struct UcsXmlObjectList *list;

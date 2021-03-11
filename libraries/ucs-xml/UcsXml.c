@@ -106,6 +106,7 @@ typedef struct
     Ucs_Xrm_MlbPort_t *mlbPort;
     Ucs_Xrm_StrmPort_t *strmPortA;
     Ucs_Xrm_StrmPort_t *strmPortB;
+    Ucs_Xrm_RmckPort_t *rmckPort;
 } NodeData_t;
 
 typedef struct
@@ -178,6 +179,7 @@ static const char* MUTE_MODE =              "MuteMode";
 static const char* MUTE_MODE_NO_MUTING =    "NoMuting";
 static const char* MUTE_MODE_MUTE_SIGNAL =  "MuteSignal";
 static const char* AVP_PACKET_SIZE =        "IsocPacketSize";
+static const char* DIVISOR =                "Divisor";
 #define SYNC_CONNECTION                     "SyncConnection"
 #define AVP_CONNECTION                      "AVPConnection"
 #define DFP_CONNECTION                      "DFPhaseConnection"
@@ -199,15 +201,16 @@ static const char* ALL_SOCKETS[] = { NETWORK_SOCKET, USB_SOCKET, MLB_SOCKET,
 #define MLB_PORT                            "MediaLBPort"
 #define USB_PORT                            "USBPort"
 #define STRM_PORT                           "StreamPort"
-static const char* ALL_PORTS[] = { MLB_PORT, USB_PORT, STRM_PORT, NULL };
+#define RMCK_PORT                           "RMCKPort"
+static const char* ALL_PORTS[] = { MLB_PORT, USB_PORT, STRM_PORT, RMCK_PORT, NULL };
 
 static const char* PHYSICAL_LAYER =         "PhysicalLayer";
 static const char* DEVICE_INTERFACES =      "DeviceInterfaces";
 static const char* STRM_IN_COUNT =          "StreamingIfEpInCount";
 static const char* STRM_OUT_COUNT =         "StreamingIfEpOutCount";
 
-static const char* STRM_PIN =                "StreamPinID";
-static const char* STRM_ALIGN =              "DataAlignment";
+static const char* STRM_PIN =               "StreamPinID";
+static const char* STRM_ALIGN =             "DataAlignment";
 
 static const char* SCRIPT =                 "Script";
 static const char* FBLOCK_ID =              "FBlockId";
@@ -914,6 +917,9 @@ static ParseResult_t ParseAll(mxml_node_t *tree, UcsXmlVal_t *ucs, PrivateData_t
                 MSocketType_t socType;
                 mxml_node_t *soc;
                 memset(&priv->conData, 0, sizeof(ConnectionData_t));
+                if(priv->nodeData.rmckPort) {
+                    AddJob(&priv->conData.jobList, priv->nodeData.rmckPort, &priv->objList);
+                }
                 if (Parse_Success != (result = ParseConnection(con, conType, priv)))
                     return result;
                 /*Iterate all sockets*/
@@ -1033,6 +1039,13 @@ static ParseResult_t ParseNode(mxml_node_t *node, PrivateData_t *priv)
                 if (!GetStrmPort(&priv->nodeData.strmPortA, &p)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
                 p.index = 1;
                 if (!GetStrmPort(&priv->nodeData.strmPortB, &p)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+            }
+            else if (0 == (strcmp(txt, RMCK_PORT)))
+            {
+                struct RmckPortParameters p;
+                p.list = &priv->objList;
+                if (!GetUInt16(port, DIVISOR, &p.divisor, true)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
+                if (!GetRmckPort(&priv->nodeData.rmckPort, &p)) RETURN_ASSERT(Parse_XmlError, "Missing mandatory attribute");
             }
             else
             {

@@ -5,6 +5,10 @@ UNICENS Daemon (unicensd) & UNICENS Client (unicensc)
 !!! Control Channel default mapping: /dev/inic-control-rx  and  /dev/inic-control-tx   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+V05.02.01
+=========
+- Adding support for creating RMCK port out of XML
+
 V05.02.00
 =========
 - Better remote GPIO and I2C handling

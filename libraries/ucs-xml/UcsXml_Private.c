@@ -369,6 +369,22 @@ bool GetStrmPortDefaultCreated(Ucs_Xrm_ResObject_t **streamPort, uint8_t portInd
     return true;
 }
 
+bool GetRmckPort(Ucs_Xrm_RmckPort_t **rmckPort, struct RmckPortParameters *param)
+{
+    Ucs_Xrm_RmckPort_t *p;
+    CHECK_POINTER(rmckPort);
+    CHECK_POINTER(param);
+    CHECK_POINTER(param->list);
+    p = MCalloc(param->list, 1, sizeof(Ucs_Xrm_RmckPort_t));
+    CHECK_POINTER(p);
+    p->resource_type = UCS_XRM_RC_TYPE_RMCK_PORT;
+    p->index = 0;
+    p->clock_source = UCS_RMCK_PORT_CLK_SRC_NW_SYSTEM;
+    p->divisor = param->divisor;
+    *rmckPort = p;
+    return true;
+}
+
 bool GetStrmSocket(Ucs_Xrm_StrmSocket_t **strmSoc, struct StrmSocketParameters *param)
 {
     Ucs_Xrm_StrmSocket_t *soc = NULL;
