@@ -726,7 +726,7 @@ static bool GetPayload(mxml_node_t *element, const char *name, uint8_t **pPayloa
     txtCopy = malloc(tempLen);
     if (NULL == txtCopy)
         return false;
-    strncpy(txtCopy, txt, tempLen);
+    strcpy(txtCopy, txt);
     tempLen = tempLen / 3; /* 2 chars hex value plus space (AA )  */
     p = MCalloc(obj, offset + tempLen, 1);
     if (NULL == p)
@@ -2047,7 +2047,7 @@ static ParseResult_t ParseDriver(mxml_node_t *drv, UcsXmlVal_t *ucs, PrivateData
 
 static ParseResult_t StoreDriverInfo(PrivateData_t *priv, const char *driverLink)
 {
-#define MAX_CHANNEL_NAME_LENGTH 6
+#define MAX_CHANNEL_NAME_LENGTH 8
     char *channelName;
     ConnectionData_t *con = &priv->conData;
     DriverCfgDataType_t cfgDataType;

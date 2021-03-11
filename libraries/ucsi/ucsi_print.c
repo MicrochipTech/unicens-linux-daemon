@@ -300,8 +300,8 @@ static void PrintTable(void)
         const char *sinkReset = "";
         const char *routeAvail = " ";
         const char *routeReset = "";
-        char sourceAddr[20];
-        char sinkAddr[20];
+        char sourceAddr[24];
+        char sinkAddr[24];
         char conLabel[20];
         Ucs_Xrm_ResObject_t **inJobs = m.pRoutes[i].source_endpoint_ptr->jobs_list_ptr;
         Ucs_Xrm_ResObject_t **outJobs = m.pRoutes[i].sink_endpoint_ptr->jobs_list_ptr;

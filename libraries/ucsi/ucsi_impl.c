@@ -36,7 +36,7 @@
 /* Private Definitions and variables                                    */
 /************************************************************************/
 
-#define TRACE_BUFFER_SZ     (100)
+#define TRACE_BUFFER_SZ     (106)
 #define MAGIC               (0xA144BEAF)
 #define LOCAL_NODE_ADDR     (0x1)
 #define UNKNOWN_NODE_ADDR   (0xFFFF)
