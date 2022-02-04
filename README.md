@@ -35,12 +35,12 @@ Now the binaries `unicensd` and `xml2struct` shall be available in the current f
 In order to run unicensd, first make sure that the MOST Linux Driver is up and running.
 
 On newer version of Linux, the MOST Linux Driver is already part of the shipped Linux kernel.
-If so, the driver can be actived:
+If so, the driver can be activated:
 ```bash
 sudo modprobe most_cdev
 sudo modprobe most_usb
 ```
-Note that the driver mentionted above is already the V2 variant, so please use the -drv2 option to launch the UNICENS daemon.
+Note that the driver mentioned above is already the V2 variant, so please use the -drv2 option to launch the UNICENS daemon.
 
 For older releases, please follow this tutorial therefor: [MOST Linux Driver](https://github.com/microchip-ais/linux/blob/mchp-dev/mld/README.md). 
 
