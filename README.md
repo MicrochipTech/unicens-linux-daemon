@@ -34,7 +34,15 @@ $ ./build.sh
 Now the binaries `unicensd` and `xml2struct` shall be available in the current folder.
 In order to run unicensd, first make sure that the MOST Linux Driver is up and running.
 
-Please follow this tutorial therefor: [MOST Linux Driver](https://github.com/microchip-ais/linux/blob/mchp-dev/mld/README.md). 
+On newer version of Linux, the MOST Linux Driver is already part of the shipped Linux kernel.
+If so, the driver can be actived:
+```bash
+sudo modprobe most_cdev
+sudo modprobe most_usb
+```
+Note that the driver mentionted above is already the V2 variant, so please use the -drv2 option to launch the UNICENS daemon.
+
+For older releases, please follow this tutorial therefor: [MOST Linux Driver](https://github.com/microchip-ais/linux/blob/mchp-dev/mld/README.md). 
 
 On Raspbian OS its recommend to get the kernel headers by following this tutorial: [rpi_source](https://github.com/notro/rpi-source/wiki).
 
